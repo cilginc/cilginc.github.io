@@ -20,13 +20,13 @@ image:
 
 I start with exporting the target machine IP adress as a enviroment variable:
 
-```sh
+```bash
 export IP=10.10.160.10
 ```
 
 And runnig `nmap` scan on the target:
 
-```sh
+```bash
 nmap -T4 -n -sC -sV -Pn -p- $IP
 Starting Nmap 7.97 ( https://nmap.org ) at 2025-06-18 02:16 +0300
 Nmap scan report for 10.10.160.10

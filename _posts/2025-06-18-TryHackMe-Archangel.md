@@ -5,7 +5,7 @@ author: cilgin
 date: 2025-06-18 00:38:49 +0300
 categories: [CyberSecurity]
 tags: [CTF, TryHackMe, Easy]
-pin: true
+pin: false
 math: false
 mermaid: false
 image:
@@ -19,13 +19,13 @@ image:
 
 I start with exporting the target machine IP adress as a enviroment variable:
 
-```sh
+```bash
 export IP=10.10.205.56
 ```
 
 And runnig `nmap` scan on the target:
 
-```sh
+```bash
 nmap -T4 -n -sC -sV -Pn -p- $IP
 Starting Nmap 7.97 ( https://nmap.org ) at 2025-06-18 00:46 +0300
 Nmap scan report for 10.10.178.245
