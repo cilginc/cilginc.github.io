@@ -1,6 +1,6 @@
 ---
-title: TryHackMe: Hacker vs Hacker
-description: **Hacker vs Hacker** is Easy CTF Room on TryHackMe.
+title: "TryHackMe: Hacker vs Hacker"
+description: "**Hacker vs Hacker** is Easy CTF Room on TryHackMe."
 author: cilgin
 date: 2025-06-18 02:11:36 +0300
 categories: [CyberSecurity]
