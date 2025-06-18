@@ -1,16 +1,14 @@
 ---
 title: "TryHackMe: Archangel"
-description: "**Archangel** is Easy CTF Room on TryHackMe."
 author: cilgin
 date: 2025-06-18 00:38:49 +0300
 categories: [CyberSecurity]
 tags: [CTF, TryHackMe, Easy]
-pin: false
+pin: true
 math: false
 mermaid: false
 image:
   path: /assets/img/2025-06-18-TryHackMe-Archangel/Archangel.png
-  alt: Archangel picture.
 ---
 
 # Enumeration
