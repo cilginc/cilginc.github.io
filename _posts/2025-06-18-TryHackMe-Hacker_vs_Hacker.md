@@ -131,7 +131,8 @@ if (!strpos($target_file, ".pdf")) {
 }
 ```
 
-Also there is upload section on the page. `photo`
+Also there is upload section on the page. 
+![Desktop View](/assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/photo1.png){: width="1044" height="409" }
 
 We can use this file make a reverse shell to the machine.
 
