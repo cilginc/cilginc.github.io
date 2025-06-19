@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-18-TryHackMe-Ninja_Skills.md/Ninja_Skills.md
+  path: /assets/img/2025-06-18-TryHackMe-Ninja_Skills/Ninja_Skills.png
 ---
 
 # SSH'ing into machine
