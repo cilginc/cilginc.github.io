@@ -51,3 +51,64 @@ And then now we got the file paths. We can get the files with ip addresses with 
 ```bash
 grep  -Eo "([0-9]{1,3}[\.]){3}[0-9]{1,3}" $(<paths.txt)
 ```
+
+
+## Question 3  
+
+
+```bash
+#!/bin/bash
+
+target_hash="9d54da7584015647ba052173b84d45e8007eba94"
+
+while IFS= read -r file; do
+  if [ -f "$file" ]; then
+    hash=$(sha1sum "$file" | awk '{print $1}')
+    if [[ "$hash" == "$target_hash" ]]; then
+      echo "Match found: $file"
+      exit 0
+    fi
+  fi
+done < paths.txt
+
+echo "No match found."
+```
+
+
+## Question 4
+
+
+```bash
+#!/bin/bash
+
+target_lines=230
+
+while IFS= read -r file; do
+  if [ -f "$file" ]; then
+    line_count=$(wc -l < "$file")
+    if [ "$line_count" -eq "$target_lines" ]; then
+      echo "Match found: $file"
+    fi
+  fi
+done < paths.txt
+```
+
+
+
+## Question 5
+
+
+```bash
+[new-user@ip-10-10-194-46 ~]$ cat paths.txt | xargs ls -ln
+-rwxrwxr-x 1 501 501 13545 Oct 23  2019 /etc/8V2L
+-rw-rw-r-- 1 501 501 13545 Oct 23  2019 /etc/ssh/SRSq
+-rw-rw-r-- 1 501 502 13545 Oct 23  2019 /home/v2Vb
+-rw-rw-r-- 1 501 501 13545 Oct 23  2019 /media/rmfX
+-rw-rw-r-- 1 501 501 13545 Oct 23  2019 /mnt/c4ZX
+-rw-rw-r-- 1 501 502 13545 Oct 23  2019 /mnt/D8B3
+-rw-rw-r-- 1 501 501 13545 Oct 23  2019 /opt/oiMO
+-rw-rw-r-- 1 501 501 13545 Oct 23  2019 /opt/PFbD
+-rw-rw-r-- 1 501 501 13545 Oct 23  2019 /var/FHl1
+-rw-rw-r-- 1 501 501 13545 Oct 23  2019 /var/log/uqyw
+-rw-rw-r-- 1 502 501 13545 Oct 23  2019 /X1Uy
+```
