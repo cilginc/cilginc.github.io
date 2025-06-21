@@ -1,0 +1,103 @@
+---
+title: "Ultimate Compression Algorithms Tier List"
+author: cilgin
+date: 2025-06-21 21:58:41 +0300
+categories: [Tier List]
+tags: [Compression, Tier_List]
+pin: true
+math: false
+mermaid: false
+image:
+  path: /assets/img/2025-06-21-
+---
+
+This is a technical blog post about compression algorithms. Stay tuned to find which is the best algorithm for your needs.
+
+---
+
+# What is Data Compression?
+
+**Data compression** is the process of encoding information using fewer bits than the original representation. Its goal is to reduce file size for efficient storage, faster transmission, or both.
+
+There are two main categories of compression:
+
+- **Lossless Compression**: Preserves all original data. The decompressed output is bit-for-bit identical to the input. Common algorithms include `DEFLATE` (used in gzip), `bzip2`, `LZMA`, and `Zstandard`.
+- **Lossy Compression**: Sacrifices some data accuracy to achieve higher compression ratios. Used for audio, image, and video (e.g., MP3, JPEG, H.264).
+
+Compression algorithms often rely on techniques such as:
+
+- **Entropy encoding** (e.g. Huffman, arithmetic coding)
+- **Dictionary-based compression** (e.g. LZ77, LZ78)
+- **Prediction models and context modeling** (used in modern compressors like Zstandard or paq8)
+
+The effectiveness of compression depends on data type, redundancy level, and the algorithm’s design trade-offs between speed, memory usage, and compression ratio.
+
+# Testing the Algorithms
+
+I tested these algorithms on this blog post:
+
+- gzip
+- bzip2
+- xz
+- zstd
+- lz4
+- brotli
+- lzma (7zip)
+- zip
+
+Here's the all versions I tested:
+
+```text
+gzip 1.14-modified
+bzip2, a block-sorting file compressor.  Version 1.0.8, 13-Jul-2019.
+xz (XZ Utils) 5.8.1
+*** Zstandard CLI (64-bit) v1.5.7, by Yann Collet ***
+*** lz4 v1.10.0 64-bit multithread, by Yann Collet ***
+brotli 1.1.0
+liblzma 5.8.1
+This is Zip 3.0 (July 5th 2008), by Info-ZIP.
+```
+
+## Files I tested
+
+Flight data on <https://www.tablab.app/json/sample>
+OpenSSH logs on <https://github.com/logpai/loghub
+<https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt>
+My FLAC library
+
+### Flight Data JSON
+
+- File Size: 123.0 MB
+
+photo1
+
+photo2
+
+### OpenSSH Logs
+
+- File Size: 73.4 MB
+
+photo3
+
+photo4
+
+### rockyou.txt
+
+- File Size: 139.9 MB
+
+photo5
+
+photo6
+
+### FLAC Songs
+
+I used 3 albums from my library. Even thought FLAC's are compressed we can compress them even more with these algorithms.
+I needed to make the 3 albums on the same file for algorithms to work.
+
+Tools I used:
+
+```text
+tar (GNU tar) 1.35
+```
+
+- File Size: 3.6 GB
