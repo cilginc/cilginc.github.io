@@ -69,31 +69,31 @@ My FLAC library
 
 - File Size: 123.0 MB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo1){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo1.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo2){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo2.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo3){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo3.png){: width="700" height="500" }
 
 ### OpenSSH Logs
 
 - File Size: 73.4 MB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo4){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo4.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo5){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo5.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo6){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo6.png){: width="700" height="500" }
 
 ### rockyou.txt
 
 - File Size: 139.9 MB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo7){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo7.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo8){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo8.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo9){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo9.png){: width="700" height="500" }
 
 ### FLAC Songs
 
@@ -108,12 +108,14 @@ tar (GNU tar) 1.35
 
 - File Size: 3.6 GB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo10){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo10.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo11){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo11.png){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo12){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo12.png){: width="700" height="500" }
 
 And as you can see from the graphs we can't compress FLAC more with these algorithms. Just never try to compress FLAC's like me or you will end up with waste of time.
 
 # Last Thoughts
+
+These been a great experiment for me. I think using zip on linux is not a good solution because gzip is better and open source.
