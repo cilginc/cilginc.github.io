@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-18-TryHackMe-Ninja_Skills/Source.png
+  path: /assets/img/2025-06-18-TryHackMe-Source/Source.png
 ---
 
 # Enumeration
@@ -66,7 +66,7 @@ how to fix it, please visit the webpage mentioned above.
 
 And It's using self-signed certificates. I guess using browser is better from there.
 So I hop into my browser and go the path with https.
-![Desktop View](/assets/img/2025-06-18-TryHackMe-Ninja_Skills/photo1.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-06-18-TryHackMe-Source/photo1.png){: width="972" height="589" }
 
 ## Trying to log in as a admin
 
