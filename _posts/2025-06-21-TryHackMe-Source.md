@@ -11,6 +11,8 @@ image:
   path: /assets/img/2025-06-21-TryHackMe-Source/Source.png
 ---
 
+This is a write-up for a <https://tryhackme.com/room/source> room where I walk through the steps I took to solve the challenges and capture the flags.
+
 # Enumeration
 
 ## Nmap Scan
@@ -66,7 +68,7 @@ how to fix it, please visit the webpage mentioned above.
 
 And It's using self-signed certificates. I guess using browser is better from there.
 So I hop into my browser and go the path with https.
-![Desktop View](/assets/img/2025-06-21-TryHackMe-Source/photo1.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-06-21-TryHackMe-Source/photo1.png){: width="665" height="645" }
 
 ## Trying to log in as a admin
 

@@ -11,6 +11,8 @@ image:
   path: /assets/img/2025-06-18-TryHackMe-Ninja_Skills/Ninja_Skills.png
 ---
 
+This is a write-up for a <https://tryhackme.com/room/ninjaskills> room where I walk through the steps I took to solve the challenges and capture the flags.
+
 # SSH'ing into machine
 
 Start by ssh'ing to machine:
