@@ -1,5 +1,5 @@
 ---
-title: "TryHackMe: Hacker vs Hacker"
+title: "TryHackMe: Ninja Skills"
 author: cilgin
 date: 2025-06-20 00:16:13 +0300
 categories: [CyberSecurity]
