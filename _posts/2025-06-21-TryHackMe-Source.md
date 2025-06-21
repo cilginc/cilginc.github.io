@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-18-TryHackMe-Source/Source.png
+  path: /assets/img/2025-06-21-TryHackMe-Source/Source.png
 ---
 
 # Enumeration
