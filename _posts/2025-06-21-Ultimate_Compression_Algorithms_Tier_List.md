@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-21-
+  path: /assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/main.png
 ---
 
 This is a technical blog post about compression algorithms. Stay tuned to find which is the best algorithm for your needs.
