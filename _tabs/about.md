@@ -6,7 +6,7 @@ order: 4
 
 # About Me
 
-Hi, I’m **[cilgin]**, a passionate Linux user, automation enthusiast, and DevOps learner who enjoys customizing everything and building tools that make life easier (and more fun).  
+Hi, I’m **cilgin**, a passionate Linux user, automation enthusiast, and DevOps learner who enjoys customizing everything and building tools that make life easier (and more fun).  
 This blog is my space to share thoughts, experiments, and technical deep dives — mostly around Linux, open source, and infrastructure.
 
 ## What I Do
@@ -25,7 +25,7 @@ I take pride in automating things that others wouldn’t bother with. If it can 
 Want to reach out? I’m always open to discussions, collaboration, or just exchanging ideas.  
 If you prefer secure communication, feel free to use my PGP key below:
 
-```gpg
+```text
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: User ID:	cilgincc <cilgincc@outlook.com>
 Comment: Fingerprint:	423CDFC41E33AF0A57961132A3268485E24AD0D0
