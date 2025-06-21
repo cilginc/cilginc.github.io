@@ -69,29 +69,35 @@ My FLAC library
 
 - File Size: 123.0 MB
 
-photo1
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo1){: width="700" height="500" }
 
-photo2
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo2){: width="700" height="500" }
+
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo3){: width="700" height="500" }
 
 ### OpenSSH Logs
 
 - File Size: 73.4 MB
 
-photo3
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo4){: width="700" height="500" }
 
-photo4
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo5){: width="700" height="500" }
+
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo6){: width="700" height="500" }
 
 ### rockyou.txt
 
 - File Size: 139.9 MB
 
-photo5
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo7){: width="700" height="500" }
 
-photo6
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo8){: width="700" height="500" }
+
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo9){: width="700" height="500" }
 
 ### FLAC Songs
 
-I used 3 albums from my library. Even thought FLAC's are compressed we can compress them even more with these algorithms.
+I used 3 albums from my library. Even thought FLAC's are compressed we can try to compress them even more with these algorithms.
 I needed to make the 3 albums on the same file for algorithms to work.
 
 Tools I used:
@@ -101,3 +107,13 @@ tar (GNU tar) 1.35
 ```
 
 - File Size: 3.6 GB
+
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo10){: width="700" height="500" }
+
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo11){: width="700" height="500" }
+
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo12){: width="700" height="500" }
+
+And as you can see from the graphs we can't compress FLAC more with these algorithms. Just never try to compress FLAC's like me or you will end up with waste of time.
+
+# Last Thoughts
