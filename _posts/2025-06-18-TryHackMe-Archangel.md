@@ -11,6 +11,8 @@ image:
   path: /assets/img/2025-06-18-TryHackMe-Archangel/Archangel.png
 ---
 
+This is a write-up for a <https://tryhackme.com/room/archangel> room where I walk through the steps I took to solve the challenges and capture the flags.
+
 # Enumeration
 
 ## Nmap Scan

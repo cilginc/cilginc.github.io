@@ -11,6 +11,8 @@ image:
   path: /assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/Hacker_vs_Hacker.png
 ---
 
+This is a write-up for a <https://tryhackme.com/room/hackervshacker> room where I walk through the steps I took to solve the challenges and capture the flags.
+
 # Enumeration
 
 ## Nmap Scan
