@@ -6,26 +6,26 @@ order: 4
 
 # About Me
 
-Hi, I’m **[cilgin]**, a passionate Linux user, automation enthusiast, and DevOps learner who enjoys customizing everything and building tools that make life easier (and more fun).  
-This blog is my space to share thoughts, experiments, and technical deep dives — mostly around Linux, open source, and infrastructure.
+Hi, I’m **cilgin**, a passionate Linux user, automation enthusiast, and DevOps learner who enjoys customizing everything and building tools that make life easier (and more fun).  
+This blog is my space to share thoughts, experiments, and technical deep dives mostly around Linux, open source, and infrastructure.
 
 ## What I Do
 
 I spend most of my time playing with:
 
-- **Arch Linux**, my daily driver — because I like to know _exactly_ what’s running on my system
+- **Arch Linux**, my daily driver because I like configuring my own system
 - **Automation tools** like Ansible, Bash scripting, and GitHub Actions
 - **Containers & orchestration**, from Docker to Kubernetes
 - **Infrastructure monitoring, logging**, and **self-hosted tools**
 
-I take pride in automating things that others wouldn’t bother with. If it can be scripted, I’ll probably write one — not because I have to, but because I enjoy it.
+I take pride in automating things that others wouldn’t bother with. If it can be scripted, I’ll probably write one. Not because I have to, but because I enjoy it.
 
 ## Contact
 
 Want to reach out? I’m always open to discussions, collaboration, or just exchanging ideas.  
 If you prefer secure communication, feel free to use my PGP key below:
 
-```gpg
+```text
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: User ID:	cilgincc <cilgincc@outlook.com>
 Comment: Fingerprint:	423CDFC41E33AF0A57961132A3268485E24AD0D0
