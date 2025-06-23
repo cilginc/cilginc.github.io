@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/main.png
+  path: /assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/main.jpg
 ---
 
 Welcome to the ultimate showdown of web servers. Where bytes meet bragging rights and request handling gets real. In this post, we slice and dice popular web servers based on hardcore metrics. From battle-tested veterans that power the internet’s backbone to scrappy upstarts trying to steal the spotlight, I’ll rank them into tiers so you know exactly which server deserves a throne and which one should probably stick to serving cat memes on a side project. Buckle up—it’s going to be a nerdy.
