@@ -26,7 +26,7 @@ for filename in os.listdir(directory):
             try:
                 with Image.open(filepath) as img:
                     width, height = img.size
-                markdown_str = f'![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/{directory}/{filename}){{: width="{width}" height="{height}" }}'
+                markdown_str = f'![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/{directory}/{filename}){{: width="{width}" height="{height}" }}'
                 print(markdown_str)
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
