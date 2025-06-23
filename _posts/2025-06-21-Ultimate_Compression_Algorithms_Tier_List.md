@@ -11,30 +11,32 @@ image:
   path: /assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/main.png
 ---
 
-This is a technical blog post about compression algorithms. Stay tuned to find which is the best algorithm for your needs.
+Ever wondered how to shrink your files to an impossibly small size? You're in the right place! This is your ultimate guide to the wild world of compression algorithms.
+
+Stick around as we put them to the test to find the perfect one for your needs.
 
 ---
 
-# What is Data Compression?
+# What on Earth is Data Compression?
 
-**Data compression** is the process of encoding information using fewer bits than the original representation. Its goal is to reduce file size for efficient storage, faster transmission, or both.
+In a nutshell, **data compression** is the magical art of encoding information using fewer bits than the original file. The main goal is to shrink files down for more efficient storage, faster network transfers, or both!
 
-There are two main categories of compression:
+There are two main flavors of compression:
 
-- **Lossless Compression**: Preserves all original data. The decompressed output is bit-for-bit identical to the input. Common algorithms include `DEFLATE` (used in gzip), `bzip2`, `LZMA`, and `Zstandard`.
-- **Lossy Compression**: Sacrifices some data accuracy to achieve higher compression ratios. Used for audio, image, and video (e.g., MP3, JPEG, H.264).
+- **Lossless Compression**: This is like a perfect vacuum-sealed bag for your data—nothing gets lost! The decompressed file is a bit-for-bit perfect clone of the original. Common lossless wizards include `DEFLATE` (used in `gzip`), `bzip2`, `LZMA`, and `Zstandard`.
+- **Lossy Compression**: This one's a bit more ruthless. It cleverly throws out some "unnecessary" data to achieve incredible compression ratios. It's the secret sauce behind your MP3s, JPEGs, and H.264 videos, where you'd never notice the missing bits anyway.
 
-Compression algorithms often rely on techniques such as:
+These algorithms perform their magic using clever tricks like:
 
-- **Entropy encoding** (e.g. Huffman, arithmetic coding)
-- **Dictionary-based compression** (e.g. LZ77, LZ78)
-- **Prediction models and context modeling** (used in modern compressors like Zstandard or paq8)
+- **Entropy encoding** (e.g., Huffman, arithmetic coding)
+- **Dictionary-based compression** (e.g., LZ77, LZ78)
+- **Prediction and context modeling** (the brains behind modern beasts like Zstandard)
 
-The effectiveness of compression depends on data type, redundancy level, and the algorithm’s design trade-offs between speed, memory usage, and compression ratio.
+So, how well does an algorithm work? It all boils down to the type of data, how much redundant information it has, and the algorithm's trade-offs between speed, memory usage, and compression ratio.
 
-# Testing the Algorithms
+# Putting the Algorithms to the Test
 
-I tested these algorithms on this blog post:
+To see these algorithms in action, I threw a bunch of different files at them. Here are our mighty contenders:
 
 - gzip
 - bzip2
@@ -45,7 +47,7 @@ I tested these algorithms on this blog post:
 - lzma (7zip)
 - zip
 
-Here's the all versions I tested:
+And here are the exact versions of the tools used in my high-tech, super-scientific lab (a.k.a. my computer):
 
 ```text
 gzip 1.14-modified
@@ -58,16 +60,18 @@ liblzma 5.8.1
 This is Zip 3.0 (July 5th 2008), by Info-ZIP.
 ```
 
-## Files I tested
+## The Sacrificial Files
 
-- Flight data on <https://www.tablab.app/json/sample>
-- OpenSSH logs on <https://github.com/logpai/loghub
-- <https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt>
-- My FLAC library
+I tested the algorithms on a variety of data:
+
+- [Flight Data JSON](https://www.tablab.app/json/sample)
+- [OpenSSH Logs](https://github.com/logpai/loghub) (because who doesn't love reading logs?)
+- [rockyou.txt](https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt) (the infamous password list)
+- My personal FLAC library
 
 ### Flight Data JSON
 
-- File Size: 123.0 MB
+- **Original File Size**: 123.0 MB
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo1.png){: width="700" height="500" }
 
@@ -75,11 +79,11 @@ This is Zip 3.0 (July 5th 2008), by Info-ZIP.
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo3.png){: width="700" height="500" }
 
-The winner is `bzip2` for JSON files. Best compression ratio of all ones with good compression times. Only downside is that decompression times is not good as others.
+And the winner for squishing JSON is... `bzip2`! It delivered the best compression ratio with a respectable compression time. The only catch? Decompressing is a bit of a snoozefest compared to the others.
 
 ### OpenSSH Logs
 
-- File Size: 73.4 MB
+- **Original File Size**: 73.4 MB
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo4.png){: width="700" height="500" }
 
@@ -87,11 +91,11 @@ The winner is `bzip2` for JSON files. Best compression ratio of all ones with go
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo6.png){: width="700" height="500" }
 
-The winner is `bzip2` again for sure. If I'm writing a log backup script i definitely use `bzip2`. I think `bzip2` is good at plain text with repeated symbols.
+Well, look who it is again! `bzip2` takes the crown once more. If I were writing a log backup script, `bzip2` would definitely be my co-pilot. It seems to have a real talent for handling plain text with lots of repetition.
 
 ### rockyou.txt
 
-- File Size: 139.9 MB
+- **Original File Size**: 139.9 MB
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo7.png){: width="700" height="500" }
 
@@ -99,20 +103,19 @@ The winner is `bzip2` again for sure. If I'm writing a log backup script i defin
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo9.png){: width="700" height="500" }
 
-On `rockyou.txt` `bzip2` is performing very badly and compression ratio is nearly same as `zstd`which makes `bzip2` worst algorithm for rockyou.txt. I think `zstd` did a very great job here not the best compression ratio but it's very fast. But the winner is `xz` or `lzma` here. 
+Whoa, a plot twist! On `rockyou.txt`, our previous champion, `bzip2`, completely fumbled. Its compression ratio was barely better than `zstd`, making it a poor choice here. `zstd`, on the other hand, was a speed demon! While it didn't have the _best_ ratio, its performance was impressive. The true winners for pure file size reduction, however, are `xz` and `lzma`.
 
 ### FLAC Songs
 
-I used 3 albums from my library. Even thought FLAC's are compressed we can try to compress them even more with these algorithms.
-I needed to make the 3 albums on the same file for algorithms to work.
+Even though FLAC files are already compressed, I thought, "Can we go deeper?" So, I grabbed three albums from my library to find out. To make sure our algorithms could chew on them properly, I bundled the three albums into a single `tar` archive.
 
-Tools I used:
+The only tool needed here was good old `tar`:
 
 ```text
 tar (GNU tar) 1.35
 ```
 
-- File Size: 3.6 GB
+- **Original File Size**: 3.6 GB
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo10.png){: width="700" height="500" }
 
@@ -120,18 +123,28 @@ tar (GNU tar) 1.35
 
 ![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo12.png){: width="700" height="500" }
 
-And as you can see from the graphs we can't compress FLAC more with these algorithms. Just never try to compress FLAC's like me or you will end up with waste of time.
+And the results are in... you can't really compress a compressed thing much further. As the graphs clearly show, this was an exercise in futility. Take it from me: don't try to re-compress your FLAC files unless you enjoy watching progress bars and wasting precious time.
 
-# Last Thoughts
+# Final Thoughts
 
-These been a great experiment for me. I think using zip on linux is not a good solution because gzip is better and open source. My favorite one on this list `zstd` of course. Because it's very very fast. And you know sometimes you need to transfer some big files over your home network. And you have enough file space. If you are using gigabit ethernet, I think compressing with `zstd` will speed up the process. I also like `xz` beacuse I't have the smallest file size (I'm ignoring `brotli` it is too slow). I think `brotli` is not bad for homelabs. You know there is a computers that doing nothing but a running some webservers. Just give a `brotli` compression and the whole month will be 100% CPU. It can be worth the waiting. Anyways here is my go to algorithms for tasks:
+This has been a fun and enlightening experiment. One thing is clear: using `zip` on Linux feels a bit dated when `gzip` is a superior, open-source alternative that's already there.
 
-- Sharing archive on public: `brotli`
-- If you don't like waiting: `xz`
-- Log backups and json: `bzip2`
-- If file size is under `10G` and I don't know which algorithm is best for that file: `gzip`
-- Same thing but if it is over `10G`: `zstd`
+My personal favorite of the bunch has to be `zstd`. Why? It's FAST. Like, ridiculously fast. Picture this: you're moving huge files across your home network. If you're on a gigabit connection, compressing with `zstd` first can actually _speed up_ the total transfer time. Less data to send means a quicker trip!
 
-You can use your own defaults, just inspect the charts and pick one for your needs.
+I also have a soft spot for `xz`, as it consistently delivered some of the smallest file sizes without being as agonizingly slow as `brotli`.
 
-Thank you for reading me. I hope this blog post was useful to you.
+But hey, `brotli` isn't all bad! Got a server in your homelab that's just sitting there gathering dust? Put that CPU to work! Tell it to `brotli`-compress something, and it'll be happily busy for the next month. For static web assets, that wait can be totally worth it.
+
+Anyway, enough rambling. Here's my personal cheat sheet for picking an algorithm:
+
+- **Sharing an archive publicly**: `brotli`. It's slow to create, but browsers love it, and you only have to compress once.
+- **For the best ratio without waiting an eternity**: `xz`. This is the sweet spot for great compression when `brotli` is just too slow.
+- **For log backups and JSON files**: `bzip2`. It's the king of repetitive text.
+- **For quick, everyday compression (under 10 GB)**: `gzip`. A fantastic, reliable all-rounder.
+- **For quick, everyday compression (over 10 GB)**: `zstd`. When you have a massive file and speed is of the essence.
+
+- **My Favorite**: `zstd`. I like it just because it's fast.
+
+Of course, these are just my recommendations. The best way to find _your_ perfect algorithm is to look at the charts and pick the one that best fits your specific needs for speed, size, and sanity.
+
+Thanks for reading! I hope this deep dive was useful to you.
