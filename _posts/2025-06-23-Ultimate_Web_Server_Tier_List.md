@@ -121,43 +121,43 @@ Looks like the best option is `Caddy` for feature wise with auto SSL support.
 
 ### NGINX
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo1.png){: width="930" height="385" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo2.png){: width="936" height="393" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo3.png){: width="935" height="374" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo4.png){: width="928" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo5.png){: width="945" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo1.png){: width="930" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo2.png){: width="936" height="393" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo3.png){: width="935" height="374" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo4.png){: width="928" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo5.png){: width="945" height="382" }
 
 ### CADDY
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo1.png){: width="925" height="379" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo2.png){: width="926" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo3.png){: width="929" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo4.png){: width="928" height="390" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo5.png){: width="927" height="387" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo1.png){: width="925" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo2.png){: width="926" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo3.png){: width="929" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo4.png){: width="928" height="390" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo5.png){: width="927" height="387" }
 
 ### APACHE
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo1.png){: width="927" height="384" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo2.png){: width="932" height="389" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo3.png){: width="928" height="384" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo4.png){: width="926" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo5.png){: width="937" height="388" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo1.png){: width="927" height="384" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo2.png){: width="932" height="389" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo3.png){: width="928" height="384" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo4.png){: width="926" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo5.png){: width="937" height="388" }
 
 ### LIGHTTPD
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo1.png){: width="941" height="380" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo2.png){: width="935" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo3.png){: width="932" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo4.png){: width="937" height="377" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo5.png){: width="930" height="378" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo1.png){: width="941" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo2.png){: width="935" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo3.png){: width="932" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo4.png){: width="937" height="377" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo5.png){: width="930" height="378" }
 
 ### H2O
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo1.png){: width="917" height="378" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo2.png){: width="924" height="388" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo3.png){: width="934" height="377" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo4.png){: width="932" height="379" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo5.png){: width="936" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo1.png){: width="917" height="378" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo2.png){: width="924" height="388" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo3.png){: width="934" height="377" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo4.png){: width="932" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo5.png){: width="936" height="380" }
 
 ## Winner
 
@@ -174,19 +174,19 @@ I'm making this test for just curiousity. Use whatever you like. I like python o
 
 ### Python
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo1.png){: width="937" height="382" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo2.png){: width="935" height="386" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo3.png){: width="927" height="380" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo4.png){: width="943" height="384" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo5.png){: width="932" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo1.png){: width="937" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo2.png){: width="935" height="386" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo3.png){: width="927" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo4.png){: width="943" height="384" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo5.png){: width="932" height="385" }
 
 ### Node
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo1.png){: width="932" height="385" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo2.png){: width="923" height="388" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo3.png){: width="931" height="382" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo4.png){: width="937" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo5.png){: width="932" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo1.png){: width="932" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo2.png){: width="923" height="388" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo3.png){: width="931" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo4.png){: width="937" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo5.png){: width="932" height="382" }
 
 ## Winner
 
@@ -202,16 +202,16 @@ I used default http library with `go` and used warp with `rust`.
 
 ### Go
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo1.png){: width="906" height="385" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo2.png){: width="905" height="392" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo3.png){: width="908" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo4.png){: width="906" height="390" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo5.png){: width="911" height="387" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo1.png){: width="906" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo2.png){: width="905" height="392" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo3.png){: width="908" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo4.png){: width="906" height="390" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo5.png){: width="911" height="387" }
 
 ### Rust
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo1.png){: width="928" height="389" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo2.png){: width="930" height="378" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo3.png){: width="931" height="380" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo4.png){: width="928" height="379" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo5.png){: width="928" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo1.png){: width="928" height="389" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo2.png){: width="930" height="378" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo3.png){: width="931" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo4.png){: width="928" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo5.png){: width="928" height="379" }
