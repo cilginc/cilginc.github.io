@@ -127,6 +127,8 @@ Looks like the best option is `Caddy` for feature wise with auto SSL support.
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo4.png){: width="928" height="383" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo5.png){: width="945" height="382" }
 
+As you thought nginx have pretty good performance with good average response time.
+
 ### CADDY
 
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo1.png){: width="925" height="379" }
@@ -134,6 +136,8 @@ Looks like the best option is `Caddy` for feature wise with auto SSL support.
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo3.png){: width="929" height="383" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo4.png){: width="928" height="390" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo5.png){: width="927" height="387" }
+
+Caddy is making better than i thought and it is very close to nginx.
 
 ### APACHE
 
@@ -143,6 +147,9 @@ Looks like the best option is `Caddy` for feature wise with auto SSL support.
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo4.png){: width="926" height="381" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo5.png){: width="937" height="388" }
 
+Apache gets demolished by the best with around **7000** HTTP failures and **1 minutes** of max response time.
+You shouldn't use apache in 2025.
+
 ### LIGHTTPD
 
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo1.png){: width="941" height="380" }
@@ -150,6 +157,8 @@ Looks like the best option is `Caddy` for feature wise with auto SSL support.
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo3.png){: width="932" height="381" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo4.png){: width="937" height="377" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo5.png){: width="930" height="378" }
+
+I never heard of this web server before but I think its perfoming better than apache. You shouldn't use this server on production tho.
 
 ### H2O
 
@@ -159,7 +168,16 @@ Looks like the best option is `Caddy` for feature wise with auto SSL support.
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo4.png){: width="932" height="379" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo5.png){: width="936" height="380" }
 
+I never heard of this one it perfoms the worst of all of them. There is no reason to use webser on production.
+
 ## Winner
+
+I think there are two winners:
+
+- `Nginx` and `Caddy`
+
+I think caddy is great for newcomers with easy configuration and great documentation. And It is very close to nginx.
+Real production king is `Nginx` of course but I will not use `Nginx` in every project after this test. beacause for smaller projects `Caddy` can work like a charm too.
 
 # Local Servers
 
@@ -180,6 +198,8 @@ I'm making this test for just curiousity. Use whatever you like. I like python o
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo4.png){: width="943" height="384" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo5.png){: width="932" height="385" }
 
+Python didn't finished the test. It is not that performant like other servers.
+
 ### Node
 
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo1.png){: width="932" height="385" }
@@ -188,7 +208,15 @@ I'm making this test for just curiousity. Use whatever you like. I like python o
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo4.png){: width="937" height="383" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo5.png){: width="932" height="382" }
 
+Node server performance overkill for its use. But it is faster than some of the production servers.
+
 ## Winner
+
+Winner is your preferrence of course.
+For small VUS 2 servers are nearly the same on performance side.
+Use whatever you want.
+You may want to use node beacause it is more stable.
+You may want to use python beacause it is already installed.
 
 # Servers that I wrote
 
@@ -208,6 +236,8 @@ I used default http library with `go` and used warp with `rust`.
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo4.png){: width="906" height="390" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo5.png){: width="911" height="387" }
 
+If you look at the graphs you may see that go is made 16000796 requests which is higher than nginx. But if you look at the http failures you will see 800612 failures. If my code doesn't suck there will be probably around 800184 requests made. Which is not bad for a go library.
+
 ### Rust
 
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo1.png){: width="928" height="389" }
@@ -215,3 +245,11 @@ I used default http library with `go` and used warp with `rust`.
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo3.png){: width="931" height="380" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo4.png){: width="928" height="379" }
 ![Desktop View](/assets/img/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo5.png){: width="928" height="379" }
+
+Rust didn't completed the test. I don't think my code suck at this point. I think rust http libraries not good as you think. Just joking don't rewrite nginx with rust please.
+
+# Last Thoughts
+
+This experiment is good for my curiousity. Before i maked the test i was always using nginx. But now i may be use caddy on smaller projects. For production just use `nginx` it is the default and best web server of all time. 
+
+Thank you for reading me. I hope this blog post was useful to you.
