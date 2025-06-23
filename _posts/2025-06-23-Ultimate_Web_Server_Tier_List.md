@@ -124,51 +124,51 @@ Feature-wise, `Caddy` looks like the clear winner with its built-in automatic SS
 
 ### NGINX
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo1.png){: width="930" height="385" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo2.png){: width="936" height="393" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo3.png){: width="935" height="374" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo4.png){: width="928" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo5.png){: width="945" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo1.png){: width="930" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo2.png){: width="936" height="393" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo3.png){: width="935" height="374" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo4.png){: width="928" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/nginx/photo5.png){: width="945" height="382" }
 
 As you might expect, Nginx has pretty good performance with a great average response time.
 
 ### CADDY
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo1.png){: width="925" height="379" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo2.png){: width="926" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo3.png){: width="929" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo4.png){: width="928" height="390" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo5.png){: width="927" height="387" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo1.png){: width="925" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo2.png){: width="926" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo3.png){: width="929" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo4.png){: width="928" height="390" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/caddy/photo5.png){: width="927" height="387" }
 
 Caddy performed better than I thought and is very close to Nginx's performance.
 
 ### APACHE
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo1.png){: width="927" height="384" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo2.png){: width="932" height="389" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo3.png){: width="928" height="384" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo4.png){: width="926" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo5.png){: width="937" height="388" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo1.png){: width="927" height="384" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo2.png){: width="932" height="389" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo3.png){: width="928" height="384" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo4.png){: width="926" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/apache/photo5.png){: width="937" height="388" }
 
 Apache gets demolished, clocking in with around **7,000** HTTP failures and a max response time of **1 minute**. You probably shouldn't be using Apache for this kind of workload in 2025.
 
 ### LIGHTTPD
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo1.png){: width="941" height="380" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo2.png){: width="935" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo3.png){: width="932" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo4.png){: width="937" height="377" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo5.png){: width="930" height="378" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo1.png){: width="941" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo2.png){: width="935" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo3.png){: width="932" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo4.png){: width="937" height="377" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/lighttpd/photo5.png){: width="930" height="378" }
 
 I had never heard of this web server before, but it performs better than Apache. I still wouldn't recommend it for production, though.
 
 ### H2O
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo1.png){: width="917" height="378" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo2.png){: width="924" height="388" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo3.png){: width="934" height="377" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo4.png){: width="932" height="379" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo5.png){: width="936" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo1.png){: width="917" height="378" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo2.png){: width="924" height="388" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo3.png){: width="934" height="377" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo4.png){: width="932" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/h2o/photo5.png){: width="936" height="380" }
 
 I'd also never heard of this one, and it performed the worst of them all. There's no reason to use this web server in production.
 
@@ -193,21 +193,21 @@ I'm doing this test purely out of curiosity. You should use whichever you prefer
 
 ### Python
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo1.png){: width="937" height="382" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo2.png){: width="935" height="386" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo3.png){: width="927" height="380" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo4.png){: width="943" height="384" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo5.png){: width="932" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo1.png){: width="937" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo2.png){: width="935" height="386" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo3.png){: width="927" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo4.png){: width="943" height="384" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/python/photo5.png){: width="932" height="385" }
 
 Python's built-in server didn't finish the test. It's clearly not as performant as the others, which is expected.
 
 ### Node.js
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo1.png){: width="932" height="385" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo2.png){: width="923" height="388" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo3.png){: width="931" height="382" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo4.png){: width="937" height="383" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo5.png){: width="932" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo1.png){: width="932" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo2.png){: width="923" height="388" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo3.png){: width="931" height="382" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo4.png){: width="937" height="383" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/node/photo5.png){: width="932" height="382" }
 
 The Node.js server's performance is overkill for its typical use case. It's even faster than some of the production servers we tested!
 
@@ -228,21 +228,21 @@ My `Go` server had a lot of HTTP failures—not because the default library is b
 
 ### Go
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo1.png){: width="906" height="385" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo2.png){: width="905" height="392" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo3.png){: width="908" height="381" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo4.png){: width="906" height="390" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo5.png){: width="911" height="387" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo1.png){: width="906" height="385" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo2.png){: width="905" height="392" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo3.png){: width="908" height="381" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo4.png){: width="906" height="390" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/go/photo5.png){: width="911" height="387" }
 
 If you look at the graphs, you might see that my Go server handled a whopping **16,000,796** requests, which is even higher than Nginx! But before you get too excited, look at the HTTP failures: **800,612**. If my code didn't suck, this would have been a very different story. Still, it's impressive what Go's standard library can do out of the box.
 
 ### Rust
 
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo1.png){: width="928" height="389" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo2.png){: width="930" height="378" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo3.png){: width="931" height="380" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo4.png){: width="928" height="379" }
-![Desktop View](/assests/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo5.png){: width="928" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo1.png){: width="928" height="389" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo2.png){: width="930" height="378" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo3.png){: width="931" height="380" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo4.png){: width="928" height="379" }
+![Desktop View](/assets/2025-06-23-Ultimate_Web_Server_Tier_List/rust/photo5.png){: width="928" height="379" }
 
 My Rust server didn't complete the test. At this point, I don't think my code is the _only_ problem. Maybe Rust's HTTP libraries aren't as foolproof as you'd think. (Just kidding—please don't come after me, Rustaceans. And definitely don't rewrite Nginx in Rust based on this result.)
 
