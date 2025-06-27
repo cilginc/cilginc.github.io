@@ -56,7 +56,7 @@ It seems to be this IP adress is routing me to <http://lookup.thm>. So i add thi
 
 And i see the website
 
-![Desktop View](/assets/img/2025-06-21-TryHackMe-Lookup/photo1.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-06-21-TryHackMe-Lookup/photo1.png){: width="646" height="407" }
 
 And i tried password:password but it didnt worked of course.
 
@@ -171,7 +171,7 @@ So i added the domain to the /etc/hosts
 
 and ı finded some web file manager software.
 
-![Desktop View](/assets/img/2025-06-21-TryHackMe-Lookup/photo2.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-06-21-TryHackMe-Lookup/photo2.png){: width="525" height="537" }
 
 I firstly tried to check the software version for any vulns
 
