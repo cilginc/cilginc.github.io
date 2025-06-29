@@ -663,3 +663,41 @@ PS : Prometheus left a hidden flag, try and find it ! I recommend logging as roo
 
 
 Ok Now we need to fing a secret flag
+
+Firstly log in as a root with ssh:
+
+1. Add you public key to the root/.ssh/authorized_keys
+
+2. `ssh root@olympus.thm`
+
+
+Now we can try to get all the word which starts with flag{ with this command:
+
+```bash
+find . -type f -exec cat {} + > output.txt
+```
+
+Even with grep there will be some crappy binary in this file. So after this command finishes I'll use vim to search throught flag{
+
+But never be me beacuse I run vim in the target machine rather than downloading the file and running in my system now system crashed out a little bit.
+
+Anyways If you don't want use this command. the secret flag is on /etc/ssl/private.
+
+
+
+```bash
+root@ip-10-10-85-12:/etc/ssl/private# cat .b0nus.fl4g 
+Here is the final flag ! Congrats !
+
+flag{*****************}
+
+
+As a reminder, here is a usefull regex :
+
+grep -irl flag{
+
+
+
+
+Hope you liked the room ;)
+```
