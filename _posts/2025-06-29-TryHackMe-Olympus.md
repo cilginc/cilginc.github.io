@@ -13,7 +13,7 @@ image:
 
 Hey everyone!
 
-Welcome to another adventure. Today, we're setting our sights on the heavens and attempting to conquer the Olympus room on TryHackMe. Let's grab our gear, set our IP, and get ready to challenge the gods
+Welcome to another adventure. Today, we're setting our sights on the heavens and attempting to conquer the **[Olympus](https://tryhackme.com/room/olympusroom)** room on TryHackMe. Let's grab our gear, set our IP, and get ready to challenge the gods
 
 ---
 
