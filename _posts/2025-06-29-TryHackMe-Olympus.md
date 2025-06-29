@@ -351,3 +351,80 @@ I tried cracking admin too but I can't cracked it.
 
 
 ![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo4.png){: width="972" height="589" }
+
+I think we can upload a php reverse shell file and open that. But we need to find the name of the filename. 
+
+First fuzzing the site using gobuster.
+
+```bash
+❯ gobuster dir -w common.txt -u http://chat.olympus.thm/ -x md,js,html,php,py,css,txt -t 50 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://chat.olympus.thm/
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              md,js,html,php,py,css,txt
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/config.php           (Status: 200) [Size: 0]
+/home.php             (Status: 302) [Size: 0] [--> login.php]
+/index.php            (Status: 302) [Size: 0] [--> login.php]
+/javascript           (Status: 301) [Size: 325] [--> http://chat.olympus.thm/javascript/]
+/login.php            (Status: 200) [Size: 1577]
+/logout.php           (Status: 302) [Size: 0] [--> login.php]
+/phpmyadmin           (Status: 403) [Size: 281]
+/server-status        (Status: 403) [Size: 281]
+/static               (Status: 301) [Size: 321] [--> http://chat.olympus.thm/static/]
+/upload.php           (Status: 200) [Size: 112]
+/uploads              (Status: 301) [Size: 322] [--> http://chat.olympus.thm/uploads/]
+Progress: 37912 / 37912 (100.00%)
+===============================================================
+Finished
+===============================================================
+```
+
+And there is a uploads folder we can look inside.
+But firstly upload a png named 0.png
+
+
+And tried fuzzing uploads directory:
+
+```bash
+❯ gobuster dir -w common.txt -u http://chat.olympus.thm/uploads/ -x md,js,html,php,py,css,txt -t 50 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://chat.olympus.thm/uploads/
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              html,php,py,css,txt,md,js
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/index.html           (Status: 200) [Size: 0]
+Progress: 37912 / 37912 (100.00%)
+===============================================================
+Finished
+===============================================================
+```
+
+And we can't find it.
+
+Maybe we can just upload the php reverse shell and it works maybe?
+And it not works so maybe we can try making sql request to find the file.
+
+But wait haven't i tried to log in webmaster admin page. yes ı forgot to do that.
+
+
