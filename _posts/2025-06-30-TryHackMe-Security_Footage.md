@@ -34,7 +34,7 @@ Rename it to .jpeg
 
 And open with your image viever software.
 
-![Desktop View](2025-06-30-TryHackMe-Security_Footage/photo1.png){: width="972" height="589" }
+![Desktop View](2025-06-30-TryHackMe-Security_Footage/photo1.png){: width="1244" height="938" }
 
 And voila now you can see the first frame of the video.
 
