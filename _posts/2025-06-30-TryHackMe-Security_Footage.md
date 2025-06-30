@@ -41,7 +41,7 @@ The `Content-type: image/jpeg` is a dead giveaway! The network traffic contains 
 3.  Carefully delete everything _except_ for the data that makes up a single image. A JPEG file in binary starts with the bytes `\xff\xd8` and ends with `\xff\xd9`. Find the first block of image data and surgically remove all the text and headers around it.
 4.  Save the file and open it with any image viewer.
 
-![Desktop View](2025-06-30-TryHackMe-Security_Footage/photo1.png){: width="1244" height="938" }
+![Desktop View](/assets/img/2025-06-30-TryHackMe-Security_Footage/photo1.png){: width="1244" height="938" }
 
 And voilà! Like magic, the first frame of the security footage appears. We're on the right track!
 
