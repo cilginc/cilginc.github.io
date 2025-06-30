@@ -11,80 +11,111 @@ image:
   path: /assets/img/2025-06-30-TryHackMe-Security_Footage/main.png
 ---
 
-Hi I'm doing <https://tryhackme.com/room/securityfootage>
+Hey there, fellow hackers and digital detectives! Today, we're diving into the [Security Footage](https://tryhackme.com/room/securityfootage) room on TryHackMe. This one is a fun forensics challenge where we get to play video editor with nothing but a network capture and a little bit of code.
+
+Let's piece together this mystery, one frame at a time!
 
 ---
 
+### Step 1: The Evidence File
 
-Firstly download the files.
+First things first, download the provided file from the TryHackMe room. You'll get a `.pcap` file, which is a packet capture. Think of it as a recording of all the network conversations that were happening at a certain time. Our job is to eavesdrop on that conversation and find the secrets within.
 
-You'll see a pcap file looks like this:
+### Step 2: A Manual Sneak Peek
 
-In this pcap you will see some image blocks which starts with JFIF and ends with 
+If you open the `.pcap` file in a text editor like Neovim, VSCode, or even Notepad (you brave soul), you'll see a lot of what looks like gibberish. However, if you scroll through, you'll start to see a pattern.
+
+You'll notice blocks of data that start with `JFIF` and are wrapped in what looks like HTTP multipart data, often ending with something like:
+
+```
 --BoundaryString
 Content-type: image/jpeg
-Content-Length:     10427
+Content-Length: 10427
+```
 
+The `Content-type: image/jpeg` is a dead giveaway! The network traffic contains a stream of JPEG images. To prove our theory, let's try to extract just one of them by hand.
 
-So we can try to delete all the files expect one image block 
-you can use whatever you want but i'll be using neovim
-
-Copy the existing file and delete all the blocks expect first block.
-Rename it to .jpeg
-
-And open with your image viever software.
+1.  Make a copy of the original file so we don't destroy our evidence.
+    `cp security.pcap test.jpeg`
+2.  Open `test.jpeg` in your favorite text editor. (I'm a Neovim fan myself, no text editor flame wars, please!)
+3.  Carefully delete everything _except_ for the data that makes up a single image. A JPEG file in binary starts with the bytes `\xff\xd8` and ends with `\xff\xd9`. Find the first block of image data and surgically remove all the text and headers around it.
+4.  Save the file and open it with any image viewer.
 
 ![Desktop View](2025-06-30-TryHackMe-Security_Footage/photo1.png){: width="1244" height="938" }
 
-And voila now you can see the first frame of the video.
+And voilà! Like magic, the first frame of the security footage appears. We're on the right track!
 
-But we can't manually get the all images right.
+### Step 3: Automate It (Because We're Efficient!)
 
-So I maked a python script for this:
+Now, doing that manually for what could be hundreds of frames would be a one-way ticket to carpal tunnel. No, thank you. As all good hackers do, let's automate the boring stuff.
+
+I've whipped up a simple Python script to do the heavy lifting. This script will read the entire `.pcap` file, hunt for the start (`\xff\xd8`) and end (`\xff\xd9`) markers of each JPEG, carve them out, and save them as individual files.
 
 ```python
 import os
 
-pcap_file = "input.pcap" # Change this for yourself
+# The name of the downloaded packet capture file
+pcap_file = "input.pcap"
+
+# The directory where we'll save our extracted images
 output_dir = "extracted_jpegs"
 os.makedirs(output_dir, exist_ok=True)
 
+# These are the hexadecimal "magic numbers" for the start and end of a JPEG file.
 jpeg_start = b'\xff\xd8'
 jpeg_end = b'\xff\xd9'
 
+print(f"[*] Reading the pcap file: {pcap_file}")
 with open(pcap_file, 'rb') as f:
     data = f.read()
 
+print("[*] Starting JPEG extraction...")
 index = 0
 offset = 0
 
+# Loop through the file data to find all JPEGs
 while True:
+    # Find the start of the next JPEG
     start_idx = data.find(jpeg_start, offset)
     if start_idx == -1:
-        break
+        break # No more JPEGs found!
+
+    # Find the end of that same JPEG
     end_idx = data.find(jpeg_end, start_idx)
     if end_idx == -1:
-        break
-    end_idx += 2  
+        break # Found a start but no end, something is wrong.
 
+    # The end marker itself is 2 bytes long, so we include it.
+    end_idx += 2
+
+    # Slice the JPEG data out of the main file
     jpeg_data = data[start_idx:end_idx]
+
+    # Save the JPEG data to a new file with a padded name (e.g., image_00001.jpg)
     filename = os.path.join(output_dir, f'image_{index:05d}.jpg')
     with open(filename, 'wb') as img_file:
         img_file.write(jpeg_data)
-        print(f"[+] {filename} kaydedildi.")
-    
+        print(f"[+] {filename} has been saved.")
+
+    # Move to the next frame and continue the search from where we left off
     index += 1
     offset = end_idx
+
+print(f"\n[+] Success! Extracted {index} images to the '{output_dir}' directory.")
 ```
 
+Run this script in the same directory as your `.pcap` file. It will create a new folder called `extracted_jpegs` and fill it with all the frames from the video.
 
-If you run this script you'll get all the images in the pcap file in extracted_jpegs directory
+### Step 4: Movie Time!
 
-And we need to make this images a video with ffmpeg with this command:
+We have the frames, but we need a video. Enter our favorite command-line video wizard: `ffmpeg`. This powerful tool can stitch our pile of images back into a coherent video file.
+
+Run the following command in your terminal:
 
 ```bash
 ffmpeg -framerate 25 -i extracted_jpegs/image_%05d.jpg -c:v libx264 -pix_fmt yuv420p output.mp4
 ```
 
-And you'll get output.mp4 which obtains flag for the room. Good luck typing every charecter by yourself.
+And... scene! You should now have an `output.mp4` file. Open it up, watch the security footage, and you'll find the flag you've been looking for.
 
+Good luck, and happy hacking!
