@@ -77,3 +77,14 @@ while True:
     offset = end_idx
 ```
 
+
+If you run this script you'll get all the images in the pcap file in extracted_jpegs directory
+
+And we need to make this images a video with ffmpeg with this command:
+
+```bash
+ffmpeg -framerate 25 -i extracted_jpegs/image_%05d.jpg -c:v libx264 -pix_fmt yuv420p output.mp4
+```
+
+And you'll get output.mp4 which obtains flag for the room. Good luck typing every charecter by yourself.
+
