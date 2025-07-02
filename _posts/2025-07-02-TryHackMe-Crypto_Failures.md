@@ -1,5 +1,5 @@
 ---
-title: "TryHackMe: Breaking RSA"
+title: "TryHackMe: Crypto Failures"
 author: cilgin
 date: 2025-07-02 15:43:16 +0300
 categories: [CyberSecurity]
