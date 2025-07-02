@@ -256,15 +256,15 @@ Running this script gives us the first flag! But the server taunts us: "Now I wa
 
 To get the secret key, we have to reverse-engineer the cookie. We know the cookie is made of encrypted 8-character chunks of the key. We can take a valid cookie, isolate each chunk, and brute-force the plaintext that generates it.
 
-This will take a while, so let's get a script running.
+Let's get a script running.
 
 ```python
 import requests
 import sys
-import itertools
 import string
+from urllib.parse import unquote
 
-# Once again, we need the 'crypt' module.
+# The 'crypt' module is needed, but it's not on Windows.
 try:
     import crypt
 except ImportError:
@@ -274,69 +274,80 @@ except ImportError:
 # --- Point it at the target ---
 IP = "10.10.183.237"
 URL = f"http://{IP}/"
-USER_AGENT = "AA"
 
-# The character set to use for brute-forcing.
-# string.printable includes letters, digits, punctuation, and whitespace.
-CHARSETS = [
-    string.printable
-]
+# We'll use all printable characters for the brute-force.
+CHARSET = string.printable
 
-def crack_chunk(salt, target_hash, length, prefix=""):
-    """Tries to find the plaintext for a single encrypted chunk."""
-    for charset in CHARSETS:
-        # Generate all possible combinations of characters of a given length
-        for p in itertools.product(charset, repeat=length):
-            guess = "".join(p)
-            # Check if our encrypted guess matches the target hash
-            if crypt.crypt(prefix + guess, salt) == target_hash:
-                print(f" -> Found: '{guess}'")
-                return guess
-    return None
+def find_key():
+    """
+    Finds the secret key one character at a time using a block alignment oracle.
+    """
+    found_key = ""
+    print("Alright, let's find that secret key. This might take a minute.\n")
 
-print("Okay, admin access is nice, but they want the key. Let's find it.")
-print(">> Grabbing a fresh cookie to analyze...")
+    while True:
+        # We'll try to find the next character in the key.
+        next_char_num = len(found_key) + 1
+        print(f"[*] Searching for character #{next_char_num}...")
 
-# Get a new cookie to work with
-res = requests.get(URL, headers={'User-Agent': USER_AGENT}, allow_redirects=False)
-cookie = res.cookies.get('secure_cookie')
-salt = cookie[:2]
-
-if not cookie:
-    print("!! Didn't get a cookie. Is the server up?")
-    sys.exit(1)
-
-print(f">> Got the salt: '{salt}'. Time to crack the key, chunk by chunk.")
-
-found_key = ""
-chunk_num = 1
-# Each crypt() output is 13 chars long. We skip the first block, which is "guest:AA".
-cookie_ptr = 13 
-
-while cookie_ptr < len(cookie):
-    target = cookie[cookie_ptr : cookie_ptr + 13]
-    
-    print(f"\n>> Working on key chunk #{chunk_num} (target hash: {target})")
-    
-    # The first chunk of the key is prefixed with ":" and is 7 chars long
-    # because the full block is ":<key_part>" (8 chars total).
-    if chunk_num == 1:
-        part = crack_chunk(salt, target, 7, prefix=":")
-    else: # Subsequent chunks are a full 8 chars long.
-        part = crack_chunk(salt, target, 8)
+        # 1. Align the block
+        # We adjust the User-Agent padding until our target character is the
+        # last byte of an 8-byte block.
+        for pad_length in range(1, 9):
+            user_agent = 'x' * pad_length
+            
+            # This is the string we're building. '*' is the placeholder for the char we want.
+            plaintext_to_align = f"guest:{user_agent}:{found_key}*"
+            
+            if len(plaintext_to_align) % 8 == 0:
+                # Perfect alignment! The '*' is at the end of a block.
+                # The 7 characters before it are our known prefix.
+                block_prefix = plaintext_to_align[-8:-1]
+                break
         
-    if part:
-        found_key += part
-        chunk_num += 1
-        cookie_ptr += 13
-    else:
-        print("\n!! Cracking failed. The key might use weird characters. Aborting.")
-        sys.exit(1)
+        # 2. Brute-force the aligned character
+        # Get a fresh cookie from the server using the correct padding.
+        try:
+            res = requests.get(URL, headers={'User-Agent': user_agent}, allow_redirects=False, timeout=5)
+            real_cookie = unquote(res.cookies['secure_cookie'])
+            salt = real_cookie[:2]
+        except (requests.RequestException, KeyError) as e:
+            print(f"\n[!] Failed to get a cookie from the server: {e}")
+            return None
+            
+        found_next_char = False
+        for char_guess in CHARSET:
+            # Build the full 8-byte block we're testing.
+            test_block = block_prefix + char_guess
+            
+            # Encrypt it and see if it's in the real cookie.
+            hashed_block = crypt.crypt(test_block, salt)
+            
+            if hashed_block in real_cookie:
+                # We found it!
+                found_key += char_guess
+                found_next_char = True
+                # Print progress on the same line.
+                print(f"\r[+] Key found so far: {found_key}", end="", flush=True)
+                break # Move on to find the *next* character.
+        
+        print() # Move to the next line for the next character search.
 
-print("\n=======================================")
-print(f"  Jackpot! The secret key is:")
-print(f"  {found_key}")
-print("=======================================")
+        if not found_next_char:
+            # If we went through all characters and found nothing, we must be at the end of the key.
+            print("[*] No more characters found. Assuming the key is complete.")
+            break
+            
+    return found_key
+
+if __name__ == "__main__":
+    key = find_key()
+
+    if key:
+        print("\n=======================================")
+        print(f"  Jackpot! The secret key is:")
+        print(f"  {key}")
+        print("=======================================")
 ```
 
 Fire up the script, grab a coffee (or two), and let the computer do the heavy lifting. This process brute-forces each 13-character segment of the cookie to find its 8-character plaintext source. After a short wait, it will piece together the secret key, and the room is complete!
