@@ -11,12 +11,13 @@ image:
   path: /assets/img/2025-07-02-TryHackMe-Crypto_Failures/main.png
 ---
 
-hi I'm making <https://tryhackme.com/room/cryptofailures> room
-
+Hey everyone! Today, we're diving into the [Crypto Failures](https://tryhackme.com/room/cryptofailures) room on TryHackMe. This room is a fantastic example of why you should never, *ever* roll your own cryptography. Let's get our hands dirty and see what happens when good intentions meet bad implementation.
 
 ---
 
+### Step 1: Initial Reconnaissance - The Classic Nmap Scan
 
+First things first, let's see what we're up against. We'll set our target IP as an environment variable to make life easier, then unleash `nmap` to poke around.
 
 ```bash
 export IP=10.10.183.237
@@ -42,16 +43,21 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 70.09 seconds
 ```
 
-We can go to the web page via our browser and we can see this message:
+The scan reveals two open ports: SSH on port **22** and an Apache web server on port **80**. Since we don't have any credentials, the web server is our front door. Let's go see who's home!
 
-```text
+### Step 2: Web Enumeration - Finding the Developer's Diary
+
+Navigating to `http://$IP` in a browser, we're greeted with a message and a cookie is set. Let's inspect the page source (Ctrl+U).
+
+```html
 <p>You are logged in as guest:**********************************************************************
 <p>SSO cookie is protected with traditional military grade en<b>crypt</b>ion
 <!-- TODO remember to remove .bak files-->
 ```
 
-Bro thinks his cookie just protected military grade encryption but it is probably not.
-Also he gave some hint for me so firstly we need to fuzz the webserver with gobuster.
+Our developer friend proudly claims "military grade encryption," which in the cybersecurity world is a bit like a magician saying, "nothing up my sleeve." It's a classic sign that something fun is about to happen!
+
+Even better, they left us a little breadcrumb in the comments: `<!-- TODO remember to remove .bak files-->`. Well, if they insist! This is a huge hint to look for backup files. Let's fire up `gobuster` to hunt them down.
 
 ```bash
 ❯ gobuster dir -w common.txt -u http://$IP/ -x md,js,html,php,py,css,txt,bak -t 50 
@@ -80,21 +86,25 @@ Finished
 ===============================================================
 ```
 
-As you can see bro gave me `/index.php.bak` lets read that file.
+And just like that, `gobuster` strikes gold! We've found `index.php.bak`. This is like finding the developer's diary. Let's download it with `curl` and see what secrets it holds.
 
 ```bash
 ❯ curl $IP/index.php.bak > index.php.bak
 ```
 
-Now we can read the php file and find out what it does.
+### Step 3: Source Code Analysis - Where It All Went Wrong
+
+Now for the fun part: let's read the PHP source code and figure out how this "military grade" encryption works.
 
 ```php
 <?php
 include('config.php');
 
 function generate_cookie($user,$ENC_SECRET_KEY) {
-    $SALT=generatesalt(2);
+    // A 2-character salt? Interesting choice.
+    $SALT=generatesalt(2); 
     
+    // The string to be "encrypted".
     $secure_cookie_string = $user.":".$_SERVER['HTTP_USER_AGENT'].":".$ENC_SECRET_KEY;
 
     $secure_cookie = make_secure_cookie($secure_cookie_string,$SALT);
@@ -103,46 +113,44 @@ function generate_cookie($user,$ENC_SECRET_KEY) {
     setcookie("user","$user",time()+3600,'/','',false);
 }
 
+// A wrapper for the built-in crypt() function.
 function cryptstring($what,$SALT){
-
-return crypt($what,$SALT);
-
+    return crypt($what,$SALT);
 }
 
-
+// This is the heart of the "encryption" logic.
 function make_secure_cookie($text,$SALT) {
+    $secure_cookie='';
 
-$secure_cookie='';
-
-foreach ( str_split($text,8) as $el ) {
-    $secure_cookie .= cryptstring($el,$SALT);
+    // It splits the string into 8-character chunks...
+    foreach ( str_split($text,8) as $el ) {
+        // ...and then encrypts each chunk separately.
+        $secure_cookie .= cryptstring($el,$SALT);
+    }
+    return($secure_cookie);
 }
 
-return($secure_cookie);
-}
-
-
+// A standard salt generator. Nothing too crazy here.
 function generatesalt($n) {
-$randomString='';
-$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-for ($i = 0; $i < $n; $i++) {
-    $index = rand(0, strlen($characters) - 1);
-    $randomString .= $characters[$index];
+    $randomString='';
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for ($i = 0; $i < $n; $i++) {
+        $index = rand(0, strlen($characters) - 1);
+        $randomString .= $characters[$index];
+    }
+    return $randomString;
 }
-return $randomString;
-}
 
-
-
+// This function checks if our cookie is legit.
 function verify_cookie($ENC_SECRET_KEY){
-
-
     $crypted_cookie=$_COOKIE['secure_cookie'];
     $user=$_COOKIE['user'];
     $string=$user.":".$_SERVER['HTTP_USER_AGENT'].":".$ENC_SECRET_KEY;
 
+    // It gets the salt from the first 2 characters of the cookie.
     $salt=substr($_COOKIE['secure_cookie'],0,2);
 
+    // It re-creates the cookie and compares it to the one we sent.
     if(make_secure_cookie($string,$salt)===$crypted_cookie) {
         return true;
     } else {
@@ -150,52 +158,52 @@ function verify_cookie($ENC_SECRET_KEY){
     }
 }
 
-
+// Main logic of the page.
 if ( isset($_COOKIE['secure_cookie']) && isset($_COOKIE['user']))  {
-
     $user=$_COOKIE['user'];
-
     if (verify_cookie($ENC_SECRET_KEY)) {
-        
-    if ($user === "admin") {
-   
-        echo 'congrats: ******flag here******. Now I want the key.';
-
-            } else {
-        
-        $length=strlen($_SERVER['HTTP_USER_AGENT']);
-        print "<p>You are logged in as " . $user . ":" . str_repeat("*", $length) . "\n";
-	    print "<p>SSO cookie is protected with traditional military grade en<b>crypt</b>ion\n";    
+        // If the cookie is valid AND the user is "admin", we get the flag!
+        if ($user === "admin") {
+            echo 'congrats: ******flag here******. Now I want the key.';
+        } else {
+            $length=strlen($_SERVER['HTTP_USER_AGENT']);
+            print "<p>You are logged in as " . $user . ":" . str_repeat("*", $length) . "\n";
+            print "<p>SSO cookie is protected with traditional military grade en<b>crypt</b>ion\n";    
+        }
+    } else { 
+        print "<p>You are not logged in\n";
     }
-
-} else { 
-
-    print "<p>You are not logged in\n";
-   
-
-}
-
-}
-  else {
-
+} else {
+    // If we don't have a cookie, it generates one for 'guest' and reloads.
     generate_cookie('guest',$ENC_SECRET_KEY);
-    
     header('Location: /');
-
-
 }
 ?>
 ```
 
-If you looked the file yourself you can see that bro tried to implement some encryption by himself. 
+**The Vulnerability:**
 
-Lets crack get the flag using this python script:
+After dissecting the code, the fatal flaw becomes clear. The `make_secure_cookie` function splits the input string (`user:User-Agent:SecretKey`) into 8-character chunks and then runs each chunk through PHP's `crypt()` function.
+
+Here's the problem: The `crypt()` function (using DES) **only considers the first 8 characters of its input string**.
+
+This means that our developer has created a system where only the first block of the cookie matters for user authentication. The cookie is built like this:
+
+`crypt("guest:AA", $salt)` + `crypt(":some_se", $salt)` + `crypt("cret_key", $salt)` + ...
+
+The `verify_cookie` function checks the username from a separate `user` cookie. If we set `user=admin`, the server will try to validate a string starting with `admin:`. Our goal is to create a valid cookie for the string `admin:AA...`.
+
+Since `crypt()` only cares about the first 8 characters, we only need to forge the *first* block of the cookie! We can take a valid guest cookie, replace its first encrypted block with one we generate for `admin:AA`, and leave the rest of the cookie untouched. The server will happily accept it!
+
+### Step 4: Exploitation, Part 1 - Forging an Admin Cookie
+
+Now that we have a plan, let's write a Python script to do the dirty work.
 
 ```python
 import requests
 import sys
 
-# The 'crypt' module is needed, but it's not on Windows.
+# The 'crypt' module is a must-have for this. It's not available on Windows, sorry!
 try:
     import crypt
 except ImportError:
@@ -205,11 +213,11 @@ except ImportError:
 # --- Point it at the target ---
 IP = "10.10.183.237"
 URL = f"http://{IP}/"
-USER_AGENT = "AA" # A simple User-Agent to keep things predictable
+USER_AGENT = "AA" # A short, simple User-Agent to make our lives easier
 
-print("Alright, let's get admin access.")
+print("Alright, let's work some magic and become admin.")
 
-# 1. Get a guest cookie to work with
+# 1. Get a legitimate guest cookie to use as our template
 print(">> Knocking on the door as 'guest' to grab a cookie...")
 s = requests.Session()
 s.headers.update({'User-Agent': USER_AGENT})
@@ -217,20 +225,23 @@ res = s.get(URL, allow_redirects=False)
 guest_cookie = s.cookies.get('secure_cookie')
 
 if not guest_cookie:
-    print("!! Didn't get a cookie. Is the server up?")
+    print("!! Houston, we have a problem. Didn't get a cookie. Is the server up?")
     sys.exit(1)
 
-# 2. Forge the admin cookie
-salt = guest_cookie[:2]
-cookie_tail = guest_cookie[13:] # The part of the cookie we're keeping
+# 2. Extract the salt and the rest of the cookie we want to keep
+salt = guest_cookie[:2] # The first 2 characters are the salt
+cookie_tail = guest_cookie[13:] # The rest of the cookie, which we'll reuse
 print(f">> Got the salt: '{salt}'. Now to forge the admin part.")
 
+# 3. Create our forged first block.
+# The original block was for "guest:AA". We'll make one for "admin:AA".
+# Both are 8 characters, so crypt() will treat them similarly.
 admin_first_chunk = "admin:" + USER_AGENT
 admin_first_block = crypt.crypt(admin_first_chunk, salt)
 forged_cookie = admin_first_block + cookie_tail
 
-# 3. Use the forged cookie to get the flag
-print(">> Sending the forged cookie... let's see if it works.")
+# 4. Send the forged cookie and claim our prize!
+print(">> Sending the forged cookie... Fingers crossed!")
 cookies = {'user': 'admin', 'secure_cookie': forged_cookie}
 res = requests.get(URL, headers={'User-Agent': USER_AGENT}, cookies=cookies)
 
@@ -239,10 +250,13 @@ print(res.text.strip())
 print("---------------------------------------------------")
 ```
 
-If you use this script you will get the flag.
-But we need more we need the key. Key is little hard to find but you can use this script to get the key: 
+Running this script gives us the first flag! But the server taunts us: "Now I want the key." Challenge accepted.
 
+### Step 5: Exploitation, Part 2 - Cracking the Secret Key
 
+To get the secret key, we have to reverse-engineer the cookie. We know the cookie is made of encrypted 8-character chunks of the key. We can take a valid cookie, isolate each chunk, and brute-force the plaintext that generates it.
+
+This will take a while, so let's get a script running.
 
 ```python
 import requests
@@ -250,7 +264,7 @@ import sys
 import itertools
 import string
 
-# The 'crypt' module is needed, but it's not on Windows.
+# Once again, we need the 'crypt' module.
 try:
     import crypt
 except ImportError:
@@ -262,23 +276,28 @@ IP = "10.10.183.237"
 URL = f"http://{IP}/"
 USER_AGENT = "AA"
 
+# The character set to use for brute-forcing.
+# string.printable includes letters, digits, punctuation, and whitespace.
 CHARSETS = [
     string.printable
 ]
 
 def crack_chunk(salt, target_hash, length, prefix=""):
-    """Tries to find the plaintext for a single hash."""
+    """Tries to find the plaintext for a single encrypted chunk."""
     for charset in CHARSETS:
+        # Generate all possible combinations of characters of a given length
         for p in itertools.product(charset, repeat=length):
             guess = "".join(p)
+            # Check if our encrypted guess matches the target hash
             if crypt.crypt(prefix + guess, salt) == target_hash:
                 print(f" -> Found: '{guess}'")
                 return guess
     return None
 
-print("Okay, admin is nice, but they want the key. Let's find it.")
+print("Okay, admin access is nice, but they want the key. Let's find it.")
 print(">> Grabbing a fresh cookie to analyze...")
 
+# Get a new cookie to work with
 res = requests.get(URL, headers={'User-Agent': USER_AGENT}, allow_redirects=False)
 cookie = res.cookies.get('secure_cookie')
 salt = cookie[:2]
@@ -291,17 +310,19 @@ print(f">> Got the salt: '{salt}'. Time to crack the key, chunk by chunk.")
 
 found_key = ""
 chunk_num = 1
-cookie_ptr = 13 # Skip the first block ("guest:AA")
+# Each crypt() output is 13 chars long. We skip the first block, which is "guest:AA".
+cookie_ptr = 13 
 
 while cookie_ptr < len(cookie):
     target = cookie[cookie_ptr : cookie_ptr + 13]
     
     print(f"\n>> Working on key chunk #{chunk_num} (target hash: {target})")
     
-    # First part of the key is 7 chars long and prefixed with ':'
+    # The first chunk of the key is prefixed with ":" and is 7 chars long
+    # because the full block is ":<key_part>" (8 chars total).
     if chunk_num == 1:
         part = crack_chunk(salt, target, 7, prefix=":")
-    else: # Subsequent parts are 8 chars long
+    else: # Subsequent chunks are a full 8 chars long.
         part = crack_chunk(salt, target, 8)
         
     if part:
@@ -318,5 +339,8 @@ print(f"  {found_key}")
 print("=======================================")
 ```
 
+Fire up the script, grab a coffee (or two), and let the computer do the heavy lifting. This process brute-forces each 13-character segment of the cookie to find its 8-character plaintext source. After a short wait, it will piece together the secret key, and the room is complete!
 
-This script is brute forcing the key so you need to wait a while to complete.
+**Key Takeaway:** This room is a perfect illustration of the #1 rule of cryptography: **Don't roll your own crypto!** Use well-vetted, standard libraries and understand how they work under the hood. A simple misunderstanding of a function like `crypt()` can unravel your entire security model.
+
+Happy hacking
