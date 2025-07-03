@@ -586,3 +586,34 @@ drwx------  2 root root 4096 Jul 15  2021 .ssh
 ```
 
 And there is a zip file named mike.zip lets extract that
+
+
+```bash
+root@host2:~# unzip mike.zip 
+Archive:  mike.zip
+[mike.zip] mike password: 
+password incorrect--reenter: 
+ extracting: mike                    
+```
+
+And it has a password lets try using mike's password which is listed on the database.
+
+
+
+```bash
+root@host2:~# ls -la
+total 32
+drwx------  4 root root 4096 Jul  3 13:55 .
+drwxr-xr-x 22 root root 4096 Jun 29  2021 ..
+lrwxrwxrwx  1 root root    9 Jul 19  2021 .bash_history -> /dev/null
+-rw-r--r--  1 root root 3106 Apr  9  2018 .bashrc
+drwxr-xr-x  3 root root 4096 Jul 15  2021 .local
+-rw-r--r--  1 root root  148 Aug 17  2015 .profile
+drwx------  2 root root 4096 Jul 15  2021 .ssh
+-rw-r--r--  1 root root   32 Jul 16  2021 mike
+-rw-------  1 root root  218 Jul 16  2021 mike.zip
+root@host2:~# cat mike
+THM{*************************}
+```
+
+And we found the flag
