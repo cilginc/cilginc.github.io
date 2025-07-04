@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-07-03-TryHackMe-ContainMe/main.png
+  path: /assets/img/2025-07-03-TryHackMe-ContainMe/main.webp
 ---
 
 Hey everyone! Welcome to my write-up for the [ContainMe](https://tryhackme.com/room/containme1) room. As the name suggests, we're probably going to be dealing with some containers, which means things are about to get meta. Grab your coffee, and let's dive in!

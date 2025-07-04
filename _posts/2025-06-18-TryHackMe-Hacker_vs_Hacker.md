@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/Hacker_vs_Hacker.png
+  path: /assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/Hacker_vs_Hacker.webp
 ---
 
 This is a write-up for a <https://tryhackme.com/room/hackervshacker> room where I walk through the steps I took to solve the challenges and capture the flags.
@@ -134,7 +134,7 @@ if (!strpos($target_file, ".pdf")) {
 ```
 
 Also there is upload section on the page. 
-![Desktop View](/assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/photo1.png){: width="1044" height="409" }
+![Desktop View](/assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/photo1.webp){: width="1044" height="409" }
 
 We can use this file make a reverse shell to the machine.
 

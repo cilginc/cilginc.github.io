@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-18-TryHackMe-Archangel/Archangel.png
+  path: /assets/img/2025-06-18-TryHackMe-Archangel/Archangel.webp
 ---
 
 Ahoy! This is my write-up for the [Hacker vs Hacker](https://tryhackme.com/room/hackervshacker) room on TryHackMe. Follow along as I walk you through the steps I took to solve the challenges and capture those sweet, sweet flags.
@@ -115,7 +115,7 @@ if (!strpos($target_file, ".pdf")) {
 
 The webpage also has a handy upload section.
 
-![Desktop View](/assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/photo1.png){: width="1044" height="409" }
+![Desktop View](/assets/img/2025-06-18-TryHackMe-Hacker_vs_Hacker/photo1.webp){: width="1044" height="409" }
 
 The PHP code shows a very weak filter: it only checks if the string `.pdf` exists in the filename. It doesn't check the actual file type or prevent other extensions.
 
