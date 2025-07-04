@@ -50,7 +50,7 @@ Our scan reveals two open ports: SSH (22) and HTTP (80). The HTTP title gives us
 
 Let's point our browser to `http://www.smol.thm` and see what we get.
 
-![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo1.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo1.png){: width="1472" height="882" }
 
 A wild WordPress site appears! Before we start poking around the admin panel, let's do some directory fuzzing with `gobuster` to map out the site's structure.
 
@@ -315,7 +315,7 @@ require_once ABSPATH . 'wp-settings.php';
 
 Success! We've got the database username (`wpuser`) and password. With these credentials, we can now log into the WordPress admin dashboard at `/wp-admin`.
 
-![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo2.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo2.png){: width="1071" height="888" }
 
 We're in!
 
@@ -325,7 +325,7 @@ We're in!
 
 My first thought was to get a reverse shell by editing a theme or plugin file, but the permissions were locked down tight. Time to enumerate more from within the admin panel. A post titled "private webmaster tasks" catches my eye.
 
-![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo3.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo3.png){: width="929" height="953" }
 
 The post mentions that the `Hello Dolly` plugin might have a backdoor. That's... suspicious. Let's use our SSRF vulnerability again to read the source code of `hello.php`.
 
@@ -459,7 +459,7 @@ As suspected, it's a simple command execution backdoor! It checks for a GET para
 
 The `hello_dolly` function is hooked to `admin_notices`, which means it runs on any page in the admin dashboard.
 
-![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo4.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-04-TryHackMe-Smol/photo4.png){: width="562" height="109" }
 
 This is our entry point! We can simply browse to an admin page (like `/wp-admin/index.php`) and append our `cmd` parameter with a reverse shell payload.
 
