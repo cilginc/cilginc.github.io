@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-18-TryHackMe-Ninja_Skills/Ninja_Skills.png
+  path: /assets/img/2025-06-18-TryHackMe-Ninja_Skills/Ninja_Skills.webp
 ---
 
 Howdy, fellow hackers! This is my walkthrough for the [Ninja Skills](https://tryhackme.com/room/ninjaskills) room on TryHackMe. Join me as I slice and dice my way through the challenges to capture the flags.

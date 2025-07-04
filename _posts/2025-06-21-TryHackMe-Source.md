@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-21-TryHackMe-Source/Source.png
+  path: /assets/img/2025-06-21-TryHackMe-Source/Source.webp
 ---
 
 Howdy, fellow hackers! Welcome to my write-up for the [Source](https://tryhackme.com/room/source) room on TryHackMe. In this post, I'll walk you through the steps I took to pwn this box and grab those sweet, sweet flags. Let's get started!
@@ -68,7 +68,7 @@ how to fix it, please visit the webpage mentioned above.
 
 Ah, the classic self-signed certificate! `curl` is being a stickler for security and refuses to connect. No worries, it's time to fire up the good old web browser, which is a lot more forgiving about these things. I pointed my browser to `https://$IP:10000` and was greeted by the Webmin login page.
 
-![Desktop View](/assets/img/2025-06-21-TryHackMe-Source/photo1.png){: width="665" height="645" }
+![Desktop View](/assets/img/2025-06-21-TryHackMe-Source/photo1.webp){: width="665" height="645" }
 
 ## Trying to Log In (or Not)
 

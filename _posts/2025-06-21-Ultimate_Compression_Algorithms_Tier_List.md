@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/main.png
+  path: /assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/main.webp
 ---
 
 Ever wondered how to shrink your files to an impossibly small size? You're in the right place! This is your ultimate guide to the wild world of compression algorithms.
@@ -73,11 +73,11 @@ I tested the algorithms on a variety of data:
 
 - **Original File Size**: 123.0 MB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo1.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo1.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo2.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo2.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo3.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo3.webp){: width="700" height="500" }
 
 And the winner for squishing JSON is... `bzip2`! It delivered the best compression ratio with a respectable compression time. The only catch? Decompressing is a bit of a snoozefest compared to the others.
 
@@ -85,11 +85,11 @@ And the winner for squishing JSON is... `bzip2`! It delivered the best compressi
 
 - **Original File Size**: 73.4 MB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo4.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo4.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo5.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo5.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo6.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo6.webp){: width="700" height="500" }
 
 Well, look who it is again! `bzip2` takes the crown once more. If I were writing a log backup script, `bzip2` would definitely be my co-pilot. It seems to have a real talent for handling plain text with lots of repetition.
 
@@ -97,11 +97,11 @@ Well, look who it is again! `bzip2` takes the crown once more. If I were writing
 
 - **Original File Size**: 139.9 MB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo7.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo7.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo8.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo8.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo9.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo9.webp){: width="700" height="500" }
 
 Whoa, a plot twist! On `rockyou.txt`, our previous champion, `bzip2`, completely fumbled. Its compression ratio was barely better than `zstd`, making it a poor choice here. `zstd`, on the other hand, was a speed demon! While it didn't have the _best_ ratio, its performance was impressive. The true winners for pure file size reduction, however, are `xz` and `lzma`.
 
@@ -117,11 +117,11 @@ tar (GNU tar) 1.35
 
 - **Original File Size**: 3.6 GB
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo10.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo10.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo11.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo11.webp){: width="700" height="500" }
 
-![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo12.png){: width="700" height="500" }
+![Desktop View](/assets/img/2025-06-21-Ultimate_Compression_Algorithms_Tier_List/photo12.webp){: width="700" height="500" }
 
 And the results are in... you can't really compress a compressed thing much further. As the graphs clearly show, this was an exercise in futility. Take it from me: don't try to re-compress your FLAC files unless you enjoy watching progress bars and wasting precious time.
 

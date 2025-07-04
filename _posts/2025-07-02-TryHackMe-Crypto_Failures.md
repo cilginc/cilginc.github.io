@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-07-02-TryHackMe-Crypto_Failures/main.png
+  path: /assets/img/2025-07-02-TryHackMe-Crypto_Failures/main.webp
 ---
 
 Hey everyone! Today, we're diving into the [Crypto Failures](https://tryhackme.com/room/cryptofailures) room on TryHackMe. This room is a fantastic example of why you should never, *ever* roll your own cryptography. Let's get our hands dirty and see what happens when good intentions meet bad implementation.

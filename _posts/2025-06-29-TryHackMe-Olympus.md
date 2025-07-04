@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-29-TryHackMe-Olympus/main.png
+  path: /assets/img/2025-06-29-TryHackMe-Olympus/main.webp
 ---
 
 Hey everyone!
@@ -58,7 +58,7 @@ When I tried to visit the IP address in my browser, it redirected me to `olympus
 
 Now, let's see what the website has in store for us.
 
-![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo1.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo1.webp){: width="972" height="589" }
 
 The site is under development, but it kindly points us to an "old version" located at a different domain. The message is a bit cryptic, but it hints that we should look for subdomains.
 
@@ -213,7 +213,7 @@ Let's add `chat.olympus.thm` to our `/etc/hosts` file:
 
 Navigating to `http://chat.olympus.thm` brings us to a login page.
 
-![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo3.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo3.webp){: width="972" height="589" }
 
 We have usernames and hashed passwords. The `$2y$` prefix on the hashes indicates they are **bcrypt**, a strong and slow hashing algorithm. Let's fire up `hashcat` and see if we can crack these against the `rockyou.txt` wordlist.
 
@@ -230,7 +230,7 @@ Hash.Target......: $2y$10$YC6uoMwK9VpB5QL513vfLu1RV2sgBf01c0lzPHcz1qK2...Dvnj3C
 
 Success! We cracked the password for the user `prometheus`. The other hashes were too strong for `rockyou.txt`, but one is all we need. Let's log in.
 
-![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo4.png){: width="972" height="589" }
+![Desktop View](/assets/img/2025-06-29-TryHackMe-Olympus/photo4.webp){: width="972" height="589" }
 
 We're in! And there's a file upload feature. This is our ticket to a reverse shell. The plan is:
 

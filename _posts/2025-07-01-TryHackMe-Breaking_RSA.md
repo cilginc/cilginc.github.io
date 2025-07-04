@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-07-01-TryHackMe-Breaking_RSA/main.png
+  path: /assets/img/2025-07-01-TryHackMe-Breaking_RSA/main.webp
 ---
 
 Hey there, fellow hackers and curious minds! Today, we're diving into the [breakrsa](https://tryhackme.com/room/breakrsa) room on TryHackMe. This room is a fantastic lesson in why cryptographic implementation matters. We're about to go from a simple webpage to full root access by exploiting a classic mistake in RSA key generation.

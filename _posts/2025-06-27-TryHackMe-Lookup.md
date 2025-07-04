@@ -8,7 +8,7 @@ pin: true
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-06-27-TryHackMe-Lookup/main.png
+  path: /assets/img/2025-06-27-TryHackMe-Lookup/main.webp
 ---
 
 Hey everyone, and welcome to my walkthrough for the "Lookup" room on [TryHackMe](https://tryhackme.com/room/lookup)! I had a blast with this one, so grab your favorite beverage, fire up your terminal, and let's get hacking.
@@ -63,7 +63,7 @@ As expected, we get no output. Time to fire up the browser! Navigating to the IP
 
 With that done, browsing to `http://lookup.thm` finally shows us the website!
 
-![Desktop View](/assets/img/2025-06-27-TryHackMe-Lookup/photo1.png){: width="646" height="407" }
+![Desktop View](/assets/img/2025-06-27-TryHackMe-Lookup/photo1.webp){: width="646" height="407" }
 
 Naturally, I tried the classic `admin:admin` combo. It didn't work, of course. That would be too easy! Time to do some proper reconnaissance.
 
@@ -178,7 +178,7 @@ Logging in with our newly found username and password works, but it immediately 
 
 After adding the new domain, I'm greeted by a web-based file manager.
 
-![Desktop View](/assets/img/2025-06-27-TryHackMe-Lookup/photo2.png){: width="525" height="537" }
+![Desktop View](/assets/img/2025-06-27-TryHackMe-Lookup/photo2.webp){: width="525" height="537" }
 
 My first instinct is to check the software version for any known vulnerabilities. A quick search leads me to [this exploit on Exploit-DB](https://www.exploit-db.com/exploits/46481).
 
