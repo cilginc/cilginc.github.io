@@ -4,7 +4,7 @@ author: cilgin
 date: 2025-06-27 17:59:47 +0300
 categories: [CyberSecurity]
 tags: [CTF, TryHackMe, Easy]
-pin: true
+pin: false
 math: false
 mermaid: false
 image:
