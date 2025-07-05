@@ -4,7 +4,7 @@ author: cilgin
 date: 2025-07-03 14:37:11 +0300
 categories: [CyberSecurity]
 tags: [CTF, TryHackMe, Medium]
-pin: true
+pin: false
 math: false
 mermaid: false
 image:

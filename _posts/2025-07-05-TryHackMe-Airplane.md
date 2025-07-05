@@ -4,7 +4,7 @@ author: cilgin
 date: 2025-07-05 15:57:24 +0300
 categories: [CyberSecurity]
 tags: [CTF, TryHackMe, Medium]
-pin: true
+pin: false
 math: false
 mermaid: false
 image:
@@ -444,4 +444,4 @@ cat /root/root.txt
 ********************************
 ```
 
-And there we have it! We've successfully piloted our way from a simple web page to a full root shell. Thanks for flying with me on this walkthrough
+And there we have it! We've successfully piloted our way from a simple web page to a full root shell. Thanks for flying with me on this walkthrough!
