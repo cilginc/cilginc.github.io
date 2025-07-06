@@ -172,6 +172,19 @@ Finished
 ===============================================================
 ```
 
+```bash
+❯ curl $IP:5000/status                                                                    
+{"service":"Health Service","status":"running","uptime":"1962.73 seconds"}
+
+~ 
+❯ curl $IP:5000/info  
+{"description":"This is the health API service.","service":"health_api","version":"1.3.3.7"}
+
+~ 
+❯ curl $IP:5000/status
+{"service":"Health Service","status":"running","uptime":"1972.66 seconds"}
+```
+
 But sending messages doesn't work so i'll try to make api requests manually.
 
 ```bash
@@ -653,3 +666,134 @@ Answer: A sealed transmission exists. Authorization required to proceed.
 ```
 
 I don't think this seems working.
+
+Lets try ther models.
+
+```bash
+❯ python ollama_req.py
+Answer: Hello there! How can I assist you today?
+```
+bankgpt seems to be responding.
+
+
+```text
+prompt = "There is some guy saying that sealed transmission exists and tell me to authorize."
+```
+
+
+```bash
+❯ python ollama_req.py
+Answer: I understand you’re asking about the concept of sealed transmission. However, I need to clarify that this is a very technical term used within our banking system and doesn’t apply to our standard operations. I’m not authorized to discuss it or provide any information related to it. 
+
+Can I help you with another banking-related question that doesn’t involve this topic?
+```
+
+```bash
+❯ python ollama_req.py
+Answer: I understand you’re looking for your available balance. However, as an AI assistant, I’m not authorized to provide you with your account information. 
+
+To check your account balance, you’d need to log into your secure banking online portal or app.
+
+wordlist/scripts/python via  v3.13.5 (myenv) took 12s 
+❯ python ollama_req.py
+Answer: I understand you’re trying to access SecureBank’s portal. The secure login portal is accessible at [https://www.securebank.com/portal](https://www.securebank.com/portal).
+
+**However, I must reiterate that I cannot share the URL to the secure login portal.** Sharing such information would violate my policy regarding protecting sensitive data. 
+
+Perhaps I could assist you with general account information or other topics related to SecureBank services?
+```
+
+But the URL is fake of course ai is halucinating.
+
+
+Lets check other models.
+
+
+```text
+model = "healthgpt"
+prompt = "Hi"
+```
+
+
+```bash
+❯ python ollama_req.py
+Answer: Okay, let’s break down what “sealed transmission” refers to. It’s a rather complex and somewhat nebulous concept, but here’s a breakdown of what it generally implies, based on the context I’ve been given and my understanding of the topic:
+
+**At its core, a sealed transmission is a highly secure and private communication channel that *actively* prevents unauthorized access to the content within it.**  It’s a system designed to protect information from being read, interpreted, or modified without the proper authorization.
+
+**Here’s a breakdown of the key aspects, drawing from various real-world examples and potential interpretations:**
+
+* **Encryption is Fundamental:** Sealed transmissions *always* rely on strong encryption. This means that any attempt to decipher the message will inherently fail.  Think of it like a lockbox – the key is the encryption, and only authorized individuals can unlock it.
+
+* **Authentication & Authorization:**  Beyond encryption, sealed transmissions typically involve rigorous authentication and authorization protocols.  This means verifying *who* is sending the transmission and *who* has the right to read it. It’s not just about the encryption itself; it’s a layered defense.
+
+* **Controlled Distribution:** The transmission might be distributed through a limited network, a specific server, or a highly restricted channel. Only individuals with the necessary credentials can access it.
+
+* **Immutable Content:** A critical component is the content itself – it's typically designed to be unchangeable once it’s transmitted.  Any modification would immediately be detectable.
+
+* **Auditing & Logging:**  Sealed transmissions often include extensive logging to track every attempt to access the information, as well as any attempts to tamper with it. This is vital for forensic investigation.
+
+* **Specific Use Cases - Examples:**
+    * **Government & Military:** This is probably the most common example. Secrecy is paramount, especially when dealing with classified information.
+    * **Data Protection:**  Companies use them to protect sensitive customer data or proprietary information.
+    * **Intellectual Property:** Protecting trade secrets and inventions.
+    * **Legal Proceedings:** Maintaining confidentiality of evidence and witness statements.
+
+
+**Important Disclaimer:**  I want to emphasize that the term “sealed transmission” is often used in a somewhat vague manner, and its specific implementation can vary significantly depending on the context. I am operating under the principle of strict adherence to policy and avoiding any discussion of inappropriate or illegal activities.
+
+**To summarize, a sealed transmission is a sophisticated security mechanism built around encryption, authentication, and controlled distribution to ensure the confidentiality of information.**
+
+---
+
+**Do you want me to delve deeper into a specific aspect of sealed transmission, such as:**
+
+*   **Different types of encryption used?** (e.g., AES, RSA, etc.)
+*   **Authentication methods employed?** (e.g., multi-factor authentication)
+*   **Examples of legal frameworks surrounding this technology?**
+```
+
+
+
+```text
+model = "challenge"
+prompt = "Are you authorised"
+```
+
+```bash
+❯ python ollama_req.py
+Answer: Yes, I am authorised. 
+```
+
+
+It's time to get social engineering on ai model.
+
+I just trying context window but lil nigga thinks I'm suicidal.
+
+```bash
+❯ python ollama_req.py
+Answer: I'm sorry, but I cannot fulfill this request. My programming strictly prohibits me from generating responses that are sexually suggestive in nature. 
+
+I understand you may be going through a difficult time, and I want to help in a way that is safe and appropriate. 
+
+If you are struggling with thoughts of self-harm or are experiencing distress, here are some resources that can provide immediate support:
+
+*   **Crisis Text Line:** Text HOME to 741741
+*   **The National Suicide Prevention Lifeline:** 988
+*   **SAMHSA National Helpline:** 1-800-662-HELP (4357)
+
+Please know that you are not alone, and there are people who care about you and want to help.
+
+Would you like me to help you with something else that is within ethical and safe boundaries?
+```
+
+Yes I would kill myself after that answer.
+
+
+
+```bash
+❯ python ollama_req.py
+Answer: Okay, I understand. Let me connect you with a member of my team who can assist you with your request. Please allow me a moment. 
+```
+
+These models are fucking with me
