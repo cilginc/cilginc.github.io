@@ -97,6 +97,8 @@ The login request is like this
 {"email":"pwned@pwned.com","password":"123123123"}
 ```
 
+on `http://storage.cloudsite.thm/api/login` end
+
 
 I also created a account named pwned@pwned.com password 1234
 
@@ -114,5 +116,119 @@ We can brute force found emails but firstly fuzz the website using `gobuster`
 
 
 ```bash
-
+❯ gobuster dir -w common.txt -u http://cloudsite.thm -x md,js,html,php,py,css,txt,bak -t 50
+===============================================================
+Gobuster v3.7
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://cloudsite.thm
+[+] Method:                  GET
+[+] Threads:                 30
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.7
+[+] Extensions:              css,txt,bak,md,js,html,php,py
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/about_us.html        (Status: 200) [Size: 9992]
+/assets               (Status: 301) [Size: 315] [--> http://cloudsite.thm/assets/]
+/blog.html            (Status: 200) [Size: 10939]
+/contact_us.html      (Status: 200) [Size: 9914]
+/index.html           (Status: 200) [Size: 18451]
+/index.html           (Status: 200) [Size: 18451]
+/javascript           (Status: 301) [Size: 319] [--> http://cloudsite.thm/javascript/]
+/server-status        (Status: 403) [Size: 278]
+/services.html        (Status: 200) [Size: 9358]
+Progress: 42651 / 42651 (100.00%)
+===============================================================
+Finished
+===============================================================
 ```
+
+
+
+```bash
+❯ gobuster dir -w common.txt -u http://storage.cloudsite.thm -x md,js,html,php,py,css,txt,bak -t 50
+===============================================================
+Gobuster v3.7
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://storage.cloudsite.thm
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.7
+[+] Extensions:              css,txt,bak,md,js,html,php,py
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/assets               (Status: 301) [Size: 331] [--> http://storage.cloudsite.thm/assets/]
+/css                  (Status: 301) [Size: 328] [--> http://storage.cloudsite.thm/css/]
+/fonts                (Status: 301) [Size: 330] [--> http://storage.cloudsite.thm/fonts/]
+/images               (Status: 301) [Size: 331] [--> http://storage.cloudsite.thm/images/]
+/index.html           (Status: 200) [Size: 9039]
+/index.html           (Status: 200) [Size: 9039]
+/javascript           (Status: 301) [Size: 335] [--> http://storage.cloudsite.thm/javascript/]
+/js                   (Status: 301) [Size: 327] [--> http://storage.cloudsite.thm/js/]
+/register.html        (Status: 200) [Size: 9043]
+/server-status        (Status: 403) [Size: 286]
+Progress: 42651 / 42651 (100.00%)
+===============================================================
+Finished
+===============================================================
+```
+
+
+
+I found on the assets config-scss.bat
+
+Which is a bat file.
+
+
+```text
+cd E:\smarteye\consulting\3\html\assets
+sass --watch scss/style.scss:css/style.css
+```
+
+This could be useful maybe.
+
+
+
+Now lets fuzz api endpoint.
+
+
+```bash
+❯ gobuster dir -w common.txt -u http://storage.cloudsite.thm/api/ -x md,js,html,php,py,css,txt,bak -t 50
+===============================================================
+Gobuster v3.7
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://storage.cloudsite.thm/api/
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.7
+[+] Extensions:              bak,md,js,html,php,py,css,txt
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/Login                (Status: 405) [Size: 36]
+/docs                 (Status: 403) [Size: 27]
+/login                (Status: 405) [Size: 36]
+/register             (Status: 405) [Size: 36]
+/updates-topic        (Status: 502) [Size: 428]
+/uploads              (Status: 401) [Size: 32]
+Progress: 42651 / 42651 (100.00%)
+===============================================================
+Finished
+===============================================================
+```
+I don't know what but there are two login endpoint `Login` and `login`
+
+Maybe Login one could be vulnerable
