@@ -68,13 +68,13 @@ The Nmap scan gave us a domain name. Let's see what happens when we try to `curl
 
 Just as we suspected, a redirect. To access the site properly, we need to tell our machine how to find `cloudsite.thm`. Let's add it to our `/etc/hosts` file.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo1.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo1.webp){: width="1233" height="754" }
 
 With that done, we can browse the site. It looks like a standard cloud SaaS website template. Clicking the "Log In" button whisks us away to a new subdomain: `storage.cloudsite.thm`.
 
 Time for another entry in our `/etc/hosts` file!
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo2.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo2.webp){: width="510" height="663" }
 
 Now we're at a login page. I tried the classic `admin:admin`, but it demanded an email address. Fair enough. A quick look around the main site's source code and contact page revealed a couple of emails.
 
@@ -91,7 +91,7 @@ These might come in handy later. I also noticed that the login request is a JSON
 
 I created my own account (`pwned@pwned.com` with password `1234`) to see what a regular user can do.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo3.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo3.webp){: width="742" height="477" }
 
 "Your subscription is inactive." Well, that's not very useful. It seems we're stuck... or are we? Before trying to brute-force the emails we found, let's do some more directory fuzzing with our old friend, `gobuster`.
 
@@ -248,11 +248,11 @@ Since the `/api/register` endpoint is open, let's try registering a new user, bu
 
 It worked! I logged in with our new "active" user `b@b.com`.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo4.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo4.webp){: width="500" height="930" }
 
 Success! We now have an active subscription and access to the file upload feature.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo5.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo5.webp){: width="527" height="516" }
 
 ### SSRF and Leaking API Docs
 
@@ -260,13 +260,13 @@ The dashboard allows uploading files from our computer or from a URL. Uploading 
 
 Let's see if we can make the server fetch the `/api/docs` endpoint that was previously forbidden to us.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo6.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo6.webp){: width="522" height="571" }
 
 The result was a file containing `{"message": "Access denied"}`. Drats. This probably means the server is fetching the URL over the public internet, where it can't access internal-only endpoints.
 
 However, the HTTP response headers revealed the backend is using ExpressJS (`X-Powered-By: Express`). A common setup for Node.js/Express apps is to run on a local port like `3000`. Let's try to get the server to talk to itself via `localhost`.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo7.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo7.webp){: width="554" height="576" }
 
 Bingo! This time, it worked and gave us the API documentation.
 
@@ -351,7 +351,7 @@ I used this payload:
 
 Since my shell was mangling the special characters, I switched to a GUI REST client (`yaak`) for this part.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo8.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo8.webp){: width="1620" height="963" }
 
 Houston, we have an error!
 
@@ -380,7 +380,7 @@ Now for the fun part: getting a reverse shell. We can craft a payload to execute
 
 I sent this payload (with my own IP and port) and...
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo9.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo9.webp){: width="1728" height="193" }
 
 We're in! Let's upgrade this to a fully interactive shell.
 
@@ -529,7 +529,7 @@ Exporting definitions in JSON to a file at "/tmp/def.json" ...
 
 We have the hash for the `root` user. The hashing algorithm is `rabbit_password_hashing_sha256`. A quick search of the [RabbitMQ documentation](https://www.rabbitmq.com/docs/passwords#this-is-the-algorithm) reveals how this works.
 
-![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo10.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo10.webp){: width="527" height="554" }
 
 The password hash is a Base64 encoded string. When decoded, the first 4 bytes are a random salt, and the rest is the SHA-256 hash of `salt + password`. We can extract the salt and hash, and then try to crack it.
 
