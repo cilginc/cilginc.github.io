@@ -269,3 +269,88 @@ After jwt decode I get this.
     "exp": 1751893523
 }
 ```
+
+
+Lets register a new user with subscription active.
+
+```bash
+❯ curl -X POST 'http://storage.cloudsite.thm/api/register' -d '{
+    "email": "b@b.com",
+    "password": "1234",
+    "subscription": "active"
+}' -H "Content-Type: application/json"
+{"message":"User registered successfully"}%                         
+```
+
+
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo4.webp){: width="972" height="589" }
+
+
+And look what i found
+
+We can upload files.
+
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo5.webp){: width="972" height="589" }
+
+
+I upload some file and when i go to the /api/uploads/* it downloads the file.
+
+
+We can also upload from url some maybe giving /api/docs downloads the docs.
+
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo6.webp){: width="972" height="589" }
+
+
+And it downloaded 
+
+```json
+{"message":"Access denied"}
+```
+
+
+I think we should use localhost because it reroutes over internet which is giving access denied error.
+
+
+If we look at the http headers we can see that it uses express on the backend so i'm guessing it works on localhost 3000
+
+
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo7.webp){: width="972" height="589" }
+
+
+
+And it gave me this file:
+
+
+```text
+Endpoints Perfectly Completed
+
+POST Requests:
+/api/register - For registering user
+/api/login - For loggin in the user
+/api/upload - For uploading files
+/api/store-url - For uploadion files via url
+/api/fetch_messeges_from_chatbot - Currently, the chatbot is under development. Once development is complete, it will be used in the future.
+
+GET Requests:
+/api/uploads/filename - To view the uploaded files
+/dashboard/inactive - Dashboard for inactive user
+/dashboard/active - Dashboard for active user
+
+Note: All requests to this endpoint are sent in JSON format.
+```
+
+
+So there is still one api endpoint we didn't find out. Which is /api/fetch_messeges_from_chatbot 
+
+
+
+```bash
+❯ curl -s 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot'
+{"message":"Token not provided"}%                                                                       
+```
+
+Of course it wants token use browser.
