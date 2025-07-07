@@ -232,3 +232,40 @@ Finished
 I don't know what but there are two login endpoint `Login` and `login`
 
 Maybe Login one could be vulnerable
+
+
+I don't know what but i nuked my previus acocunt whatever make new one.
+
+
+After trying /api/docs I found something:
+
+
+
+```bash
+❯ curl -s http://storage.cloudsite.thm/api/uploads
+{"message":"Token not provided"}%                                                                       
+```
+
+If we go to the browser I get:
+
+```text
+message	"Your subscription is inactive. You cannot use our services."
+```
+
+```bash
+❯ curl -s 'http://storage.cloudsite.thm/api/uploads' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFAYS5jb20iLCJzdWJzY3JpcHRpb24iOiJpbmFjdGl2ZSIsImlhdCI6MTc1MTg4OTkyMywiZXhwIjoxNzUxODkzNTIzfQ.qQb3z00lku8yAT6qCmXzKfugOoiJhbYV54va3Fmc07w'
+{"message":"Your subscription is inactive. You cannot use our services."}%     
+```
+
+So maybe there is a thing in the token lets decode the token first.
+
+After jwt decode I get this.
+
+```text
+{
+    "email": "a@a.com",
+    "subscription": "inactive",
+    "iat": 1751889923,
+    "exp": 1751893523
+}
+```
