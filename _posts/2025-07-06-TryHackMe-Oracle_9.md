@@ -3,7 +3,7 @@ title: "TryHackMe: Oracle 9"
 author: cilgin
 date: 2025-07-06 16:23:57 +0300
 categories: [CyberSecurity]
-tags: [CTF, TryHackMe, Medium]
+tags: [CTF, TryHackMe, Easy]
 pin: false
 math: false
 mermaid: false
