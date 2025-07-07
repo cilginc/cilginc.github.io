@@ -65,3 +65,54 @@ Lets add `cloudsite.thm` to `/etc/hosts`
 ![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo1.webp){: width="972" height="589" }
 
 You can see that this is a site cloud Saas website template
+
+
+If you try to click log in you'll directed to `storage.cloudsite.thm`.
+
+
+Lets try adding this to our `/etc/hosts`
+
+
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo2.webp){: width="972" height="589" }
+
+
+
+
+I tried admin admin but It wanted me a e mail lets look at the site for any emails.
+
+
+```text
+info@smarteyeapps.com
+sales@smarteyeapps.com
+```
+
+I found this too maybe it can be helpful.
+
+
+The login request is like this
+
+
+```text
+{"email":"pwned@pwned.com","password":"123123123"}
+```
+
+
+I also created a account named pwned@pwned.com password 1234
+
+
+When I log in I see this.
+
+![Desktop View](/assets/img/2025-07-07-TryHackMe-Rabbit_Store/photo3.webp){: width="972" height="589" }
+
+
+Which means we can't do anything with this account.
+
+
+We can brute force found emails but firstly fuzz the website using `gobuster`
+
+
+
+```bash
+
+```
