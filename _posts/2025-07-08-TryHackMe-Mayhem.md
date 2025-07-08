@@ -1659,3 +1659,139 @@ And decipher using <https://gchq.github.io/CyberChef/>
 
 
 ![Desktop View](/assets/img/2025-07-08-TryHackMe-Mayhem/photo4.webp){: width="972" height="589" }
+
+
+datas i gained:
+
+You need to delete every data after 3a begins
+
+```text
+Host Name:                 WIN-9H86M71MBE9
+OS Name:                   Microsoft Windows Server 2019 Standard Evaluation
+OS Version:                10.0.17763 N/A Build 17763
+OS Manufacturer:           Microsoft Corporation
+OS Configuration:          Primary Domain Controller
+OS Build Type:             Multiprocessor Free
+Registered Owner:          Windows User
+Registered Organization:   
+Product ID:                00431-10000-00000-AA311
+Original Install Date:     11/14/2023, 7:36:09 PM
+System Boot Time:          11/14/2023, 7:55:55 PM
+System Manufacturer:       innotek GmbH
+System Model:              VirtualBox
+System Type:               x64-based PC
+Processor(s):              1 Processor(s) Installed.
+                           [01]: Intel64 Family 6 Model 158 Stepping 13 GenuineIntel ~3600 Mhz
+BIOS Version:              innotek GmbH VirtualBox, 12/1/2006
+Windows Directory:         C:\Windows
+System Directory:          C:\Windows\system32
+Boot Device:               \Device\HarddiskVolume1
+System Locale:             en-us;English (United States)
+Input Locale:              en-us;English (United States)
+Time Zone:                 (UTC-08:00) Pacific Time (US & Canada)
+Total Physical Memory:     8,192 MB
+Available Physical Memory: 6,352 MB
+Virtual Memory: Max Size:  10,112 MB
+Virtual Memory: Available: 8,376 MB
+Virtual Memory: In Use:    1,736 MB
+Page File Location(s):     C:\pagefile.sys
+Domain:                    clientserver.thm
+Logon Server:              \\WIN-9H86M71MBE9
+Hotfix(s):                 3 Hotfix(s) Installed.
+                           [01]: KB5020627
+                           [02]: KB5019966
+                           [03]: KB5020374
+Network Card(s):           1 NIC(s) Installed.
+                           [01]: Intel(R) PRO/1000 MT Desktop Adapter
+                                 Connection Name: Ethernet
+                                 DHCP Enabled:    Yes
+                                 DHCP Server:     10.0.2.3
+                                 IP address(es)
+                                 [01]: 10.0.2.38
+                                 [02]: fe80::e134:1b0c:c8d5:3020
+Hyper-V Requirements:      A hypervisor has been detected. Features required for Hyper-V will not be displayed.
+```
+
+
+```text
+UserName		SID
+====================== ====================================
+CLIENTSERVER\paco	S-1-5-21-679395392-3966376528-1349639417-1103
+
+
+GROUP INFORMATION                                 Type                     SID                                          Attributes               
+================================================= ===================== ============================================= ==================================================
+CLIENTSERVER\Domain Users                         Group                    S-1-5-21-679395392-3966376528-1349639417-513  Mandatory group, Enabled by default, Enabled group, 
+Everyone                                          Well-known group         S-1-1-0                                       Mandatory group, Enabled by default, Enabled group, 
+BUILTIN\Administrators                            Alias                    S-1-5-32-544                                  Mandatory group, Enabled by default, Enabled group, Group owner, 
+BUILTIN\Users                                     Alias                    S-1-5-32-545                                  Mandatory group, Enabled by default, Enabled group, 
+BUILTIN\Pre-Windows 2000 Compatible Access        Alias                    S-1-5-32-554                                  Mandatory group, Enabled by default, Enabled group, 
+NT AUTHORITY\INTERACTIVE                          Well-known group         S-1-5-4                                       Mandatory group, Enabled by default, Enabled group, 
+CONSOLE LOGON                                     Well-known group         S-1-2-1                                       Mandatory group, Enabled by default, Enabled group, 
+NT AUTHORITY\Authenticated Users                  Well-known group         S-1-5-11                                      Mandatory group, Enabled by default, Enabled group, 
+NT AUTHORITY\This Organization                    Well-known group         S-1-5-15                                      Mandatory group, Enabled by default, Enabled group, 
+LOCAL                                             Well-known group         S-1-2-0                                       Mandatory group, Enabled by default, Enabled group, 
+Authentication authority asserted identity        Well-known group         S-1-18-1                                      Mandatory group, Enabled by default, Enabled group, 
+Mandatory Label\High Mandatory Level              Label                    S-1-16-12288                                  Mandatory group, Enabled by default, Enabled group, 
+
+
+Privilege Name                Description                                       State                         
+============================= ================================================= ===========================
+SeIncreaseQuotaPrivilege      Adjust memory quotas for a process                Disabled                      
+SeMachineAccountPrivilege     Add workstations to domain                        Disabled                      
+SeSecurityPrivilege           Manage auditing and security log                  Disabled                      
+SeTakeOwnershipPrivilege      Take ownership of files or other objects          Disabled                      
+SeLoadDriverPrivilege         Load and unload device drivers                    Disabled                      
+SeSystemProfilePrivilege      Profile system performance                        Disabled                      
+SeSystemtimePrivilege         Change the system time                            Disabled                      
+SeProfileSingleProcessPrivilegeProfile single process                            Disabled                      
+SeIncreaseBasePriorityPrivilegeIncrease scheduling priority                      Disabled                      
+SeCreatePagefilePrivilege     Create a pagefile                                 Disabled                      
+SeBackupPrivilege             Back up files and directories                     Disabled                      
+SeRestorePrivilege            Restore files and directories                     Disabled                      
+SeShutdownPrivilege           Shut down the system                              Disabled                      
+SeDebugPrivilege              Debug programs                                    Enabled                       
+SeSystemEnvironmentPrivilege  Modify firmware environment values                Disabled                      
+SeChangeNotifyPrivilege       Bypass traverse checking                          Enabled                       
+SeRemoteShutdownPrivilege     Force shutdown from a remote system               Disabled                      
+SeUndockPrivilege             Remove computer from docking station              Disabled                      
+SeEnableDelegationPrivilege   Enable computer and user accounts to be trusted for delegationDisabled                      
+SeManageVolumePrivilege       Perform volume maintenance tasks                  Disabled                      
+SeImpersonatePrivilege        Impersonate a client after authentication         Enabled                       
+SeCreateGlobalPrivilege       Create global objects                             Enabled                       
+SeIncreaseWorkingSetPrivilege Increase a process working set                    Disabled                      
+SeTimeZonePrivilege           Change the time zone                              Disabled                      
+SeCreateSymbolicLinkPrivilege Create symbolic links                             Disabled                      
+SeDelegateSessionUserImpersonatePrivilegeObtain an impersonation token for another user in the same sessionDisabled                      
+```
+
+
+```text
+Volume in drive C has no label.
+ Volume Serial Number is D284-F445
+
+ Directory of C:\Users\paco\Desktop
+
+11/14/2023  08:12 PM    <DIR>          .
+11/14/2023  08:12 PM    <DIR>          ..
+11/14/2023  08:04 PM    <DIR>          Files
+               0 File(s)              0 bytes
+               3 Dir(s)  94,010,191,872 bytes free
+```
+
+
+```text
+ Volume in drive C has no label.
+ Volume Serial Number is D284-F445
+
+ Directory of C:\Users\paco\Desktop\Files
+
+11/14/2023  08:14 PM    <DIR>          .
+11/14/2023  08:14 PM    <DIR>          ..
+11/14/2023  08:14 PM               555 clients.csv
+               1 File(s)            555 bytes
+               2 Dir(s)  94,010,060,800 bytes free
+```
+
+
+I used vim macros to make data more accesisble and used CyberChef to decode myself. Yes I could've write a python script for doing that job.
