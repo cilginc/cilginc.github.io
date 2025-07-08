@@ -1617,21 +1617,15 @@ demon.x64.exe
 
 You can see that there is demon.x64.exe which is not misspelled. Havoc C2 framework uses this name to create daemon.
 
-
 I found a article on internet about blue-teaming Havoc.
 
 [Havoc C2 Framework – A Defensive Operator’s Guide](https://www.immersivelabs.com/resources/blog/havoc-c2-framework-a-defensive-operators-guide)
 
-
 According to the arcticle we need to find bytes said `0xDEADBEEF` for obtaining encyption keys from packet capture. There bytes are magic byte value.
-
 
 ![Desktop View](/assets/img/2025-07-08-TryHackMe-Mayhem/photo2.webp){: width="972" height="589" }
 
-
 Use this photo to get AES and IV key.
-
-
 
 ```text
 AES key = 946cf2f65ac2d2b868328a18dedcc296cc40fa28fab41a0c34dcc010984410ca
@@ -1639,27 +1633,17 @@ AES key = 946cf2f65ac2d2b868328a18dedcc296cc40fa28fab41a0c34dcc010984410ca
 IV key = 8cd00c3e349290565aaa5a8c3aacd43
 ```
 
-
 use this command to get all the post request data.
 
 ```bash
-tshark -r traffic.pcapng -Y 'http.request.method == "POST"' -T fields -e media.type 
+tshark -r traffic.pcapng -Y 'http.request.method == "POST"' -T fields -e media.type
 ```
-
 
 And decipher using <https://gchq.github.io/CyberChef/>
 
-
-
 ![Desktop View](/assets/img/2025-07-08-TryHackMe-Mayhem/photo3.webp){: width="972" height="589" }
 
-
-
-
-
-
 ![Desktop View](/assets/img/2025-07-08-TryHackMe-Mayhem/photo4.webp){: width="972" height="589" }
-
 
 datas i gained:
 
@@ -1673,7 +1657,7 @@ OS Manufacturer:           Microsoft Corporation
 OS Configuration:          Primary Domain Controller
 OS Build Type:             Multiprocessor Free
 Registered Owner:          Windows User
-Registered Organization:   
+Registered Organization:
 Product ID:                00431-10000-00000-AA311
 Original Install Date:     11/14/2023, 7:36:09 PM
 System Boot Time:          11/14/2023, 7:55:55 PM
@@ -1712,59 +1696,57 @@ Network Card(s):           1 NIC(s) Installed.
 Hyper-V Requirements:      A hypervisor has been detected. Features required for Hyper-V will not be displayed.
 ```
 
-
 ```text
 UserName		SID
 ====================== ====================================
 CLIENTSERVER\paco	S-1-5-21-679395392-3966376528-1349639417-1103
 
 
-GROUP INFORMATION                                 Type                     SID                                          Attributes               
+GROUP INFORMATION                                 Type                     SID                                          Attributes
 ================================================= ===================== ============================================= ==================================================
-CLIENTSERVER\Domain Users                         Group                    S-1-5-21-679395392-3966376528-1349639417-513  Mandatory group, Enabled by default, Enabled group, 
-Everyone                                          Well-known group         S-1-1-0                                       Mandatory group, Enabled by default, Enabled group, 
-BUILTIN\Administrators                            Alias                    S-1-5-32-544                                  Mandatory group, Enabled by default, Enabled group, Group owner, 
-BUILTIN\Users                                     Alias                    S-1-5-32-545                                  Mandatory group, Enabled by default, Enabled group, 
-BUILTIN\Pre-Windows 2000 Compatible Access        Alias                    S-1-5-32-554                                  Mandatory group, Enabled by default, Enabled group, 
-NT AUTHORITY\INTERACTIVE                          Well-known group         S-1-5-4                                       Mandatory group, Enabled by default, Enabled group, 
-CONSOLE LOGON                                     Well-known group         S-1-2-1                                       Mandatory group, Enabled by default, Enabled group, 
-NT AUTHORITY\Authenticated Users                  Well-known group         S-1-5-11                                      Mandatory group, Enabled by default, Enabled group, 
-NT AUTHORITY\This Organization                    Well-known group         S-1-5-15                                      Mandatory group, Enabled by default, Enabled group, 
-LOCAL                                             Well-known group         S-1-2-0                                       Mandatory group, Enabled by default, Enabled group, 
-Authentication authority asserted identity        Well-known group         S-1-18-1                                      Mandatory group, Enabled by default, Enabled group, 
-Mandatory Label\High Mandatory Level              Label                    S-1-16-12288                                  Mandatory group, Enabled by default, Enabled group, 
+CLIENTSERVER\Domain Users                         Group                    S-1-5-21-679395392-3966376528-1349639417-513  Mandatory group, Enabled by default, Enabled group,
+Everyone                                          Well-known group         S-1-1-0                                       Mandatory group, Enabled by default, Enabled group,
+BUILTIN\Administrators                            Alias                    S-1-5-32-544                                  Mandatory group, Enabled by default, Enabled group, Group owner,
+BUILTIN\Users                                     Alias                    S-1-5-32-545                                  Mandatory group, Enabled by default, Enabled group,
+BUILTIN\Pre-Windows 2000 Compatible Access        Alias                    S-1-5-32-554                                  Mandatory group, Enabled by default, Enabled group,
+NT AUTHORITY\INTERACTIVE                          Well-known group         S-1-5-4                                       Mandatory group, Enabled by default, Enabled group,
+CONSOLE LOGON                                     Well-known group         S-1-2-1                                       Mandatory group, Enabled by default, Enabled group,
+NT AUTHORITY\Authenticated Users                  Well-known group         S-1-5-11                                      Mandatory group, Enabled by default, Enabled group,
+NT AUTHORITY\This Organization                    Well-known group         S-1-5-15                                      Mandatory group, Enabled by default, Enabled group,
+LOCAL                                             Well-known group         S-1-2-0                                       Mandatory group, Enabled by default, Enabled group,
+Authentication authority asserted identity        Well-known group         S-1-18-1                                      Mandatory group, Enabled by default, Enabled group,
+Mandatory Label\High Mandatory Level              Label                    S-1-16-12288                                  Mandatory group, Enabled by default, Enabled group,
 
 
-Privilege Name                Description                                       State                         
+Privilege Name                Description                                       State
 ============================= ================================================= ===========================
-SeIncreaseQuotaPrivilege      Adjust memory quotas for a process                Disabled                      
-SeMachineAccountPrivilege     Add workstations to domain                        Disabled                      
-SeSecurityPrivilege           Manage auditing and security log                  Disabled                      
-SeTakeOwnershipPrivilege      Take ownership of files or other objects          Disabled                      
-SeLoadDriverPrivilege         Load and unload device drivers                    Disabled                      
-SeSystemProfilePrivilege      Profile system performance                        Disabled                      
-SeSystemtimePrivilege         Change the system time                            Disabled                      
-SeProfileSingleProcessPrivilegeProfile single process                            Disabled                      
-SeIncreaseBasePriorityPrivilegeIncrease scheduling priority                      Disabled                      
-SeCreatePagefilePrivilege     Create a pagefile                                 Disabled                      
-SeBackupPrivilege             Back up files and directories                     Disabled                      
-SeRestorePrivilege            Restore files and directories                     Disabled                      
-SeShutdownPrivilege           Shut down the system                              Disabled                      
-SeDebugPrivilege              Debug programs                                    Enabled                       
-SeSystemEnvironmentPrivilege  Modify firmware environment values                Disabled                      
-SeChangeNotifyPrivilege       Bypass traverse checking                          Enabled                       
-SeRemoteShutdownPrivilege     Force shutdown from a remote system               Disabled                      
-SeUndockPrivilege             Remove computer from docking station              Disabled                      
-SeEnableDelegationPrivilege   Enable computer and user accounts to be trusted for delegationDisabled                      
-SeManageVolumePrivilege       Perform volume maintenance tasks                  Disabled                      
-SeImpersonatePrivilege        Impersonate a client after authentication         Enabled                       
-SeCreateGlobalPrivilege       Create global objects                             Enabled                       
-SeIncreaseWorkingSetPrivilege Increase a process working set                    Disabled                      
-SeTimeZonePrivilege           Change the time zone                              Disabled                      
-SeCreateSymbolicLinkPrivilege Create symbolic links                             Disabled                      
-SeDelegateSessionUserImpersonatePrivilegeObtain an impersonation token for another user in the same sessionDisabled                      
+SeIncreaseQuotaPrivilege      Adjust memory quotas for a process                Disabled
+SeMachineAccountPrivilege     Add workstations to domain                        Disabled
+SeSecurityPrivilege           Manage auditing and security log                  Disabled
+SeTakeOwnershipPrivilege      Take ownership of files or other objects          Disabled
+SeLoadDriverPrivilege         Load and unload device drivers                    Disabled
+SeSystemProfilePrivilege      Profile system performance                        Disabled
+SeSystemtimePrivilege         Change the system time                            Disabled
+SeProfileSingleProcessPrivilegeProfile single process                            Disabled
+SeIncreaseBasePriorityPrivilegeIncrease scheduling priority                      Disabled
+SeCreatePagefilePrivilege     Create a pagefile                                 Disabled
+SeBackupPrivilege             Back up files and directories                     Disabled
+SeRestorePrivilege            Restore files and directories                     Disabled
+SeShutdownPrivilege           Shut down the system                              Disabled
+SeDebugPrivilege              Debug programs                                    Enabled
+SeSystemEnvironmentPrivilege  Modify firmware environment values                Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking                          Enabled
+SeRemoteShutdownPrivilege     Force shutdown from a remote system               Disabled
+SeUndockPrivilege             Remove computer from docking station              Disabled
+SeEnableDelegationPrivilege   Enable computer and user accounts to be trusted for delegationDisabled
+SeManageVolumePrivilege       Perform volume maintenance tasks                  Disabled
+SeImpersonatePrivilege        Impersonate a client after authentication         Enabled
+SeCreateGlobalPrivilege       Create global objects                             Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set                    Disabled
+SeTimeZonePrivilege           Change the time zone                              Disabled
+SeCreateSymbolicLinkPrivilege Create symbolic links                             Disabled
+SeDelegateSessionUserImpersonatePrivilegeObtain an impersonation token for another user in the same sessionDisabled
 ```
-
 
 ```text
 Volume in drive C has no label.
@@ -1779,7 +1761,6 @@ Volume in drive C has no label.
                3 Dir(s)  94,010,191,872 bytes free
 ```
 
-
 ```text
  Volume in drive C has no label.
  Volume Serial Number is D284-F445
@@ -1793,5 +1774,48 @@ Volume in drive C has no label.
                2 Dir(s)  94,010,060,800 bytes free
 ```
 
+```text
+THM{HavOc_C2_DeCRypTing_is_Fun_Fun_FUN}
+```
+
+```text
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet:
+
+   Connection-specific DNS Suffix  . : home
+   Link-local IPv6 Address . . . . . : fe80::e134:1b0c:c8d5:3020%6
+   IPv4 Address. . . . . . . . . . . : 10.0.2.38
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 10.0.2.1
+```
 
 I used vim macros to make data more accesisble and used CyberChef to decode myself. Yes I could've write a python script for doing that job.
+
+Anyways here is the commands i used in vim:
+
+```
+:%s/00000010deadbeef0e9fb7d80000000100000000/
+```
+
+```
+/3a
+ctrl-v
+select all
+n
+d
+```
+
+Questions:
+
+What is the SID of the user that the attacker is executing everything under?
+
+What is the Link-local IPv6 Address of the server? Enter the answer exactly as you see it.
+The attacker printed a flag for us to see. What is that flag?
+
+The attacker added a new account as a persistence mechanism. What is the username and password of that account? Format is username:password
+
+The attacker found an important file on the server. What is the full path of that file?
+
+What is the flag found inside the file from question 5?
