@@ -1615,4 +1615,47 @@ c|w{
 demon.x64.exe
 ```
 
-asda
+You can see that there is demon.x64.exe which is not misspelled. Havoc C2 framework uses this name to create daemon.
+
+
+I found a article on internet about blue-teaming Havoc.
+
+[Havoc C2 Framework – A Defensive Operator’s Guide](https://www.immersivelabs.com/resources/blog/havoc-c2-framework-a-defensive-operators-guide)
+
+
+According to the arcticle we need to find bytes said `0xDEADBEEF` for obtaining encyption keys from packet capture. There bytes are magic byte value.
+
+
+![Desktop View](/assets/img/2025-07-08-TryHackMe-Mayhem/photo2.webp){: width="972" height="589" }
+
+
+Use this photo to get AES and IV key.
+
+
+
+```text
+AES key = 946cf2f65ac2d2b868328a18dedcc296cc40fa28fab41a0c34dcc010984410ca
+
+IV key = 8cd00c3e349290565aaa5a8c3aacd43
+```
+
+
+use this command to get all the post request data.
+
+```bash
+tshark -r traffic.pcapng -Y 'http.request.method == "POST"' -T fields -e media.type 
+```
+
+
+And decipher using <https://gchq.github.io/CyberChef/>
+
+
+
+![Desktop View](/assets/img/2025-07-08-TryHackMe-Mayhem/photo3.webp){: width="972" height="589" }
+
+
+
+
+
+
+![Desktop View](/assets/img/2025-07-08-TryHackMe-Mayhem/photo4.webp){: width="972" height="589" }
