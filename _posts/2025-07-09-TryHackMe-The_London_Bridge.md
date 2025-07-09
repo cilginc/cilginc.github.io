@@ -46,7 +46,7 @@ Nmap done: 1 IP address (1 host up) scanned in 45.48 seconds
 
 Let's fire up a browser and see what's happening on `http://$IP:8080`.
 
-![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo1.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo1.webp){: width="1261" height="544" }
 
 It's a charming little tourist site about London. How quaint! Now, let's see what's hiding under the surface.
 
@@ -83,11 +83,11 @@ Finished
 
 Interesting results! The `/gallery` page looks like a good place to start. Let's head over there.
 
-![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo2.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo2.webp){: width="357" height="117" }
 
 The gallery page has a file upload form, which corresponds to the `/upload` endpoint we found. This is where things usually get fun. Let's capture a legitimate upload request with Burp Suite to see how it works.
 
-![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo3.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-09-TryHackMe-The_London_Bridge/photo3.webp){: width="784" height="340" }
 
 I threw everything but the kitchen sink at this upload form. I tried uploading Python shells with `.jpg` extensions, manipulating magic bytes, and even embedding a Python reverse shell into an image's EXIF data. Nothing worked. The server was surprisingly picky and would only accept genuine image files.
 
