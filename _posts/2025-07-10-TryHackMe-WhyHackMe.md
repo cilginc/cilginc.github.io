@@ -63,11 +63,11 @@ Nmap done: 1 IP address (1 host up) scanned in 65.77 seconds
 
 Let's start with the web server on port 80.
 
-![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo1.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo1.webp){: width="603" height="258" }
 
 It looks like a simple PHP website. After clicking around a bit, I stumbled upon a login page at `/login.php`.
 
-![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo2.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo2.webp){: width="695" height="604" }
 
 My usual go-to combo of `admin:admin` didn't work (shocker!). Before we get too crazy, let's do some directory fuzzing with `gobuster` to see if there are any hidden pages.
 
@@ -107,7 +107,7 @@ Finished
 
 Jackpot! Gobuster found `/register.php`. If we can't log in, we'll just make our own account!
 
-![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo3.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo3.webp){: width="751" height="646" }
 
 After registering and logging in, we're told we can now comment on posts. This is a classic place to hunt for Cross-Site Scripting (XSS) vulnerabilities.
 
@@ -155,11 +155,11 @@ Aha! This is a massive clue. There's a password file at `/dir/pass.txt`, but it'
 
 Let's test the comment section for XSS. A simple `<script>alert("Test")</script>` comment doesn't work.
 
-![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo4.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo4.webp){: width="488" height="80" }
 
 But what if the vulnerability is in the username field? I created a new user with the name `<script>alert("Test")</script>`, and... success! The username is reflected on the page without being sanitized.
 
-![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo5.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo5.webp){: width="556" height="226" }
 
 Now we can weaponize this. The plan is:
 1.  Craft a JavaScript payload that fetches `/dir/pass.txt`.
@@ -506,7 +506,7 @@ apache.key
 
 With `capture.pcap` and `apache.key`, we can open the capture in Wireshark. In Wireshark, go to `Edit -> Preferences -> Protocols -> TLS` and add the `apache.key` file to the "RSA keys list". After doing this, the traffic magically decrypts, and we can see the full request to the backdoor!
 
-![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo6.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-10-TryHackMe-WhyHackMe/photo6.webp){: width="723" height="494" }
 
 The decrypted packet reveals the path: `/cgi-bin/5UP3r53Cr37.py` and the required GET parameters: `key` and `iv`, plus a `cmd` parameter for our command. Let's test it with `cmd=id`.
 
