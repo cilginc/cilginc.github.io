@@ -8,7 +8,7 @@ pin: false
 math: false
 mermaid: false
 image:
-  path: /assets/img/2025-07-11-TryHackMe-Creative/main.webp
+  path: /assets/img/2025-07-11-TryHackMe-Creative/main.svg
 ---
 
 Hey everyone! Welcome to another adventure in the land of TryHackMe. Today, we're diving headfirst into the [Creative](https://tryhackme.com/room/creative) room. Let's pop open a terminal, get our IP, and see what kind of creative trouble we can get into.
